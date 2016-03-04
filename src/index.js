@@ -1,2 +1,8 @@
 import Carousel from './components/carousel'
-export { Carousel }
+import Test from './components/test'
+
+
+export {
+  Test,
+  Carousel
+}
