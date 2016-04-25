@@ -16,6 +16,8 @@ app.get('/',
     res.render('index.ejs');
   });
 
-app.listen(process.env.PORT || 3000, function() {
+var port = process.env.PORT || 7000;
+
+app.listen(port, function() {
   console.log('Node app is running on port', port);
 });
