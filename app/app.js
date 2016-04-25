@@ -1,16 +1,13 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react';
+import { render } from "react-dom";
 
-import { Test, Carousel } from "../src";
+import { App } from '../zoned';
 
-// render the carousel component
-ReactDOM.render(
-  <Carousel />,
-  document.getElementById('carousel')
-);
+require('./style')
 
-// render the test component
-ReactDOM.render(
-  <Test />,
-  document.getElementById('test')
+const rootElement = document.getElementById('app');
+
+render(
+  <App />,
+  rootElement
 );

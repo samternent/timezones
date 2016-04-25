@@ -12,14 +12,14 @@ module.exports = {
     path: __dirname + "/dist",
   },
   resolve: {
-      extensions: ['', '.js', '.scss'],
+      extensions: ['', '.js', '.scss', 'json']
   },
   module: {
       loaders: [
           {
             test: /\.js$/,
             exclude: /node_modules/,
-            loaders: ["react-hot", "babel-loader"]
+            loaders: ["react-hot", "babel?presets[]=react,presets[]=es2015"]
           },
           {
             test: /\.scss$/,
@@ -29,6 +29,11 @@ module.exports = {
             test: /\.html$/,
             loader: "file?name=[name].[ext]",
           },
+          {
+            test: /\.json$/,
+            loader: "json-loader",
+          },
+          { test: /\.(png|jpg)$/, loader: 'url-loader?limit=8192' },
         ]
   },
   plugins: [
