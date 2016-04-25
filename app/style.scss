@@ -95,13 +95,14 @@ ul {
 }
 
 .zone__time {
-  margin: 1.5em auto 0;
+  margin: 40px auto 0;
   font-size: 3em;
   font-weight: 800;
   text-align: center;
   background-color: rgba(#fff, 0.8);
   padding: 30px;
-  width: 60%;
+  max-width: 700px;
+  width: 100%;
 }
 .zone__date {
   margin: 5px auto;
@@ -111,8 +112,8 @@ ul {
   font-weight: 100;
   text-transform: uppercase;
   text-align: center;
-  width: 60%;
-
+  max-width: 700px;
+  width: 100%;
 }
 
 
