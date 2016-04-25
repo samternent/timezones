@@ -34,11 +34,32 @@ export default class Zoned extends React.Component {
     this.state = {
       zone: {
         moment: startingZone,
-        names: ['MY ZONE', 'EUROPE', 'LONDON'],
+        names: ['EUROPE', 'BIRMINGHAM'],
       }
     };
 
     this.onInputChange = this.onInputChange.bind(this);
+  }
+
+  componentDidMount() {
+    setInterval(this.tickClock.bind(this), 1000);
+  }
+  getClockStyle(type) {
+    const time = moment().tz(this.state.zone.moment).format('h:mm:ss').split(':');
+    let deg = null;
+
+    if (type === 's') deg = time[2] * 6;
+    if (type === 'm') deg = time[1] * 6;
+    if (type === 'h') deg = time[0] * 30;
+
+    return {
+      'transform': `rotateZ(${deg}deg)`
+    }
+  }
+
+  tickClock() {
+    const [date, time] = moment().tz(this.state.zone.moment).format('MMMM Do YYYY, h:mm:ss a').split(',');
+    this.setState({ time, date });
   }
 
   onInputChange(e) {
@@ -62,6 +83,7 @@ export default class Zoned extends React.Component {
 
   renderNames() {
     return this.state.zone.names.map((zone, i) => {
+      if (i > 1) return null;
       return (
           <div className='zone__name' key={`name_${i}`}>
             { zone }
@@ -73,7 +95,11 @@ export default class Zoned extends React.Component {
   render() {
     return (
       <div className='zoned'>
-
+        <div className='zoned__clock' dataTime={ this.state.time }>
+          <div className='zoned__clock--second' style={ this.getClockStyle('s') }/>
+          <div className='zoned__clock--minute' style={ this.getClockStyle('m') }/>
+          <div className='zoned__clock--hour' style={ this.getClockStyle('h') }/>
+        </div>
         <header className='header'>
           <div className='search'>
             <input
@@ -87,7 +113,10 @@ export default class Zoned extends React.Component {
         <section className='zone'>
           <div>{ this.renderNames() }</div>
           <div className='zone__time'>
-            { moment().tz(this.state.zone.moment).format('lll') }
+            { this.state.time }
+          </div>
+          <div className='zone__date'>
+            { this.state.date }
           </div>
         </section>
 

@@ -49,7 +49,8 @@ input {
   padding: 0.5em;
   font-size: 1em;
   width: 100%;
-  font-weight:100;
+  font-weight:800;
+  color: red;
   text-transform: uppercase;;
   text-align: center;
   border: 1px solid #efefef;
@@ -94,8 +95,66 @@ ul {
 }
 
 .zone__time {
-  margin: 1em auto;
+  margin: 1.5em auto 0;
   font-size: 3em;
-  font-weight: 100;
+  font-weight: 800;
   text-align: center;
+  background-color: rgba(#fff, 0.8);
+  padding: 30px;
+  width: 60%;
+}
+.zone__date {
+  margin: 5px auto;
+  padding: 10px;
+  background-color: rgba(#fff, 0.8);
+  font-size: 2em;
+  font-weight: 100;
+  text-transform: uppercase;
+  text-align: center;
+  width: 60%;
+
+}
+
+
+
+.zoned__clock {
+  position: fixed;
+  top: 0; bottom: 0; right: 0; left: 0;
+  // background-color: #efefef;
+  z-index: -1;
+}
+
+.zoned__clock--minute {
+  position: absolute;
+  top: -30vh;
+  height: 80vh;
+  width: 10px;
+  background-color: #dfdfdf;
+  left: 49.5vw;
+  transform-origin: 0 0;
+  transform-origin: bottom center;
+  transition: 200ms transform;
+  border-radius: 0 0% 20px 20px;
+}
+.zoned__clock--hour {
+  position: absolute;
+  top: 10vh;
+  height: 40vh;
+  width: 15px;
+  background-color: #dedede;
+  left: 49vw;
+  transform-origin: bottom center;
+  transition: 200ms transform;
+  border-radius: 0 0% 20px 20px;
+}
+.zoned__clock--second {
+  position: absolute;
+  top: -50vh;
+  height: 100vh;
+  width: 5px;
+  background-color: #e3e3e3;
+  left: 49.75vw;
+  transform-origin: bottom center;
+  transition: 200ms transform;
+  border-radius: 0 0% 20px 20px;
 }

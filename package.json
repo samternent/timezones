@@ -4,7 +4,7 @@
   "description": "React carousel",
   "main": "src",
   "scripts": {
-    "start: dev": "webpack-dev-server --hot --inline --progress --colors --presets es2015,react",
+    "start:dev": "webpack-dev-server --hot --inline --progress --colors --presets es2015,react",
     "build": "webpack --progress --colors --presets es2015,react",
     "start": "node app.js"
   },
