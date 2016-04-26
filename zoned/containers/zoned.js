@@ -120,7 +120,6 @@ export default class Zoned extends React.Component {
               { this.state.date }
             </div>
           </section>
-
         </div>
       </div>
     );

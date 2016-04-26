@@ -17,6 +17,7 @@ h1, h2, h3, h4, h5 {
 }
 
 .zoned {
+  border: 1px solid #c3c3c3;
   margin: 0 auto;
   width: 350px;
   height: 450px;
@@ -51,7 +52,6 @@ input {
   font-size: 1em;
   width: 100%;
   font-weight:800;
-  color: red;
   text-transform: uppercase;;
   text-align: center;
   border: 1px solid #efefef;
@@ -96,12 +96,11 @@ ul {
 }
 
 .zone__time {
-  margin: 40px auto 0;
   font-size: 3em;
-  font-weight: 800;
+  font-weight: 100;
   text-align: center;
   background-color: rgba(#fff, 0.8);
-  padding: 30px;
+  padding: 20px;
   width: 100%;
   position: absolute;
   bottom: calc(1.5em);
@@ -126,9 +125,7 @@ ul {
 
 .zoned__clock {
   position: absolute;
-  top: 0; left: 0;
-  height: 350px;
-  width: 350px;
+  top: 0; left: 0; bottom: 0; right: 0;
   background-color: #efefef;
   z-index: -1;
 }
@@ -138,6 +135,7 @@ ul {
   height: 200%;
   transform-origin: bottom center;
   transition: 200ms transform;
+  border: 1px solid #ccc;
   &:after {
     content: '';
     display: block;
@@ -147,14 +145,15 @@ ul {
     bottom: -25px;
     z-index: -1;
     background-color: white;
+    border: 1px solid #ccc;
   }
 }
 .zoned__clock__hand--minute {
   width: 10px;
   left: calc(50% - 5px);
-  border-right: 1px solid #5998C5;
-  border-left: 1px solid #5998C5;
-  background-color: rgba(lighten(#5998C5, 20), 6);
+  // border-right: 1px solid #5998C5;
+  // border-left: 1px solid #5998C5;
+  background-color: rgba(lighten(#5998C5, 20), 0.1);
   &:after {
     left: -20px;
     // border: 1px solid #5998C5;
@@ -164,9 +163,9 @@ ul {
 .zoned__clock__hand--hour {
   width: 20px;
   left: calc(50% - 10px);
-  border-right: 1px solid #A8201A;
-  border-left: 1px solid #A8201A;
-  background-color: rgba(lighten(#A8201A, 10), 6);
+  // border-right: 1px solid #A8201A;
+  // border-left: 1px solid #A8201A;
+  background-color: rgba(lighten(#A8201A, 10), 0.1);
   &:after {
     left: -15px;
     // border: 1px solid #A8201A;
@@ -176,9 +175,9 @@ ul {
 .zoned__clock__hand--second {
   width: 5px;
   left: calc(50% - 2.5px);
-  border-right: 1px solid #333;
-  border-left: 1px solid #333;
-  background-color: rgba(lighten(#333, 10), 6);
+  // border-right: 1px solid #333;
+  // border-left: 1px solid #333;
+  background-color: rgba(lighten(#333, 10), 0.2);
   &:after {
     left: -22.5px;
     // border: 1px solid #333;
