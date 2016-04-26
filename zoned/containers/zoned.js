@@ -96,9 +96,9 @@ export default class Zoned extends React.Component {
     return (
       <div className='zoned'>
         <div className='zoned__clock' dataTime={ this.state.time }>
-          <div className='zoned__clock--second' style={ this.getClockStyle('s') }/>
-          <div className='zoned__clock--minute' style={ this.getClockStyle('m') }/>
-          <div className='zoned__clock--hour' style={ this.getClockStyle('h') }/>
+          <div className='zoned__clock__hand zoned__clock__hand--hour' style={ this.getClockStyle('h') }/>
+          <div className='zoned__clock__hand zoned__clock__hand--minute' style={ this.getClockStyle('m') }/>
+          <div className='zoned__clock__hand zoned__clock__hand--second' style={ this.getClockStyle('s') }/>
         </div>
         <header className='header'>
           <div className='search'>

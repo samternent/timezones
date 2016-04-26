@@ -101,19 +101,20 @@ ul {
   text-align: center;
   background-color: rgba(#fff, 0.8);
   padding: 30px;
-  max-width: 700px;
   width: 100%;
+  position: absolute;
+  bottom: calc(1.5em);
 }
 .zone__date {
-  margin: 5px auto;
   padding: 10px;
   background-color: rgba(#fff, 0.8);
   font-size: 2em;
   font-weight: 100;
   text-transform: uppercase;
   text-align: center;
-  max-width: 700px;
   width: 100%;
+  position: absolute;
+  bottom: 0;
 }
 
 
@@ -121,41 +122,59 @@ ul {
 .zoned__clock {
   position: fixed;
   top: 0; bottom: 0; right: 0; left: 0;
-  // background-color: #efefef;
+  background-color: #efefef;
   z-index: -1;
 }
-
-.zoned__clock--minute {
+.zoned__clock__hand {
   position: absolute;
-  top: -30vh;
-  height: 80vh;
+  top: -150vh;
+  height: 200vh;
+  transform-origin: bottom center;
+  transition: 200ms transform;
+  &:after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    bottom: -25px;
+    z-index: -1;
+    background-color: white;
+  }
+}
+.zoned__clock__hand--minute {
   width: 10px;
-  background-color: #dfdfdf;
-  left: 49.5vw;
-  transform-origin: 0 0;
-  transform-origin: bottom center;
-  transition: 200ms transform;
-  border-radius: 0 0% 20px 20px;
+  left: calc(50vw - 5px);
+  border-right: 1px solid #5998C5;
+  border-left: 1px solid #5998C5;
+  background-color: rgba(lighten(#5998C5, 20), 6);
+  &:after {
+    left: -20px;
+    // border: 1px solid #5998C5;
+    // background-color: white;
+  }
 }
-.zoned__clock--hour {
-  position: absolute;
-  top: 10vh;
-  height: 40vh;
-  width: 15px;
-  background-color: #dedede;
-  left: 49vw;
-  transform-origin: bottom center;
-  transition: 200ms transform;
-  border-radius: 0 0% 20px 20px;
+.zoned__clock__hand--hour {
+  width: 20px;
+  left: calc(50vw - 10px);
+  border-right: 1px solid #A8201A;
+  border-left: 1px solid #A8201A;
+  background-color: rgba(lighten(#A8201A, 10), 6);
+  &:after {
+    left: -15px;
+    // border: 1px solid #A8201A;
+    // background-color: white;
+  }
 }
-.zoned__clock--second {
-  position: absolute;
-  top: -50vh;
-  height: 100vh;
+.zoned__clock__hand--second {
   width: 5px;
-  background-color: #e3e3e3;
-  left: 49.75vw;
-  transform-origin: bottom center;
-  transition: 200ms transform;
-  border-radius: 0 0% 20px 20px;
+  left: calc(50vw - 2.5px);
+  border-right: 1px solid #333;
+  border-left: 1px solid #333;
+  background-color: rgba(lighten(#333, 10), 6);
+  &:after {
+    left: -22.5px;
+    // border: 1px solid #333;
+    // background-color: white;
+  }
 }
