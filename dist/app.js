@@ -19837,14 +19837,7 @@
 	    value: function render() {
 	      return _react2.default.createElement(
 	        'div',
-	        { className: 'zoned' },
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'zoned__clock', dataTime: this.state.time },
-	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--hour', style: this.getClockStyle('h') }),
-	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--minute', style: this.getClockStyle('m') }),
-	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--second', style: this.getClockStyle('s') })
-	        ),
+	        null,
 	        _react2.default.createElement(
 	          'header',
 	          { className: 'header' },
@@ -19860,22 +19853,33 @@
 	          )
 	        ),
 	        _react2.default.createElement(
-	          'section',
-	          { className: 'zone' },
+	          'div',
+	          { className: 'zoned' },
 	          _react2.default.createElement(
 	            'div',
-	            null,
-	            this.renderNames()
+	            { className: 'zoned__clock', dataTime: this.state.time },
+	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--hour', style: this.getClockStyle('h') }),
+	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--minute', style: this.getClockStyle('m') }),
+	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--second', style: this.getClockStyle('s') })
 	          ),
 	          _react2.default.createElement(
-	            'div',
-	            { className: 'zone__time' },
-	            this.state.time
-	          ),
-	          _react2.default.createElement(
-	            'div',
-	            { className: 'zone__date' },
-	            this.state.date
+	            'section',
+	            { className: 'zone' },
+	            _react2.default.createElement(
+	              'div',
+	              null,
+	              this.renderNames()
+	            ),
+	            _react2.default.createElement(
+	              'div',
+	              { className: 'zone__time' },
+	              this.state.time
+	            ),
+	            _react2.default.createElement(
+	              'div',
+	              { className: 'zone__date' },
+	              this.state.date
+	            )
 	          )
 	        )
 	      );
@@ -34933,7 +34937,7 @@
 
 
 	// module
-	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  margin: 0 auto;\n  padding: 10px; }\n\n.header {\n  padding: 30px 0;\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\n.header__icon {\n  float: left;\n  display: inline-block;\n  margin: 4px 0 0 3px;\n  font-size: 2em;\n  color: #6c6c6c; }\n\n.logo {\n  display: block;\n  margin: 0 auto; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  color: red;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  margin: 40px auto 0;\n  font-size: 3em;\n  font-weight: 800;\n  text-align: center;\n  background-color: rgba(255, 255, 255, 0.8);\n  padding: 30px;\n  width: 100%;\n  position: absolute;\n  bottom: calc(1.5em); }\n\n.zone__date {\n  padding: 10px;\n  background-color: rgba(255, 255, 255, 0.8);\n  font-size: 2em;\n  font-weight: 100;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0; }\n\n.zoned__clock {\n  position: fixed;\n  top: 0;\n  left: 0;\n  height: 100vh;\n  width: 100vw;\n  background-color: #efefef;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -150vh;\n  height: 200vh;\n  transform-origin: bottom center;\n  transition: 200ms transform; }\n  .zoned__clock__hand:after {\n    content: '';\n    display: block;\n    width: 50px;\n    height: 50px;\n    position: absolute;\n    bottom: -25px;\n    z-index: -1;\n    background-color: white; }\n\n.zoned__clock__hand--minute {\n  width: 10px;\n  left: calc(50vw - 5px);\n  border-right: 1px solid #5998C5;\n  border-left: 1px solid #5998C5;\n  background-color: #a5c7df; }\n  .zoned__clock__hand--minute:after {\n    left: -20px; }\n\n.zoned__clock__hand--hour {\n  width: 20px;\n  left: calc(50vw - 10px);\n  border-right: 1px solid #A8201A;\n  border-left: 1px solid #A8201A;\n  background-color: #d42821; }\n  .zoned__clock__hand--hour:after {\n    left: -15px; }\n\n.zoned__clock__hand--second {\n  width: 5px;\n  left: calc(50vw - 2.5px);\n  border-right: 1px solid #333;\n  border-left: 1px solid #333;\n  background-color: #4d4d4d; }\n  .zoned__clock__hand--second:after {\n    left: -22.5px; }\n", ""]);
+	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  margin: 0 auto;\n  width: 350px;\n  height: 450px;\n  position: relative;\n  overflow: hidden; }\n\n.header {\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\n.header__icon {\n  float: left;\n  display: inline-block;\n  font-size: 2em;\n  color: #6c6c6c; }\n\n.logo {\n  display: block;\n  margin: 0 auto; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  color: red;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  margin: 40px auto 0;\n  font-size: 3em;\n  font-weight: 800;\n  text-align: center;\n  background-color: rgba(255, 255, 255, 0.8);\n  padding: 30px;\n  width: 100%;\n  position: absolute;\n  bottom: calc(1.5em);\n  left: 0;\n  right: 0; }\n\n.zone__date {\n  padding: 10px;\n  background-color: rgba(255, 255, 255, 0.8);\n  font-size: 2em;\n  font-weight: 100;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0; }\n\n.zoned__clock {\n  position: absolute;\n  top: 0;\n  left: 0;\n  height: 350px;\n  width: 350px;\n  background-color: #efefef;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -150%;\n  height: 200%;\n  transform-origin: bottom center;\n  transition: 200ms transform; }\n  .zoned__clock__hand:after {\n    content: '';\n    display: block;\n    width: 50px;\n    height: 50px;\n    position: absolute;\n    bottom: -25px;\n    z-index: -1;\n    background-color: white; }\n\n.zoned__clock__hand--minute {\n  width: 10px;\n  left: calc(50% - 5px);\n  border-right: 1px solid #5998C5;\n  border-left: 1px solid #5998C5;\n  background-color: #a5c7df; }\n  .zoned__clock__hand--minute:after {\n    left: -20px; }\n\n.zoned__clock__hand--hour {\n  width: 20px;\n  left: calc(50% - 10px);\n  border-right: 1px solid #A8201A;\n  border-left: 1px solid #A8201A;\n  background-color: #d42821; }\n  .zoned__clock__hand--hour:after {\n    left: -15px; }\n\n.zoned__clock__hand--second {\n  width: 5px;\n  left: calc(50% - 2.5px);\n  border-right: 1px solid #333;\n  border-left: 1px solid #333;\n  background-color: #4d4d4d; }\n  .zoned__clock__hand--second:after {\n    left: -22.5px; }\n", ""]);
 
 	// exports
 

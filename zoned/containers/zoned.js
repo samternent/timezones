@@ -94,12 +94,7 @@ export default class Zoned extends React.Component {
 
   render() {
     return (
-      <div className='zoned'>
-        <div className='zoned__clock' dataTime={ this.state.time }>
-          <div className='zoned__clock__hand zoned__clock__hand--hour' style={ this.getClockStyle('h') }/>
-          <div className='zoned__clock__hand zoned__clock__hand--minute' style={ this.getClockStyle('m') }/>
-          <div className='zoned__clock__hand zoned__clock__hand--second' style={ this.getClockStyle('s') }/>
-        </div>
+      <div>
         <header className='header'>
           <div className='search'>
             <input
@@ -110,16 +105,23 @@ export default class Zoned extends React.Component {
             />
           </div>
         </header>
-        <section className='zone'>
-          <div>{ this.renderNames() }</div>
-          <div className='zone__time'>
-            { this.state.time }
+        <div className='zoned'>
+          <div className='zoned__clock' dataTime={ this.state.time }>
+            <div className='zoned__clock__hand zoned__clock__hand--hour' style={ this.getClockStyle('h') }/>
+            <div className='zoned__clock__hand zoned__clock__hand--minute' style={ this.getClockStyle('m') }/>
+            <div className='zoned__clock__hand zoned__clock__hand--second' style={ this.getClockStyle('s') }/>
           </div>
-          <div className='zone__date'>
-            { this.state.date }
-          </div>
-        </section>
+          <section className='zone'>
+            <div>{ this.renderNames() }</div>
+            <div className='zone__time'>
+              { this.state.time }
+            </div>
+            <div className='zone__date'>
+              { this.state.date }
+            </div>
+          </section>
 
+        </div>
       </div>
     );
   }
