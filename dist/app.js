@@ -58,7 +58,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	__webpack_require__(316);
+	__webpack_require__(269);
 
 	var rootElement = document.getElementById('app');
 
@@ -19718,9 +19718,9 @@
 
 	var _momentTimezone2 = _interopRequireDefault(_momentTimezone);
 
-	var _socket = __webpack_require__(267);
+	var _fuse = __webpack_require__(267);
 
-	var _socket2 = _interopRequireDefault(_socket);
+	var _fuse2 = _interopRequireDefault(_fuse);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19730,30 +19730,25 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var socket = (0, _socket2.default)();
+	var list = __webpack_require__(268);
+	// import io from 'socket.io-client';
+	//
+	// const socket = io();
 
-	// import '../styles/app'
-	// import Logo from '../assets/logo.png'
-	var formatFilter = function formatFilter(filter) {
-	  return filter.replace(/_/g, ' ').toUpperCase();
+	var searchOptions = {
+	  caseSensitive: false,
+	  // includeScore: true,
+	  shouldSort: true,
+	  tokenize: false,
+	  threshold: 0.4,
+	  location: 0,
+	  distance: 10,
+	  maxPatternLength: 32,
+	  keys: [{ name: "city", weight: 0.7 }, { name: "country", weight: 0.3 }]
 	};
+	var fuse = new _fuse2.default(list, searchOptions);
 
-	var filterZones = function filterZones(searchTerm) {
-	  var moments = _momentTimezone2.default.tz.names(searchTerm);
-	  return moments.map(function (zone, i) {
-	    var names = formatFilter(zone).split('/');
-	    var moment = moments[i];
-	    var searchTerms = names.join(' ');
-
-	    return {
-	      names: names,
-	      moment: moment,
-	      searchTerms: searchTerms
-	    };
-	  });
-	};
-
-	var startingZone = _momentTimezone2.default.tz.guess();
+	var startingZone = fuse.search('birmingham')[0];
 
 	var Zoned = function (_React$Component) {
 	  _inherits(Zoned, _React$Component);
@@ -19764,10 +19759,7 @@
 	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Zoned).call(this, props));
 
 	    _this.state = {
-	      zone: {
-	        moment: startingZone,
-	        names: ['EUROPE', 'BIRMINGHAM']
-	      }
+	      zone: startingZone
 	    };
 
 	    _this.onInputChange = _this.onInputChange.bind(_this);
@@ -19782,7 +19774,7 @@
 	  }, {
 	    key: 'getClockStyle',
 	    value: function getClockStyle(type) {
-	      var time = (0, _momentTimezone2.default)().tz(this.state.zone.moment).format('h:mm:ss').split(':');
+	      var time = (0, _momentTimezone2.default)().tz(this.state.zone.tz).format('h:mm:ss').split(':');
 	      var deg = null;
 
 	      if (type === 's') deg = time[2] * 6;
@@ -19796,7 +19788,7 @@
 	  }, {
 	    key: 'tickClock',
 	    value: function tickClock() {
-	      var _moment$tz$format$spl = (0, _momentTimezone2.default)().tz(this.state.zone.moment).format('MMMM Do YYYY, h:mm:ss a').split(',');
+	      var _moment$tz$format$spl = (0, _momentTimezone2.default)().tz(this.state.zone.tz).format('MMMM Do YYYY, h:mm:ss a').split(',');
 
 	      var _moment$tz$format$spl2 = _slicedToArray(_moment$tz$format$spl, 2);
 
@@ -19808,35 +19800,16 @@
 	  }, {
 	    key: 'onInputChange',
 	    value: function onInputChange(e) {
-	      var _this2 = this;
-
 	      var searchTerm = e.target.value.toUpperCase();
 	      if (!searchTerm) {
 	        return this.setState({
-	          zone: {
-	            moment: startingZone,
-	            names: ['MY ZONE', 'EUROPE', 'LONDON']
-	          }
+	          zone: fuse.search('birmingham')[0]
 	        });
 	      }
-	      this.props.zones.some(function (zone, i) {
-	        if (zone.searchTerms.indexOf(searchTerm) !== -1) {
-	          _this2.setState({ zone: zone });
-	          return true;
-	        }
-	      });
-	    }
-	  }, {
-	    key: 'renderNames',
-	    value: function renderNames() {
-	      return this.state.zone.names.map(function (zone, i) {
-	        if (i > 1) return null;
-	        return _react2.default.createElement(
-	          'div',
-	          { className: 'zone__name', key: 'name_' + i },
-	          zone
-	        );
-	      });
+	      var zone = fuse.search(searchTerm);
+	      if (zone.length && zone[0].tz) {
+	        return this.setState({ zone: zone[0] });
+	      }
 	    }
 	  }, {
 	    key: 'render',
@@ -19873,8 +19846,13 @@
 	            { className: 'zone' },
 	            _react2.default.createElement(
 	              'div',
-	              null,
-	              this.renderNames()
+	              { className: 'zone__name' },
+	              this.state.zone.country
+	            ),
+	            _react2.default.createElement(
+	              'div',
+	              { className: 'zone__name' },
+	              this.state.zone.city
 	            ),
 	            _react2.default.createElement(
 	              'div',
@@ -19894,13 +19872,13 @@
 
 	  return Zoned;
 	}(_react2.default.Component);
+	//
+	// Zoned.defaultProps = {
+	//   zones: filterZones(),
+	// }
+
 
 	exports.default = Zoned;
-
-
-	Zoned.defaultProps = {
-	  zones: filterZones()
-	};
 
 	/* REACT HOT LOADER */ }).call(this); } finally { if (false) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/makeExportsHot.js"); if (makeExportsHot(module, require("react"))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "zoned.js" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
 
@@ -34912,7610 +34890,10125 @@
 /* 267 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
 	/**
-	 * Module dependencies.
-	 */
-
-	var url = __webpack_require__(268);
-	var parser = __webpack_require__(273);
-	var Manager = __webpack_require__(280);
-	var debug = __webpack_require__(270)('socket.io-client');
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = exports = lookup;
-
-	/**
-	 * Managers cache.
-	 */
-
-	var cache = exports.managers = {};
-
-	/**
-	 * Looks up an existing `Manager` for multiplexing.
-	 * If the user summons:
+	 * @license
+	 * Fuse - Lightweight fuzzy-search
 	 *
-	 *   `io('http://localhost/a');`
-	 *   `io('http://localhost/b');`
+	 * Copyright (c) 2012-2016 Kirollos Risk <kirollos@gmail.com>.
+	 * All Rights Reserved. Apache Software License 2.0
 	 *
-	 * We reuse the existing instance based on same scheme/port/host,
-	 * and we initialize sockets for each namespace.
+	 * Licensed under the Apache License, Version 2.0 (the "License")
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
 	 *
-	 * @api public
+	 * http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
 	 */
+	;(function (global) {
+	  'use strict'
 
-	function lookup(uri, opts) {
-	  if (typeof uri == 'object') {
-	    opts = uri;
-	    uri = undefined;
+	  function log () {
+	    console.log.apply(console, arguments)
 	  }
 
-	  opts = opts || {};
+	  var MULTI_CHAR_REGEX = / +/g
 
-	  var parsed = url(uri);
-	  var source = parsed.source;
-	  var id = parsed.id;
-	  var path = parsed.path;
-	  var sameNamespace = cache[id] && path in cache[id].nsps;
-	  var newConnection = opts.forceNew || opts['force new connection'] ||
-	                      false === opts.multiplex || sameNamespace;
+	  var defaultOptions = {
+	    // The name of the identifier property. If specified, the returned result will be a list
+	    // of the items' dentifiers, otherwise it will be a list of the items.
+	    id: null,
 
-	  var io;
+	    // Indicates whether comparisons should be case sensitive.
 
-	  if (newConnection) {
-	    debug('ignoring socket cache for %s', source);
-	    io = Manager(source, opts);
-	  } else {
-	    if (!cache[id]) {
-	      debug('new io instance for %s', source);
-	      cache[id] = Manager(source, opts);
+	    caseSensitive: false,
+
+	    // An array of values that should be included from the searcher's output. When this array
+	    // contains elements, each result in the list will be of the form `{ item: ..., include1: ..., include2: ... }`.
+	    // Values you can include are `score`, `matchedLocations`
+	    include: [],
+
+	    // Whether to sort the result list, by score
+	    shouldSort: true,
+
+	    // The search function to use
+	    // Note that the default search function ([[Function]]) must conform to the following API:
+	    //
+	    //  @param pattern The pattern string to search
+	    //  @param options The search option
+	    //  [[Function]].constructor = function(pattern, options)
+	    //
+	    //  @param text: the string to search in for the pattern
+	    //  @return Object in the form of:
+	    //    - isMatch: boolean
+	    //    - score: Int
+	    //  [[Function]].prototype.search = function(text)
+	    searchFn: BitapSearcher,
+
+	    // Default sort function
+	    sortFn: function (a, b) {
+	      return a.score - b.score
+	    },
+
+	    // The get function to use when fetching an object's properties.
+	    // The default will search nested paths *ie foo.bar.baz*
+	    getFn: deepValue,
+
+	    // List of properties that will be searched. This also supports nested properties.
+	    keys: [],
+
+	    // Will print to the console. Useful for debugging.
+	    verbose: false,
+
+	    // When true, the search algorithm will search individual words **and** the full string,
+	    // computing the final score as a function of both. Note that when `tokenize` is `true`,
+	    // the `threshold`, `distance`, and `location` are inconsequential for individual tokens.
+	    tokenize: false
+	  }
+
+	  function Fuse (list, options) {
+	    var i
+	    var len
+	    var key
+	    var keys
+
+	    this.list = list
+	    this.options = options = options || {}
+
+	    // Add boolean type options
+	    for (i = 0, keys = ['sort', 'shouldSort', 'verbose', 'tokenize'], len = keys.length; i < len; i++) {
+	      key = keys[i]
+	      this.options[key] = key in options ? options[key] : defaultOptions[key]
 	    }
-	    io = cache[id];
+	    // Add all other options
+	    for (i = 0, keys = ['searchFn', 'sortFn', 'keys', 'getFn', 'include'], len = keys.length; i < len; i++) {
+	      key = keys[i]
+	      this.options[key] = options[key] || defaultOptions[key]
+	    }
 	  }
 
-	  return io.socket(parsed.path);
-	}
+	  Fuse.VERSION = '2.2.0'
 
-	/**
-	 * Protocol version.
-	 *
-	 * @api public
-	 */
+	  /**
+	   * Sets a new list for Fuse to match against.
+	   * @param {Array} list
+	   * @return {Array} The newly set list
+	   * @public
+	   */
+	  Fuse.prototype.set = function (list) {
+	    this.list = list
+	    return list
+	  }
 
-	exports.protocol = parser.protocol;
+	  Fuse.prototype.search = function (pattern) {
+	    if (this.options.verbose) log('\nSearch term:', pattern, '\n')
 
-	/**
-	 * `connect`.
-	 *
-	 * @param {String} uri
-	 * @api public
-	 */
+	    this.pattern = pattern
+	    this.results = []
+	    this.resultMap = {}
+	    this._keyMap = null
 
-	exports.connect = lookup;
+	    this._prepareSearchers()
+	    this._startSearch()
+	    this._computeScore()
+	    this._sort()
 
-	/**
-	 * Expose constructors for standalone build.
-	 *
-	 * @api public
-	 */
+	    var output = this._format()
+	    return output
+	  }
 
-	exports.Manager = __webpack_require__(280);
-	exports.Socket = __webpack_require__(308);
+	  Fuse.prototype._prepareSearchers = function () {
+	    var options = this.options
+	    var pattern = this.pattern
+	    var searchFn = options.searchFn
+	    var tokens = pattern.split(MULTI_CHAR_REGEX)
+	    var i = 0
+	    var len = tokens.length
+
+	    if (this.options.tokenize) {
+	      this.tokenSearchers = []
+	      for (; i < len; i++) {
+	        this.tokenSearchers.push(new searchFn(tokens[i], options))
+	      }
+	    }
+	    this.fullSeacher = new searchFn(pattern, options)
+	  }
+
+	  Fuse.prototype._startSearch = function () {
+	    var options = this.options
+	    var getFn = options.getFn
+	    var list = this.list
+	    var listLen = list.length
+	    var keys = this.options.keys
+	    var keysLen = keys.length
+	    var key
+	    var weight
+	    var item = null
+	    var i
+	    var j
+
+	    // Check the first item in the list, if it's a string, then we assume
+	    // that every item in the list is also a string, and thus it's a flattened array.
+	    if (typeof list[0] === 'string') {
+	      // Iterate over every item
+	      for (i = 0; i < listLen; i++) {
+	        this._analyze('', list[i], i, i)
+	      }
+	    } else {
+	      this._keyMap = {}
+	      // Otherwise, the first item is an Object (hopefully), and thus the searching
+	      // is done on the values of the keys of each item.
+	      // Iterate over every item
+	      for (i = 0; i < listLen; i++) {
+	        item = list[i]
+	        // Iterate over every key
+	        for (j = 0; j < keysLen; j++) {
+	          key = keys[j]
+	          if (typeof key !== 'string') {
+	            weight = (1 - key.weight) || 1
+	            this._keyMap[key.name] = {
+	              weight: weight
+	            }
+	            if (key.weight <= 0 || key.weight > 1) {
+	              throw new Error('Key weight has to be > 0 and <= 1')
+	            }
+	            key = key.name
+	          } else {
+	            this._keyMap[key] = {
+	              weight: 1
+	            }
+	          }
+	          this._analyze(key, getFn(item, key, []), item, i)
+	        }
+	      }
+	    }
+	  }
+
+	  Fuse.prototype._analyze = function (key, text, entity, index) {
+	    var options = this.options
+	    var words
+	    var scores
+	    var exists = false
+	    var tokenSearchers
+	    var tokenSearchersLen
+	    var existingResult
+	    var averageScore
+	    var finalScore
+	    var scoresLen
+	    var mainSearchResult
+	    var tokenSearcher
+	    var termScores
+	    var word
+	    var tokenSearchResult
+	    var i
+	    var j
+
+	    // Check if the text can be searched
+	    if (text === undefined || text === null) {
+	      return
+	    }
+
+	    scores = []
+
+	    if (typeof text === 'string') {
+	      words = text.split(MULTI_CHAR_REGEX)
+
+	      if (options.verbose) log('---------\nKey:', key)
+	      if (options.verbose) log('Record:', words)
+
+	      if (this.options.tokenize) {
+	        tokenSearchers = this.tokenSearchers
+	        tokenSearchersLen = tokenSearchers.length
+
+	        for (i = 0; i < this.tokenSearchers.length; i++) {
+	          tokenSearcher = this.tokenSearchers[i]
+	          termScores = []
+	          for (j = 0; j < words.length; j++) {
+	            word = words[j]
+	            tokenSearchResult = tokenSearcher.search(word)
+	            if (tokenSearchResult.isMatch) {
+	              exists = true
+	              termScores.push(tokenSearchResult.score)
+	              scores.push(tokenSearchResult.score)
+	            } else {
+	              termScores.push(1)
+	              scores.push(1)
+	            }
+	          }
+	          if (options.verbose) log('Token scores:', termScores)
+	        }
+
+	        averageScore = scores[0]
+	        scoresLen = scores.length
+	        for (i = 1; i < scoresLen; i++) {
+	          averageScore += scores[i]
+	        }
+	        averageScore = averageScore / scoresLen
+
+	        if (options.verbose) log('Token score average:', averageScore)
+	      }
+
+	      // Get the result
+	      mainSearchResult = this.fullSeacher.search(text)
+	      if (options.verbose) log('Full text score:', mainSearchResult.score)
+
+	      finalScore = mainSearchResult.score
+	      if (averageScore !== undefined) {
+	        finalScore = (finalScore + averageScore) / 2
+	      }
+
+	      if (options.verbose) log('Score average:', finalScore)
+
+	      // If a match is found, add the item to <rawResults>, including its score
+	      if (exists || mainSearchResult.isMatch) {
+	        // Check if the item already exists in our results
+	        existingResult = this.resultMap[index]
+
+	        if (existingResult) {
+	          // Use the lowest score
+	          // existingResult.score, bitapResult.score
+	          existingResult.output.push({
+	            key: key,
+	            score: finalScore,
+	            matchedIndices: mainSearchResult.matchedIndices
+	          })
+	        } else {
+	          // Add it to the raw result list
+	          this.resultMap[index] = {
+	            item: entity,
+	            output: [{
+	              key: key,
+	              score: finalScore,
+	              matchedIndices: mainSearchResult.matchedIndices
+	            }]
+	          }
+
+	          this.results.push(this.resultMap[index])
+	        }
+	      }
+	    } else if (isArray(text)) {
+	      for (i = 0; i < text.length; i++) {
+	        this._analyze(key, text[i], entity, index)
+	      }
+	    }
+	  }
+
+	  Fuse.prototype._computeScore = function () {
+	    var i
+	    var j
+	    var keyMap = this._keyMap
+	    var totalScore
+	    var output
+	    var scoreLen
+	    var score
+	    var weight
+	    var results = this.results
+	    var bestScore
+	    var nScore
+
+	    if (this.options.verbose) log('\n\nComputing score:\n')
+
+	    for (i = 0; i < results.length; i++) {
+	      totalScore = 0
+	      output = results[i].output
+	      scoreLen = output.length
+
+	      bestScore = 1
+
+	      for (j = 0; j < scoreLen; j++) {
+	        score = output[j].score
+	        weight = keyMap ? keyMap[output[j].key].weight : 1
+
+	        nScore = score * weight
+
+	        if (weight !== 1) {
+	          bestScore = Math.min(bestScore, nScore)
+	        } else {
+	          totalScore += nScore
+	          output[j].nScore = nScore
+	        }
+	      }
+
+	      if (bestScore === 1) {
+	        results[i].score = totalScore / scoreLen
+	      } else {
+	        results[i].score = bestScore
+	      }
+
+	      if (this.options.verbose) log(results[i])
+	    }
+	  }
+
+	  Fuse.prototype._sort = function () {
+	    var options = this.options
+	    if (options.shouldSort) {
+	      if (options.verbose) log('\n\nSorting....')
+	      this.results.sort(options.sortFn)
+	    }
+	  }
+
+	  Fuse.prototype._format = function () {
+	    var options = this.options
+	    var getFn = options.getFn
+	    var finalOutput = []
+	    var item
+	    var i
+	    var len
+	    var results = this.results
+	    var replaceValue
+	    var getItemAtIndex
+	    var include = options.include
+
+	    if (options.verbose) log('\n\nOutput:\n\n', results)
+
+	    // Helper function, here for speed-up, which replaces the item with its value,
+	    // if the options specifies it,
+	    replaceValue = options.id ? function (index) {
+	      results[index].item = getFn(results[index].item, options.id, [])[0]
+	    } : function () {}
+
+	    getItemAtIndex = function (index) {
+	      var record = results[index]
+	      var data
+	      var includeVal
+	      var j
+	      var output
+	      var _item
+	      var _result
+
+	      // If `include` has values, put the item in the result
+	      if (include.length > 0) {
+	        data = {
+	          item: record.item
+	        }
+	        if (include.indexOf('matches') !== -1) {
+	          output = record.output
+	          data.matches = []
+	          for (j = 0; j < output.length; j++) {
+	            _item = output[j]
+	            _result = {
+	              indices: _item.matchedIndices
+	            }
+	            if (_item.key) {
+	              _result.key = _item.key
+	            }
+	            data.matches.push(_result)
+	          }
+	        }
+
+	        if (include.indexOf('score') !== -1) {
+	          data.score = results[index].score
+	        }
+
+	      } else {
+	        data = record.item
+	      }
+
+	      return data
+	    }
+
+	    // From the results, push into a new array only the item identifier (if specified)
+	    // of the entire item.  This is because we don't want to return the <results>,
+	    // since it contains other metadata
+	    for (i = 0, len = results.length; i < len; i++) {
+	      replaceValue(i)
+	      item = getItemAtIndex(i)
+	      finalOutput.push(item)
+	    }
+
+	    return finalOutput
+	  }
+
+	  // Helpers
+
+	  function deepValue (obj, path, list) {
+	    var firstSegment
+	    var remaining
+	    var dotIndex
+	    var value
+	    var i
+	    var len
+
+	    if (!path) {
+	      // If there's no path left, we've gotten to the object we care about.
+	      list.push(obj)
+	    } else {
+	      dotIndex = path.indexOf('.')
+
+	      if (dotIndex !== -1) {
+	        firstSegment = path.slice(0, dotIndex)
+	        remaining = path.slice(dotIndex + 1)
+	      } else {
+	        firstSegment = path
+	      }
+
+	      value = obj[firstSegment]
+	      if (value !== null && value !== undefined) {
+	        if (!remaining && (typeof value === 'string' || typeof value === 'number')) {
+	          list.push(value)
+	        } else if (isArray(value)) {
+	          // Search each item in the array.
+	          for (i = 0, len = value.length; i < len; i++) {
+	            deepValue(value[i], remaining, list)
+	          }
+	        } else if (remaining) {
+	          // An object. Recurse further.
+	          deepValue(value, remaining, list)
+	        }
+	      }
+	    }
+
+	    return list
+	  }
+
+	  function isArray (obj) {
+	    return Object.prototype.toString.call(obj) === '[object Array]'
+	  }
+
+	  /**
+	   * Adapted from "Diff, Match and Patch", by Google
+	   *
+	   *   http://code.google.com/p/google-diff-match-patch/
+	   *
+	   * Modified by: Kirollos Risk <kirollos@gmail.com>
+	   * -----------------------------------------------
+	   * Details: the algorithm and structure was modified to allow the creation of
+	   * <Searcher> instances with a <search> method which does the actual
+	   * bitap search. The <pattern> (the string that is searched for) is only defined
+	   * once per instance and thus it eliminates redundant re-creation when searching
+	   * over a list of strings.
+	   *
+	   * Licensed under the Apache License, Version 2.0 (the "License")
+	   * you may not use this file except in compliance with the License.
+	   */
+	  function BitapSearcher (pattern, options) {
+	    options = options || {}
+	    this.options = options
+	    this.options.location = options.location || BitapSearcher.defaultOptions.location
+	    this.options.distance = 'distance' in options ? options.distance : BitapSearcher.defaultOptions.distance
+	    this.options.threshold = 'threshold' in options ? options.threshold : BitapSearcher.defaultOptions.threshold
+	    this.options.maxPatternLength = options.maxPatternLength || BitapSearcher.defaultOptions.maxPatternLength
+
+	    this.pattern = options.caseSensitive ? pattern : pattern.toLowerCase()
+	    this.patternLen = pattern.length
+
+	    if (this.patternLen <= this.options.maxPatternLength) {
+	      this.matchmask = 1 << (this.patternLen - 1)
+	      this.patternAlphabet = this._calculatePatternAlphabet()
+	    }
+	  }
+
+	  BitapSearcher.defaultOptions = {
+	    // Approximately where in the text is the pattern expected to be found?
+	    location: 0,
+
+	    // Determines how close the match must be to the fuzzy location (specified above).
+	    // An exact letter match which is 'distance' characters away from the fuzzy location
+	    // would score as a complete mismatch. A distance of '0' requires the match be at
+	    // the exact location specified, a threshold of '1000' would require a perfect match
+	    // to be within 800 characters of the fuzzy location to be found using a 0.8 threshold.
+	    distance: 100,
+
+	    // At what point does the match algorithm give up. A threshold of '0.0' requires a perfect match
+	    // (of both letters and location), a threshold of '1.0' would match anything.
+	    threshold: 0.6,
+
+	    // Machine word size
+	    maxPatternLength: 32
+	  }
+
+	  /**
+	   * Initialize the alphabet for the Bitap algorithm.
+	   * @return {Object} Hash of character locations.
+	   * @private
+	   */
+	  BitapSearcher.prototype._calculatePatternAlphabet = function () {
+	    var mask = {},
+	      i = 0
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      mask[this.pattern.charAt(i)] = 0
+	    }
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      mask[this.pattern.charAt(i)] |= 1 << (this.pattern.length - i - 1)
+	    }
+
+	    return mask
+	  }
+
+	  /**
+	   * Compute and return the score for a match with `e` errors and `x` location.
+	   * @param {number} errors Number of errors in match.
+	   * @param {number} location Location of match.
+	   * @return {number} Overall score for match (0.0 = good, 1.0 = bad).
+	   * @private
+	   */
+	  BitapSearcher.prototype._bitapScore = function (errors, location) {
+	    var accuracy = errors / this.patternLen,
+	      proximity = Math.abs(this.options.location - location)
+
+	    if (!this.options.distance) {
+	      // Dodge divide by zero error.
+	      return proximity ? 1.0 : accuracy
+	    }
+	    return accuracy + (proximity / this.options.distance)
+	  }
+
+	  /**
+	   * Compute and return the result of the search
+	   * @param {String} text The text to search in
+	   * @return {Object} Literal containing:
+	   *                          {Boolean} isMatch Whether the text is a match or not
+	   *                          {Decimal} score Overall score for the match
+	   * @public
+	   */
+	  BitapSearcher.prototype.search = function (text) {
+	    var options = this.options
+	    var i
+	    var j
+	    var textLen
+	    var location
+	    var threshold
+	    var bestLoc
+	    var binMin
+	    var binMid
+	    var binMax
+	    var start, finish
+	    var bitArr
+	    var lastBitArr
+	    var charMatch
+	    var score
+	    var locations
+	    var matches
+	    var isMatched
+	    var matchMask
+	    var matchedIndices
+	    var matchesLen
+	    var match
+
+	    text = options.caseSensitive ? text : text.toLowerCase()
+
+	    if (this.pattern === text) {
+	      // Exact match
+	      return {
+	        isMatch: true,
+	        score: 0,
+	        matchedIndices: [[0, text.length - 1]]
+	      }
+	    }
+
+	    // When pattern length is greater than the machine word length, just do a a regex comparison
+	    if (this.patternLen > options.maxPatternLength) {
+	      matches = text.match(new RegExp(this.pattern.replace(MULTI_CHAR_REGEX, '|')))
+	      isMatched = !!matches
+
+	      if (isMatched) {
+	        matchedIndices = []
+	        for (i = 0, matchesLen = matches.length; i < matchesLen; i++) {
+	          match = matches[i]
+	          matchedIndices.push([text.indexOf(match), match.length - 1])
+	        }
+	      }
+
+	      return {
+	        isMatch: isMatched,
+	        // TODO: revisit this score
+	        score: isMatched ? 0.5 : 1,
+	        matchedIndices: matchedIndices
+	      }
+	    }
+
+	    location = options.location
+	    // Set starting location at beginning text and initialize the alphabet.
+	    textLen = text.length
+	    // Highest score beyond which we give up.
+	    threshold = options.threshold
+	    // Is there a nearby exact match? (speedup)
+	    bestLoc = text.indexOf(this.pattern, location)
+
+	    // a mask of the matches
+	    matchMask = []
+	    for (i = 0; i < textLen; i++) {
+	      matchMask[i] = 0
+	    }
+
+	    if (bestLoc != -1) {
+	      threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
+	      // What about in the other direction? (speed up)
+	      bestLoc = text.lastIndexOf(this.pattern, location + this.patternLen)
+
+	      if (bestLoc != -1) {
+	        threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
+	      }
+	    }
+
+	    bestLoc = -1
+	    score = 1
+	    locations = []
+	    binMax = this.patternLen + textLen
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      // Scan for the best match; each iteration allows for one more error.
+	      // Run a binary search to determine how far from the match location we can stray
+	      // at this error level.
+	      binMin = 0
+	      binMid = binMax
+	      while (binMin < binMid) {
+	        if (this._bitapScore(i, location + binMid) <= threshold) {
+	          binMin = binMid
+	        } else {
+	          binMax = binMid
+	        }
+	        binMid = Math.floor((binMax - binMin) / 2 + binMin)
+	      }
+
+	      // Use the result from this iteration as the maximum for the next.
+	      binMax = binMid
+	      start = Math.max(1, location - binMid + 1)
+	      finish = Math.min(location + binMid, textLen) + this.patternLen
+
+	      // Initialize the bit array
+	      bitArr = Array(finish + 2)
+
+	      bitArr[finish + 1] = (1 << i) - 1
+
+	      for (j = finish; j >= start; j--) {
+	        charMatch = this.patternAlphabet[text.charAt(j - 1)]
+
+	        if (charMatch) {
+	          matchMask[j - 1] = 1
+	        }
+
+	        if (i === 0) {
+	          // First pass: exact match.
+	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch
+	        } else {
+	          // Subsequent passes: fuzzy match.
+	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch | (((lastBitArr[j + 1] | lastBitArr[j]) << 1) | 1) | lastBitArr[j + 1]
+	        }
+	        if (bitArr[j] & this.matchmask) {
+	          score = this._bitapScore(i, j - 1)
+
+	          // This match will almost certainly be better than any existing match.
+	          // But check anyway.
+	          if (score <= threshold) {
+	            // Indeed it is
+	            threshold = score
+	            bestLoc = j - 1
+	            locations.push(bestLoc)
+
+	            if (bestLoc > location) {
+	              // When passing loc, don't exceed our current distance from loc.
+	              start = Math.max(1, 2 * location - bestLoc)
+	            } else {
+	              // Already passed loc, downhill from here on in.
+	              break
+	            }
+	          }
+	        }
+	      }
+
+	      // No hope for a (better) match at greater error levels.
+	      if (this._bitapScore(i + 1, location) > threshold) {
+	        break
+	      }
+	      lastBitArr = bitArr
+	    }
+
+	    matchedIndices = this._getMatchedIndices(matchMask)
+
+	    // Count exact matches (those with a score of 0) to be "almost" exact
+	    return {
+	      isMatch: bestLoc >= 0,
+	      score: score === 0 ? 0.001 : score,
+	      matchedIndices: matchedIndices
+	    }
+	  }
+
+	  BitapSearcher.prototype._getMatchedIndices = function (matchMask) {
+	    var matchedIndices = []
+	    var start = -1
+	    var end = -1
+	    var i = 0
+	    var match
+	    var len = len = matchMask.length
+	    for (; i < len; i++) {
+	      match = matchMask[i]
+	      if (match && start === -1) {
+	        start = i
+	      } else if (!match && start !== -1) {
+	        end = i - 1
+	        matchedIndices.push([start, end])
+	        start = -1
+	      }
+	    }
+	    if (matchMask[i - 1]) {
+	      matchedIndices.push([start, i - 1])
+	    }
+	    return matchedIndices
+	  }
+
+	  // Export to Common JS Loader
+	  if (true) {
+	    // Node. Does not work with strict CommonJS, but
+	    // only CommonJS-like environments that support module.exports,
+	    // like Node.
+	    module.exports = Fuse
+	  } else if (typeof define === 'function' && define.amd) {
+	    // AMD. Register as an anonymous module.
+	    define(function () {
+	      return Fuse
+	    })
+	  } else {
+	    // Browser globals (root is window)
+	    global.Fuse = Fuse
+	  }
+
+	})(this)
 
 
 /***/ },
 /* 268 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {
-	/**
-	 * Module dependencies.
-	 */
-
-	var parseuri = __webpack_require__(269);
-	var debug = __webpack_require__(270)('socket.io-client:url');
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = url;
-
-	/**
-	 * URL parser.
-	 *
-	 * @param {String} url
-	 * @param {Object} An object meant to mimic window.location.
-	 *                 Defaults to window.location.
-	 * @api public
-	 */
-
-	function url(uri, loc){
-	  var obj = uri;
-
-	  // default to window.location
-	  var loc = loc || global.location;
-	  if (null == uri) uri = loc.protocol + '//' + loc.host;
-
-	  // relative path support
-	  if ('string' == typeof uri) {
-	    if ('/' == uri.charAt(0)) {
-	      if ('/' == uri.charAt(1)) {
-	        uri = loc.protocol + uri;
-	      } else {
-	        uri = loc.host + uri;
-	      }
-	    }
-
-	    if (!/^(https?|wss?):\/\//.test(uri)) {
-	      debug('protocol-less url %s', uri);
-	      if ('undefined' != typeof loc) {
-	        uri = loc.protocol + '//' + uri;
-	      } else {
-	        uri = 'https://' + uri;
-	      }
-	    }
-
-	    // parse
-	    debug('parse %s', uri);
-	    obj = parseuri(uri);
-	  }
-
-	  // make sure we treat `localhost:80` and `localhost` equally
-	  if (!obj.port) {
-	    if (/^(http|ws)$/.test(obj.protocol)) {
-	      obj.port = '80';
-	    }
-	    else if (/^(http|ws)s$/.test(obj.protocol)) {
-	      obj.port = '443';
-	    }
-	  }
-
-	  obj.path = obj.path || '/';
-
-	  var ipv6 = obj.host.indexOf(':') !== -1;
-	  var host = ipv6 ? '[' + obj.host + ']' : obj.host;
-
-	  // define unique id
-	  obj.id = obj.protocol + '://' + host + ':' + obj.port;
-	  // define href
-	  obj.href = obj.protocol + '://' + host + (loc && loc.port == obj.port ? '' : (':' + obj.port));
-
-	  return obj;
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+	module.exports = [
+		{
+			"city": "Aalborg",
+			"country": "Denmark",
+			"lat": "57.02888870239258",
+			"lng": "9.917778015136719",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Aarhus",
+			"country": "Denmark",
+			"lat": "56.163333892822266",
+			"lng": "10.203611373901367",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Abbotsford, BC",
+			"country": "Canada",
+			"lat": "49.06638717651367",
+			"lng": "-122.30000305175781",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Aberdeen",
+			"country": "United Kingdom",
+			"lat": "57.150001525878906",
+			"lng": "-2.0999999046325684",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Abidjan",
+			"country": "Cote d'Ivoire",
+			"lat": "5.336389064788818",
+			"lng": "-4.027777671813965",
+			"tz": "Africa/Abidjan"
+		},
+		{
+			"city": "Abu Dhabi",
+			"country": "United Arab Emirates",
+			"lat": "24.483333587646484",
+			"lng": "54.36666488647461",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Abuja",
+			"country": "Nigeria",
+			"lat": "9.083333015441895",
+			"lng": "7.5333333015441895",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Acapulco",
+			"country": "Mexico",
+			"lat": "16.83888816833496",
+			"lng": "-99.90972137451172",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Accra",
+			"country": "Ghana",
+			"lat": "5.555833339691162",
+			"lng": "-0.19638888537883759",
+			"tz": "Africa/Accra"
+		},
+		{
+			"city": "Adak, AK",
+			"country": "United States",
+			"lat": "51.866390228271484",
+			"lng": "-176.64971923828125",
+			"tz": "America/Adak"
+		},
+		{
+			"city": "Addis Ababa",
+			"country": "Ethiopia",
+			"lat": "9.033333778381348",
+			"lng": "38.70000076293945",
+			"tz": "Africa/Addis_Ababa"
+		},
+		{
+			"city": "Adelaide",
+			"country": "Australia",
+			"lat": "-34.93333435058594",
+			"lng": "138.60000610351562",
+			"tz": "Australia/Adelaide"
+		},
+		{
+			"city": "Aden",
+			"country": "Yemen",
+			"lat": "12.783333778381348",
+			"lng": "45.03333282470703",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Agra",
+			"country": "India",
+			"lat": "27.183332443237305",
+			"lng": "78.0",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Ahmedabad",
+			"country": "India",
+			"lat": "23.039722442626953",
+			"lng": "72.56694793701172",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Akita",
+			"country": "Japan",
+			"lat": "39.75",
+			"lng": "140.0833282470703",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Aklavik, NT",
+			"country": "Canada",
+			"lat": "68.21666717529297",
+			"lng": "-135.0",
+			"tz": "America/Yellowknife"
+		},
+		{
+			"city": "Akron, OH",
+			"country": "United States",
+			"lat": "41.08333206176758",
+			"lng": "-81.51667022705078",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Akumal",
+			"country": "Mexico",
+			"lat": "20.39666748046875",
+			"lng": "-87.31361389160156",
+			"tz": "America/Cancun"
+		},
+		{
+			"city": "Al Ahsa",
+			"country": "Saudi Arabia",
+			"lat": "25.39638900756836",
+			"lng": "49.60166549682617",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Al Ain",
+			"country": "United Arab Emirates",
+			"lat": "24.225833892822266",
+			"lng": "55.74416732788086",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Al Bayda'",
+			"country": "Yemen",
+			"lat": "13.97861099243164",
+			"lng": "45.573612213134766",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Al Hudaydah",
+			"country": "Yemen",
+			"lat": "14.80222225189209",
+			"lng": "42.95111083984375",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Al Jahra",
+			"country": "Kuwait",
+			"lat": "29.33333396911621",
+			"lng": "47.70000076293945",
+			"tz": "Asia/Kuwait"
+		},
+		{
+			"city": "Alacati",
+			"country": "Turkey",
+			"lat": "38.279998779296875",
+			"lng": "26.37388801574707",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Alajuela",
+			"country": "Costa Rica",
+			"lat": "10.016666412353516",
+			"lng": "-84.21666717529297",
+			"tz": "America/Costa_Rica"
+		},
+		{
+			"city": "Albany, NY",
+			"country": "United States",
+			"lat": "42.650001525878906",
+			"lng": "-73.75",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Albena",
+			"country": "Bulgaria",
+			"lat": "43.37083435058594",
+			"lng": "28.0766658782959",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Albuquerque, NM",
+			"country": "United States",
+			"lat": "35.08305740356445",
+			"lng": "-106.6500015258789",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Albury",
+			"country": "Australia",
+			"lat": "-36.08222198486328",
+			"lng": "146.9102783203125",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Alert, NU",
+			"country": "Canada",
+			"lat": "82.46666717529297",
+			"lng": "-62.5",
+			"tz": "America/Pangnirtung"
+		},
+		{
+			"city": "Alexandria",
+			"country": "Egypt",
+			"lat": "31.213611602783203",
+			"lng": "29.94416618347168",
+			"tz": "Africa/Cairo"
+		},
+		{
+			"city": "Algiers",
+			"country": "Algeria",
+			"lat": "36.766666412353516",
+			"lng": "3.049999952316284",
+			"tz": "Africa/Algiers"
+		},
+		{
+			"city": "Alicante",
+			"country": "Spain",
+			"lat": "38.349998474121094",
+			"lng": "-0.4833333194255829",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Alice Springs",
+			"country": "Australia",
+			"lat": "-23.700000762939453",
+			"lng": "133.86666870117188",
+			"tz": "Australia/Darwin"
+		},
+		{
+			"city": "Almaty",
+			"country": "Kazakhstan",
+			"lat": "43.31666564941406",
+			"lng": "76.91666412353516",
+			"tz": "Asia/Almaty"
+		},
+		{
+			"city": "Almeria",
+			"country": "Spain",
+			"lat": "36.849998474121094",
+			"lng": "-2.4666666984558105",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Alofi",
+			"country": "Niue",
+			"lat": "-19.049999237060547",
+			"lng": "-169.9166717529297",
+			"tz": "Pacific/Niue"
+		},
+		{
+			"city": "Alupka",
+			"country": "Russia",
+			"lat": "44.41666793823242",
+			"lng": "34.049720764160156",
+			"tz": "Europe/Simferopol"
+		},
+		{
+			"city": "Ambato",
+			"country": "Ecuador",
+			"lat": "-1.2402777671813965",
+			"lng": "-78.62000274658203",
+			"tz": "America/Guayaquil"
+		},
+		{
+			"city": "Ambon",
+			"country": "Indonesia",
+			"lat": "-3.700000047683716",
+			"lng": "128.1666717529297",
+			"tz": "Asia/Jayapura"
+		},
+		{
+			"city": "Amersfoort",
+			"country": "Netherlands",
+			"lat": "52.15611267089844",
+			"lng": "5.387777805328369",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Amherst, NS",
+			"country": "Canada",
+			"lat": "45.83000183105469",
+			"lng": "-64.20527648925781",
+			"tz": "America/Halifax"
+		},
+		{
+			"city": "Amiens",
+			"country": "France",
+			"lat": "49.88333511352539",
+			"lng": "2.299999952316284",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Amman",
+			"country": "Jordan",
+			"lat": "31.950000762939453",
+			"lng": "35.93333435058594",
+			"tz": "Asia/Amman"
+		},
+		{
+			"city": "Amritsar",
+			"country": "India",
+			"lat": "31.633333206176758",
+			"lng": "74.86666870117188",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Amsterdam",
+			"country": "Netherlands",
+			"lat": "52.36666488647461",
+			"lng": "4.883333206176758",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Anadyr",
+			"country": "Russia",
+			"lat": "64.7330551147461",
+			"lng": "177.5",
+			"tz": "Asia/Anadyr"
+		},
+		{
+			"city": "Anapa",
+			"country": "Russia",
+			"lat": "44.900001525878906",
+			"lng": "37.31666564941406",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Anchorage, AK",
+			"country": "United States",
+			"lat": "61.21666717529297",
+			"lng": "-149.89971923828125",
+			"tz": "America/Anchorage"
+		},
+		{
+			"city": "Ancona",
+			"country": "Italy",
+			"lat": "43.6158332824707",
+			"lng": "13.518888473510742",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Andorra la Vella",
+			"country": "Andorra",
+			"lat": "42.5",
+			"lng": "1.5166666507720947",
+			"tz": "Europe/Andorra"
+		},
+		{
+			"city": "Ankara",
+			"country": "Turkey",
+			"lat": "39.93333435058594",
+			"lng": "32.866390228271484",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Annapolis, MD",
+			"country": "United States",
+			"lat": "38.97833251953125",
+			"lng": "-76.49250030517578",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Anshan",
+			"country": "China",
+			"lat": "41.11666488647461",
+			"lng": "122.98332977294922",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Antananarivo",
+			"country": "Madagascar",
+			"lat": "-18.91666603088379",
+			"lng": "47.53333282470703",
+			"tz": "Indian/Antananarivo"
+		},
+		{
+			"city": "Antigua",
+			"country": "Guatemala",
+			"lat": "14.550000190734863",
+			"lng": "-90.73332977294922",
+			"tz": "America/Guatemala"
+		},
+		{
+			"city": "Antwerp",
+			"country": "Belgium",
+			"lat": "51.22055435180664",
+			"lng": "4.399722099304199",
+			"tz": "Europe/Brussels"
+		},
+		{
+			"city": "Apia",
+			"country": "Samoa",
+			"lat": "-13.83305549621582",
+			"lng": "-171.75",
+			"tz": "Pacific/Apia"
+		},
+		{
+			"city": "Aqaba",
+			"country": "Jordan",
+			"lat": "29.497222900390625",
+			"lng": "34.996665954589844",
+			"tz": "Asia/Amman"
+		},
+		{
+			"city": "Arad",
+			"country": "Romania",
+			"lat": "46.18333435058594",
+			"lng": "21.33333396911621",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Arawa",
+			"country": "Papua New Guinea",
+			"lat": "-6.225555419921875",
+			"lng": "155.56777954101562",
+			"tz": "Pacific/Port_Moresby"
+		},
+		{
+			"city": "Arequipa",
+			"country": "Peru",
+			"lat": "-16.383333206176758",
+			"lng": "-71.51667022705078",
+			"tz": "America/Lima"
+		},
+		{
+			"city": "Arica",
+			"country": "Chile",
+			"lat": "-18.454444885253906",
+			"lng": "-70.29027557373047",
+			"tz": "America/Santiago"
+		},
+		{
+			"city": "Arkhangelsk",
+			"country": "Russia",
+			"lat": "64.51667022705078",
+			"lng": "40.650001525878906",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Arklow",
+			"country": "Ireland",
+			"lat": "52.79999923706055",
+			"lng": "-6.150000095367432",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Armstrong, BC",
+			"country": "Canada",
+			"lat": "50.44416809082031",
+			"lng": "-119.19611358642578",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Arraial do Cabo",
+			"country": "Brazil",
+			"lat": "-22.966110229492188",
+			"lng": "-42.02888870239258",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Arzamas",
+			"country": "Russia",
+			"lat": "55.38333511352539",
+			"lng": "43.83333206176758",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Ashkelon",
+			"country": "Israel",
+			"lat": "31.66583251953125",
+			"lng": "34.559444427490234",
+			"tz": "Asia/Jerusalem"
+		},
+		{
+			"city": "Ashkhabad",
+			"country": "Turkmenistan",
+			"lat": "37.95000076293945",
+			"lng": "58.38333511352539",
+			"tz": "Asia/Ashgabat"
+		},
+		{
+			"city": "Ashland, OR",
+			"country": "United States",
+			"lat": "42.18527603149414",
+			"lng": "-122.69805908203125",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Asmara",
+			"country": "Eritrea",
+			"lat": "15.333333015441895",
+			"lng": "38.93333435058594",
+			"tz": "Africa/Asmara"
+		},
+		{
+			"city": "Astana",
+			"country": "Kazakhstan",
+			"lat": "51.18110656738281",
+			"lng": "71.42779541015625",
+			"tz": "Asia/Almaty"
+		},
+		{
+			"city": "Astrakhan",
+			"country": "Russia",
+			"lat": "46.358612060546875",
+			"lng": "48.060001373291016",
+			"tz": "Europe/Volgograd"
+		},
+		{
+			"city": "Asuncion",
+			"country": "Paraguay",
+			"lat": "-25.299999237060547",
+			"lng": "-57.63333511352539",
+			"tz": "America/Asuncion"
+		},
+		{
+			"city": "Athens",
+			"country": "Greece",
+			"lat": "37.983333587646484",
+			"lng": "23.733333587646484",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Atlanta, GA",
+			"country": "United States",
+			"lat": "33.75",
+			"lng": "-84.383056640625",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Auckland",
+			"country": "New Zealand",
+			"lat": "-36.849998474121094",
+			"lng": "174.76666259765625",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Augusta, ME",
+			"country": "United States",
+			"lat": "44.31638717651367",
+			"lng": "-69.7830581665039",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Aurangabad",
+			"country": "India",
+			"lat": "19.885278701782227",
+			"lng": "75.3197250366211",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Austin, TX",
+			"country": "United States",
+			"lat": "30.266387939453125",
+			"lng": "-97.75",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Avarua",
+			"country": "Cook Islands",
+			"lat": "-21.200000762939453",
+			"lng": "-159.76666259765625",
+			"tz": "Pacific/Rarotonga"
+		},
+		{
+			"city": "Aveiro",
+			"country": "Portugal",
+			"lat": "40.63333511352539",
+			"lng": "-8.649999618530273",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Aylesbury",
+			"country": "United Kingdom",
+			"lat": "51.815834045410156",
+			"lng": "-0.8166666626930237",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Az Zarqa",
+			"country": "Jordan",
+			"lat": "32.03333282470703",
+			"lng": "36.08333206176758",
+			"tz": "Asia/Amman"
+		},
+		{
+			"city": "Bacau",
+			"country": "Romania",
+			"lat": "46.56666564941406",
+			"lng": "26.91666603088379",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Bacolod",
+			"country": "Philippines",
+			"lat": "10.678055763244629",
+			"lng": "122.94666290283203"
+		},
+		{
+			"city": "Badajoz",
+			"country": "Spain",
+			"lat": "38.88333511352539",
+			"lng": "-6.9666666984558105",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Baden-Baden",
+			"country": "Germany",
+			"lat": "48.75",
+			"lng": "8.233333587646484",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Baghdad",
+			"country": "Iraq",
+			"lat": "33.33333206176758",
+			"lng": "44.400001525878906",
+			"tz": "Asia/Baghdad"
+		},
+		{
+			"city": "Bahawalpur",
+			"country": "Pakistan",
+			"lat": "26.392221450805664",
+			"lng": "71.67138671875",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Bahia Blanca",
+			"country": "Argentina",
+			"lat": "-38.733333587646484",
+			"lng": "-62.266387939453125",
+			"tz": "America/Argentina/Buenos_Aires"
+		},
+		{
+			"city": "Bahia Kino",
+			"country": "Mexico",
+			"lat": "28.822778701782227",
+			"lng": "-111.93638610839844",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "Baku",
+			"country": "Azerbaijan",
+			"lat": "40.366390228271484",
+			"lng": "49.900001525878906",
+			"tz": "Asia/Baku"
+		},
+		{
+			"city": "Balabag",
+			"country": "Philippines",
+			"lat": "11.966944694519043",
+			"lng": "121.92749786376953",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Balanga",
+			"country": "Philippines",
+			"lat": "14.675000190734863",
+			"lng": "120.53861236572266",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Balikpapan",
+			"country": "Indonesia",
+			"lat": "-1.263611078262329",
+			"lng": "116.82777404785156",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Balti",
+			"country": "Moldova",
+			"lat": "47.758888244628906",
+			"lng": "27.925832748413086",
+			"tz": "Europe/Chisinau"
+		},
+		{
+			"city": "Baltimore, MD",
+			"country": "United States",
+			"lat": "39.28305435180664",
+			"lng": "-76.61666870117188",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Bamako",
+			"country": "Mali",
+			"lat": "12.649999618530273",
+			"lng": "-8.0",
+			"tz": "Africa/Bamako"
+		},
+		{
+			"city": "Bandar Seri Begawan",
+			"country": "Brunei",
+			"lat": "4.933333396911621",
+			"lng": "114.94999694824219",
+			"tz": "Asia/Brunei"
+		},
+		{
+			"city": "Bandarban",
+			"country": "Bangladesh",
+			"lat": "22.19611167907715",
+			"lng": "92.21749877929688",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Bandung",
+			"country": "Indonesia",
+			"lat": "-6.916666507720947",
+			"lng": "107.5999984741211",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Banff, AB",
+			"country": "Canada",
+			"lat": "51.18083190917969",
+			"lng": "-115.56888580322266",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Bangalore",
+			"country": "India",
+			"lat": "12.966666221618652",
+			"lng": "77.56666564941406",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Bangkok",
+			"country": "Thailand",
+			"lat": "13.75",
+			"lng": "100.51669311523438",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Bangui",
+			"country": "Central African Republic",
+			"lat": "4.366666793823242",
+			"lng": "18.549999237060547",
+			"tz": "Africa/Bangui"
+		},
+		{
+			"city": "Banja Luka",
+			"country": "Bosnia and Herzegovina",
+			"lat": "44.766387939453125",
+			"lng": "17.183055877685547",
+			"tz": "Europe/Sarajevo"
+		},
+		{
+			"city": "Banjul",
+			"country": "Gambia",
+			"lat": "13.449999809265137",
+			"lng": "-16.58333396911621",
+			"tz": "Africa/Banjul"
+		},
+		{
+			"city": "Baotou",
+			"country": "China",
+			"lat": "40.66666793823242",
+			"lng": "109.80000305175781",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Barcelona",
+			"country": "Spain",
+			"lat": "41.400001525878906",
+			"lng": "2.1666667461395264",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Barcelona",
+			"country": "Venezuela",
+			"lat": "10.133055686950684",
+			"lng": "-64.71666717529297"
+		},
+		{
+			"city": "Bareilly",
+			"country": "India",
+			"lat": "28.35333251953125",
+			"lng": "79.4094467163086",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Bari",
+			"country": "Italy",
+			"lat": "41.1261100769043",
+			"lng": "16.86916732788086",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Barnaul",
+			"country": "Russia",
+			"lat": "53.35472106933594",
+			"lng": "83.76972198486328",
+			"tz": "Asia/Omsk"
+		},
+		{
+			"city": "Barrie, ON",
+			"country": "Canada",
+			"lat": "44.378055572509766",
+			"lng": "-79.70166778564453",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Basse-Terre",
+			"country": "Guadeloupe",
+			"lat": "16.0",
+			"lng": "-61.71666717529297",
+			"tz": "America/Guadeloupe"
+		},
+		{
+			"city": "Basseterre",
+			"country": "Saint Kitts and Nevis",
+			"lat": "17.299999237060547",
+			"lng": "-62.733333587646484",
+			"tz": "America/St_Kitts"
+		},
+		{
+			"city": "Baton Rouge, LA",
+			"country": "United States",
+			"lat": "30.450000762939453",
+			"lng": "-91.1500015258789",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Beijing",
+			"country": "China",
+			"lat": "39.93333435058594",
+			"lng": "116.38333129882812",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Beirut",
+			"country": "Lebanon",
+			"lat": "33.866390228271484",
+			"lng": "35.516387939453125",
+			"tz": "Asia/Beirut"
+		},
+		{
+			"city": "Beja",
+			"country": "Portugal",
+			"lat": "38.016666412353516",
+			"lng": "-7.866666793823242",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Beja",
+			"country": "Tunisia",
+			"lat": "36.733333587646484",
+			"lng": "9.183333396911621",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Belfast",
+			"country": "United Kingdom",
+			"lat": "54.58333206176758",
+			"lng": "-5.916666507720947",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Belgorod",
+			"country": "Russia",
+			"lat": "50.599998474121094",
+			"lng": "36.61666488647461",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Belgrade",
+			"country": "Serbia",
+			"lat": "44.81638717651367",
+			"lng": "20.46666717529297",
+			"tz": "Europe/Belgrade"
+		},
+		{
+			"city": "Belize City",
+			"country": "Belize",
+			"lat": "17.497777938842773",
+			"lng": "-88.1866683959961",
+			"tz": "America/Belize"
+		},
+		{
+			"city": "Bellevue, WA",
+			"country": "United States",
+			"lat": "47.61055374145508",
+			"lng": "-122.19944763183594",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Belmopan",
+			"country": "Belize",
+			"lat": "17.266666412353516",
+			"lng": "-88.78333282470703",
+			"tz": "America/Belize"
+		},
+		{
+			"city": "Belo Horizonte",
+			"country": "Brazil",
+			"lat": "-19.815834045410156",
+			"lng": "-43.954166412353516",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Belogradchik",
+			"country": "Bulgaria",
+			"lat": "43.63206100463867",
+			"lng": "22.69515037536621",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Benevento",
+			"country": "Italy",
+			"lat": "41.13055419921875",
+			"lng": "14.781110763549805",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Benxi",
+			"country": "China",
+			"lat": "41.294166564941406",
+			"lng": "123.76638793945312",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Bergen",
+			"country": "Norway",
+			"lat": "60.349998474121094",
+			"lng": "5.349999904632568",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Berlin",
+			"country": "Germany",
+			"lat": "52.516666412353516",
+			"lng": "13.399999618530273",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Bern",
+			"country": "Switzerland",
+			"lat": "46.91666793823242",
+			"lng": "7.4666666984558105",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"city": "Beziers",
+			"country": "France",
+			"lat": "43.34166717529297",
+			"lng": "3.217777729034424",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Bhopal",
+			"country": "India",
+			"lat": "23.23555564880371",
+			"lng": "77.40972137451172",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Bhubaneswar",
+			"country": "India",
+			"lat": "20.26361083984375",
+			"lng": "85.83528137207031",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Bilbao",
+			"country": "Spain",
+			"lat": "43.25694274902344",
+			"lng": "-2.9236111640930176",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Billings, MT",
+			"country": "United States",
+			"lat": "45.78277587890625",
+			"lng": "-108.50444793701172",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Biratchowk",
+			"country": "Nepal",
+			"lat": "26.669166564941406",
+			"lng": "87.38111114501953",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Birmingham",
+			"country": "United Kingdom",
+			"lat": "52.5",
+			"lng": "-1.8666666746139526",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Birmingham, AL",
+			"country": "United States",
+			"lat": "33.516666412353516",
+			"lng": "-86.80000305175781",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Bishkek",
+			"country": "Kyrgyzstan",
+			"lat": "42.86666488647461",
+			"lng": "74.58333587646484",
+			"tz": "Asia/Bishkek"
+		},
+		{
+			"city": "Bismarck, ND",
+			"country": "United States",
+			"lat": "46.81638717651367",
+			"lng": "-100.7830581665039",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Bissau",
+			"country": "Guinea-Bissau",
+			"lat": "11.866666793823242",
+			"lng": "-15.600000381469727",
+			"tz": "Africa/Bissau"
+		},
+		{
+			"city": "Bizerte",
+			"country": "Tunisia",
+			"lat": "37.266666412353516",
+			"lng": "9.866666793823242",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Blanes",
+			"country": "Spain",
+			"lat": "41.67416763305664",
+			"lng": "2.7919445037841797",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Blantyre",
+			"country": "Malawi",
+			"lat": "-15.786110877990723",
+			"lng": "35.00583267211914",
+			"tz": "Africa/Blantyre"
+		},
+		{
+			"city": "Blantyre-Hamilton",
+			"country": "United Kingdom",
+			"lat": "55.78333282470703",
+			"lng": "-4.116666793823242",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Bloemfontein",
+			"country": "South Africa",
+			"lat": "-29.11805534362793",
+			"lng": "26.223054885864258",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Boca Raton, FL",
+			"country": "United States",
+			"lat": "26.36833381652832",
+			"lng": "-80.12889099121094",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Bodrum",
+			"country": "Turkey",
+			"lat": "37.04249954223633",
+			"lng": "27.434999465942383",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Bogota",
+			"country": "Colombia",
+			"lat": "4.599999904632568",
+			"lng": "-74.08333587646484",
+			"tz": "America/Bogota"
+		},
+		{
+			"city": "Boise, ID",
+			"country": "United States",
+			"lat": "43.616390228271484",
+			"lng": "-116.19972229003906",
+			"tz": "America/Boise"
+		},
+		{
+			"city": "Bologna",
+			"country": "Italy",
+			"lat": "44.49444580078125",
+			"lng": "11.349166870117188",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Bonn",
+			"country": "Germany",
+			"lat": "50.733333587646484",
+			"lng": "7.083333492279053",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Bordeaux",
+			"country": "France",
+			"lat": "44.83333206176758",
+			"lng": "-0.5833333134651184",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Boston, MA",
+			"country": "United States",
+			"lat": "42.366390228271484",
+			"lng": "-71.06639099121094",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Braganca",
+			"country": "Portugal",
+			"lat": "41.807220458984375",
+			"lng": "-6.7588887214660645",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Brasilia",
+			"country": "Brazil",
+			"lat": "-15.79194450378418",
+			"lng": "-47.89777755737305",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Bratislava",
+			"country": "Slovakia",
+			"lat": "48.150001525878906",
+			"lng": "17.116666793823242",
+			"tz": "Europe/Bratislava"
+		},
+		{
+			"city": "Brazzaville",
+			"country": "Congo",
+			"lat": "-4.266666889190674",
+			"lng": "15.283333778381348",
+			"tz": "Africa/Brazzaville"
+		},
+		{
+			"city": "Bremen",
+			"country": "Germany",
+			"lat": "53.08333206176758",
+			"lng": "8.850000381469727",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Brest",
+			"country": "France",
+			"lat": "48.400001525878906",
+			"lng": "-4.4666666984558105",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Bridgetown",
+			"country": "Barbados",
+			"lat": "13.100000381469727",
+			"lng": "-59.61666488647461",
+			"tz": "America/Barbados"
+		},
+		{
+			"city": "Brindisi",
+			"country": "Italy",
+			"lat": "40.636112213134766",
+			"lng": "17.938888549804688",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Brisbane",
+			"country": "Australia",
+			"lat": "-27.46666717529297",
+			"lng": "153.01666259765625",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Bristol",
+			"country": "United Kingdom",
+			"lat": "51.483333587646484",
+			"lng": "-2.5333333015441895",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Brno",
+			"country": "Czech Republic",
+			"lat": "49.19388961791992",
+			"lng": "16.613332748413086",
+			"tz": "Europe/Prague"
+		},
+		{
+			"city": "Brussels",
+			"country": "Belgium",
+			"lat": "50.83329772949219",
+			"lng": "4.3332977294921875",
+			"tz": "Europe/Brussels"
+		},
+		{
+			"city": "Bucharest",
+			"country": "Romania",
+			"lat": "44.43333435058594",
+			"lng": "26.100000381469727",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Budapest",
+			"country": "Hungary",
+			"lat": "47.5",
+			"lng": "19.08333396911621",
+			"tz": "Europe/Budapest"
+		},
+		{
+			"city": "Buenos Aires",
+			"country": "Argentina",
+			"lat": "-34.58305740356445",
+			"lng": "-58.66666793823242",
+			"tz": "America/Argentina/Buenos_Aires"
+		},
+		{
+			"city": "Buffalo, NY",
+			"country": "United States",
+			"lat": "42.88333511352539",
+			"lng": "-78.88333129882812",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Bujumbura",
+			"country": "Burundi",
+			"lat": "-3.383333444595337",
+			"lng": "29.366666793823242",
+			"tz": "Africa/Bujumbura"
+		},
+		{
+			"city": "Burgos",
+			"country": "Spain",
+			"lat": "42.34111022949219",
+			"lng": "-3.695833444595337",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Buri Ram",
+			"country": "Thailand",
+			"lat": "14.99638843536377",
+			"lng": "103.11250305175781",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Burnaby, BC",
+			"country": "Canada",
+			"lat": "49.2488899230957",
+			"lng": "-122.97389221191406",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Bursa",
+			"country": "Turkey",
+			"lat": "40.18361282348633",
+			"lng": "29.0625",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Busan",
+			"country": "Korea, South",
+			"lat": "35.15777587890625",
+			"lng": "129.05471801757812",
+			"tz": "Asia/Seoul"
+		},
+		{
+			"city": "Butterworth",
+			"country": "Malaysia",
+			"lat": "5.396944522857666",
+			"lng": "100.41416931152344",
+			"tz": "Asia/Kuala_Lumpur"
+		},
+		{
+			"city": "Cabo San Lucas",
+			"country": "Mexico",
+			"lat": "22.89055633544922",
+			"lng": "-109.91666412353516",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Cairns",
+			"country": "Australia",
+			"lat": "-16.92472267150879",
+			"lng": "145.77333068847656",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Cairo",
+			"country": "Egypt",
+			"lat": "30.049999237060547",
+			"lng": "31.25",
+			"tz": "Africa/Cairo"
+		},
+		{
+			"city": "Calabar",
+			"country": "Nigeria",
+			"lat": "4.957221984863281",
+			"lng": "8.314444541931152",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Calgary, AB",
+			"country": "Canada",
+			"lat": "51.053611755371094",
+			"lng": "-114.0625",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Campinas",
+			"country": "Brazil",
+			"lat": "-22.906389236450195",
+			"lng": "-47.061668395996094",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Canberra",
+			"country": "Australia",
+			"lat": "-35.28333282470703",
+			"lng": "149.21665954589844",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Cancun",
+			"country": "Mexico",
+			"lat": "21.147777557373047",
+			"lng": "-86.83499908447266",
+			"tz": "America/Cancun"
+		},
+		{
+			"city": "Canmore, AB",
+			"country": "Canada",
+			"lat": "51.08333206176758",
+			"lng": "-115.33334350585938",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Cannes",
+			"country": "France",
+			"lat": "43.56666564941406",
+			"lng": "7.016666889190674",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Cannon Beach, OR",
+			"country": "United States",
+			"lat": "45.887779235839844",
+			"lng": "-123.96277618408203",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Cape Town",
+			"country": "South Africa",
+			"lat": "-33.93333435058594",
+			"lng": "18.46666717529297",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Capitola, CA",
+			"country": "United States",
+			"lat": "36.975276947021484",
+			"lng": "-121.95222473144531",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Caracas",
+			"country": "Venezuela",
+			"lat": "10.5",
+			"lng": "-66.91666412353516",
+			"tz": "America/Caracas"
+		},
+		{
+			"city": "Carcassonne",
+			"country": "France",
+			"lat": "43.212501525878906",
+			"lng": "2.3561110496520996",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Cardiff",
+			"country": "United Kingdom",
+			"lat": "51.47805404663086",
+			"lng": "-3.17722225189209",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Carson City, NV",
+			"country": "United States",
+			"lat": "39.16666793823242",
+			"lng": "-119.76667022705078",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Cartagena",
+			"country": "Spain",
+			"lat": "37.61666488647461",
+			"lng": "-0.9833333492279053",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Casablanca",
+			"country": "Morocco",
+			"lat": "33.59972381591797",
+			"lng": "-7.616666793823242",
+			"tz": "Africa/Casablanca"
+		},
+		{
+			"city": "Castelo Branco",
+			"country": "Portugal",
+			"lat": "39.81666564941406",
+			"lng": "-7.483333110809326",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Castlebar",
+			"country": "Ireland",
+			"lat": "53.86666488647461",
+			"lng": "-9.300000190734863",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Castries",
+			"country": "Saint Lucia",
+			"lat": "14.0",
+			"lng": "-60.983333587646484",
+			"tz": "America/St_Lucia"
+		},
+		{
+			"city": "Catamarca",
+			"country": "Argentina",
+			"lat": "-28.466110229492188",
+			"lng": "-65.78083038330078",
+			"tz": "America/Argentina/Catamarca"
+		},
+		{
+			"city": "Catania",
+			"country": "Italy",
+			"lat": "37.503055572509766",
+			"lng": "15.088055610656738",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Catarman",
+			"country": "Philippines",
+			"lat": "12.5024995803833",
+			"lng": "124.63583374023438",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Cayenne",
+			"country": "French Guiana",
+			"lat": "4.933333396911621",
+			"lng": "-52.33333206176758",
+			"tz": "America/Cayenne"
+		},
+		{
+			"city": "Cebu",
+			"country": "Philippines",
+			"lat": "10.307222366333008",
+			"lng": "123.89833068847656",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Cedar Park, TX",
+			"country": "United States",
+			"lat": "30.505277633666992",
+			"lng": "-97.82027435302734",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Champaign, IL",
+			"country": "United States",
+			"lat": "40.116390228271484",
+			"lng": "-88.24333190917969",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Chandigarh",
+			"country": "India",
+			"lat": "30.733333587646484",
+			"lng": "76.78333282470703",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Chandler, AZ",
+			"country": "United States",
+			"lat": "33.30611038208008",
+			"lng": "-111.8405532836914",
+			"tz": "America/Phoenix"
+		},
+		{
+			"city": "Changchun",
+			"country": "China",
+			"lat": "43.88333511352539",
+			"lng": "128.31666564941406",
+			"tz": "Asia/Harbin"
+		},
+		{
+			"city": "Chania",
+			"country": "Greece",
+			"lat": "35.5091667175293",
+			"lng": "24.025278091430664",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Chantilly, VA",
+			"country": "United States",
+			"lat": "38.87722396850586",
+			"lng": "-77.40888977050781",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Charleston, WV",
+			"country": "United States",
+			"lat": "38.35333251953125",
+			"lng": "-81.6352767944336",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Charlotte Amalie",
+			"country": "Virgin Islands, U.S.",
+			"lat": "18.350000381469727",
+			"lng": "-64.93333435058594",
+			"tz": "America/St_Thomas"
+		},
+		{
+			"city": "Charlotte, NC",
+			"country": "United States",
+			"lat": "35.233333587646484",
+			"lng": "-80.84972381591797",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Charlottetown, PE",
+			"country": "Canada",
+			"lat": "46.23527908325195",
+			"lng": "-63.12666702270508",
+			"tz": "America/Halifax"
+		},
+		{
+			"city": "Chattanooga, TN",
+			"country": "United States",
+			"lat": "35.04999923706055",
+			"lng": "-85.31666564941406",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Chelyabinsk",
+			"country": "Russia",
+			"lat": "55.150001525878906",
+			"lng": "61.43333435058594",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "Chengdu",
+			"country": "China",
+			"lat": "30.670000076293945",
+			"lng": "104.0713882446289",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Chennai",
+			"country": "India",
+			"lat": "13.083333015441895",
+			"lng": "80.26667022705078",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Cherepovets",
+			"country": "Russia",
+			"lat": "59.13333511352539",
+			"lng": "37.88333511352539",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Chernobyl",
+			"country": "Ukraine",
+			"lat": "51.266387939453125",
+			"lng": "30.233333587646484",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Cheruvathur",
+			"country": "India",
+			"lat": "12.21583366394043",
+			"lng": "75.16139221191406",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Chiang Mai",
+			"country": "Thailand",
+			"lat": "18.786945343017578",
+			"lng": "99.0",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Chicago, IL",
+			"country": "United States",
+			"lat": "41.84972381591797",
+			"lng": "-87.6500015258789",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Chichen Itza",
+			"country": "Mexico",
+			"lat": "20.678333282470703",
+			"lng": "-88.57166290283203",
+			"tz": "America/Merida"
+		},
+		{
+			"city": "Chihuahua",
+			"country": "Mexico",
+			"lat": "28.63330078125",
+			"lng": "-106.08329772949219",
+			"tz": "America/Chihuahua"
+		},
+		{
+			"city": "Chilliwack, BC",
+			"country": "Canada",
+			"lat": "49.15805435180664",
+			"lng": "-121.95138549804688",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Chimoio",
+			"country": "Mozambique",
+			"lat": "-18.99916648864746",
+			"lng": "33.383056640625",
+			"tz": "Africa/Maputo"
+		},
+		{
+			"city": "Chinandega",
+			"country": "Nicaragua",
+			"lat": "12.633333206176758",
+			"lng": "-87.13333129882812",
+			"tz": "America/Managua"
+		},
+		{
+			"city": "Chirala",
+			"country": "India",
+			"lat": "15.828332901000977",
+			"lng": "80.3566665649414",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Chisinau",
+			"country": "Moldova",
+			"lat": "47.02694320678711",
+			"lng": "28.84166717529297",
+			"tz": "Europe/Chisinau"
+		},
+		{
+			"city": "Chita",
+			"country": "Russia",
+			"lat": "52.045555114746094",
+			"lng": "113.49861145019531",
+			"tz": "Asia/Yakutsk"
+		},
+		{
+			"city": "Chittagong",
+			"country": "Bangladesh",
+			"lat": "22.366666793823242",
+			"lng": "91.80000305175781",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Chongqing",
+			"country": "China",
+			"lat": "29.566665649414062",
+			"lng": "106.58333587646484",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Christchurch",
+			"country": "New Zealand",
+			"lat": "-43.53333282470703",
+			"lng": "172.63333129882812",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Cienfuegos",
+			"country": "Cuba",
+			"lat": "22.16638946533203",
+			"lng": "-80.44972229003906",
+			"tz": "America/Havana"
+		},
+		{
+			"city": "Cincinnati, OH",
+			"country": "United States",
+			"lat": "39.16666793823242",
+			"lng": "-84.44972229003906",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Ciudad Acuna",
+			"country": "Mexico",
+			"lat": "29.31833267211914",
+			"lng": "-100.93250274658203",
+			"tz": "America/Matamoros"
+		},
+		{
+			"city": "Ciudad Juarez",
+			"country": "Mexico",
+			"lat": "31.736665725708008",
+			"lng": "-106.47305297851562",
+			"tz": "America/Ojinaga"
+		},
+		{
+			"city": "Cleveland, OH",
+			"country": "United States",
+			"lat": "41.5",
+			"lng": "-81.69999694824219",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Cluj",
+			"country": "Romania",
+			"lat": "46.78333282470703",
+			"lng": "23.600000381469727",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Cockburn Town",
+			"country": "Turks and Caicos Islands",
+			"lat": "21.46666717529297",
+			"lng": "-71.133056640625",
+			"tz": "America/Grand_Turk"
+		},
+		{
+			"city": "Coimbatore",
+			"country": "India",
+			"lat": "11.005277633666992",
+			"lng": "76.97083282470703",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Collioure",
+			"country": "France",
+			"lat": "42.516666412353516",
+			"lng": "3.0833330154418945",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Cologne",
+			"country": "Germany",
+			"lat": "50.94916534423828",
+			"lng": "6.95972204208374",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Colombo",
+			"country": "Sri Lanka",
+			"lat": "6.933333396911621",
+			"lng": "79.8499984741211",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Colorado Springs, CO",
+			"country": "United States",
+			"lat": "38.83333206176758",
+			"lng": "-104.81666564941406",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Columbia, SC",
+			"country": "United States",
+			"lat": "34.016387939453125",
+			"lng": "-81.0",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Columbus, GA",
+			"country": "United States",
+			"lat": "32.46666717529297",
+			"lng": "-84.98332977294922",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Columbus, OH",
+			"country": "United States",
+			"lat": "39.96666717529297",
+			"lng": "-83.0",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Conakry",
+			"country": "Guinea",
+			"lat": "9.533333778381348",
+			"lng": "-13.683333396911621",
+			"tz": "Africa/Conakry"
+		},
+		{
+			"city": "Constanta",
+			"country": "Romania",
+			"lat": "44.18333435058594",
+			"lng": "28.649999618530273",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Coos Bay, OR",
+			"country": "United States",
+			"lat": "43.366390228271484",
+			"lng": "-124.21778106689453",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Copenhagen",
+			"country": "Denmark",
+			"lat": "55.66670227050781",
+			"lng": "12.583297729492188",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Coquille, OR",
+			"country": "United States",
+			"lat": "43.176944732666016",
+			"lng": "-124.1875",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Coral Springs, FL",
+			"country": "United States",
+			"lat": "26.27166748046875",
+			"lng": "-80.27083587646484",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Cordoba",
+			"country": "Argentina",
+			"lat": "-31.41666603088379",
+			"lng": "-64.18333435058594",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Corfu",
+			"country": "Greece",
+			"lat": "39.61777877807617",
+			"lng": "19.919721603393555",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Cork",
+			"country": "Ireland",
+			"lat": "51.900001525878906",
+			"lng": "-8.483333587646484",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Corrientes",
+			"country": "Argentina",
+			"lat": "-27.471111297607422",
+			"lng": "-58.8397216796875",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Cotonou",
+			"country": "Benin",
+			"lat": "6.366666793823242",
+			"lng": "2.433333396911621",
+			"tz": "Africa/Porto-Novo"
+		},
+		{
+			"city": "Cox's Bazar",
+			"country": "Bangladesh",
+			"lat": "21.44333267211914",
+			"lng": "91.97222137451172",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Craiova",
+			"country": "Romania",
+			"lat": "44.31666564941406",
+			"lng": "23.816667556762695",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Cranbrook, BC",
+			"country": "Canada",
+			"lat": "49.5180549621582",
+			"lng": "-115.76139068603516",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Cuenca",
+			"country": "Ecuador",
+			"lat": "-2.896111011505127",
+			"lng": "-79.00527954101562",
+			"tz": "America/Guayaquil"
+		},
+		{
+			"city": "Cuiaba",
+			"country": "Brazil",
+			"lat": "-15.598889350891113",
+			"lng": "-56.095001220703125",
+			"tz": "America/Cuiaba"
+		},
+		{
+			"city": "Culiacan",
+			"country": "Mexico",
+			"lat": "24.804166793823242",
+			"lng": "-107.38777923583984",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Cupertino, CA",
+			"country": "United States",
+			"lat": "37.53305435180664",
+			"lng": "-122.05000305175781",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Curitiba",
+			"country": "Brazil",
+			"lat": "-25.42972183227539",
+			"lng": "-49.27111053466797",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Da Nang",
+			"country": "Vietnam",
+			"lat": "16.051666259765625",
+			"lng": "108.21499633789062",
+			"tz": "Asia/Ho_Chi_Minh"
+		},
+		{
+			"city": "Daegu",
+			"country": "Korea, South",
+			"lat": "35.863609313964844",
+			"lng": "128.5913848876953",
+			"tz": "Asia/Seoul"
+		},
+		{
+			"city": "Dakar",
+			"country": "Senegal",
+			"lat": "14.683333396911621",
+			"lng": "-17.450000762939453",
+			"tz": "Africa/Dakar"
+		},
+		{
+			"city": "Dakhla",
+			"country": "Morocco",
+			"lat": "23.697500228881836",
+			"lng": "-15.936944007873535",
+			"tz": "Africa/El_Aaiun"
+		},
+		{
+			"city": "Dalian",
+			"country": "China",
+			"lat": "38.95000076293945",
+			"lng": "121.58333587646484",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Dallas, TX",
+			"country": "United States",
+			"lat": "32.766666412353516",
+			"lng": "-96.80000305175781",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Damascus",
+			"country": "Syria",
+			"lat": "33.516666412353516",
+			"lng": "36.31666564941406",
+			"tz": "Asia/Damascus"
+		},
+		{
+			"city": "Damauli",
+			"country": "Nepal",
+			"lat": "27.95861053466797",
+			"lng": "84.28055572509766",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Dambulla",
+			"country": "Sri Lanka",
+			"lat": "7.856666564941406",
+			"lng": "80.649169921875",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Dampier",
+			"country": "Australia",
+			"lat": "-20.66666603088379",
+			"lng": "116.71666717529297",
+			"tz": "Australia/Perth"
+		},
+		{
+			"city": "Dandong",
+			"country": "China",
+			"lat": "40.12722396850586",
+			"lng": "124.38500213623047",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Dar es Salaam",
+			"country": "Tanzania",
+			"lat": "-6.800000190734863",
+			"lng": "39.28305435180664",
+			"tz": "Africa/Dar_es_Salaam"
+		},
+		{
+			"city": "Darasuram",
+			"country": "India",
+			"lat": "10.95138931274414",
+			"lng": "79.35610961914062",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Darwin",
+			"country": "Australia",
+			"lat": "-12.433333396911621",
+			"lng": "130.85000610351562",
+			"tz": "Australia/Darwin"
+		},
+		{
+			"city": "Dausa",
+			"country": "India",
+			"lat": "26.88944435119629",
+			"lng": "76.33611297607422",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Davao",
+			"country": "Philippines",
+			"lat": "7.079999923706055",
+			"lng": "125.61360931396484",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Dayton, OH",
+			"country": "United States",
+			"lat": "39.766666412353516",
+			"lng": "-84.19999694824219",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Del Rio, TX",
+			"country": "United States",
+			"lat": "29.362777709960938",
+			"lng": "-100.89694213867188",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Delhi",
+			"country": "India",
+			"lat": "28.616666793823242",
+			"lng": "77.21670532226562",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Denpasar",
+			"country": "Indonesia",
+			"lat": "-8.656389236450195",
+			"lng": "115.22222137451172",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Denver, CO",
+			"country": "United States",
+			"lat": "39.755001068115234",
+			"lng": "-104.98805236816406",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Des Moines, IA",
+			"country": "United States",
+			"lat": "41.59972381591797",
+			"lng": "-93.633056640625",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Detroit, MI",
+			"country": "United States",
+			"lat": "42.331390380859375",
+			"lng": "-83.04582977294922",
+			"tz": "America/Detroit"
+		},
+		{
+			"city": "Dhahran",
+			"country": "Saudi Arabia",
+			"lat": "26.28333282470703",
+			"lng": "50.11666488647461",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Dhaka",
+			"country": "Bangladesh",
+			"lat": "23.850000381469727",
+			"lng": "90.4000015258789",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Dhamar",
+			"country": "Yemen",
+			"lat": "14.550000190734863",
+			"lng": "44.401668548583984",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Dharan",
+			"country": "Nepal",
+			"lat": "26.81138801574707",
+			"lng": "87.26889038085938",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Dieppe",
+			"country": "France",
+			"lat": "49.93333435058594",
+			"lng": "1.0833333730697632",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Diffa",
+			"country": "Niger",
+			"lat": "13.315555572509766",
+			"lng": "12.608888626098633",
+			"tz": "Africa/Niamey"
+		},
+		{
+			"city": "Dili",
+			"country": "East Timor",
+			"lat": "-8.566389083862305",
+			"lng": "125.58333587646484",
+			"tz": "Asia/Dili"
+		},
+		{
+			"city": "Djember",
+			"country": "Indonesia",
+			"lat": "-8.172499656677246",
+			"lng": "113.70027923583984",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Djibouti",
+			"country": "Djibouti",
+			"lat": "11.583333015441895",
+			"lng": "43.150001525878906",
+			"tz": "Africa/Djibouti"
+		},
+		{
+			"city": "Dnepropetrovsk",
+			"country": "Ukraine",
+			"lat": "48.45000076293945",
+			"lng": "34.983333587646484",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Dodoma",
+			"country": "Tanzania",
+			"lat": "-6.183333396911621",
+			"lng": "35.733333587646484",
+			"tz": "Africa/Dar_es_Salaam"
+		},
+		{
+			"city": "Doha",
+			"country": "Qatar",
+			"lat": "25.25",
+			"lng": "51.56666564941406",
+			"tz": "Asia/Qatar"
+		},
+		{
+			"city": "Donauworth",
+			"country": "Germany",
+			"lat": "48.719444274902344",
+			"lng": "10.776666641235352",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Donetsk",
+			"country": "Ukraine",
+			"lat": "48.0",
+			"lng": "37.799720764160156",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Doolin",
+			"country": "Ireland",
+			"lat": "53.016109466552734",
+			"lng": "-9.3774995803833",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Douala",
+			"country": "Cameroon",
+			"lat": "4.047500133514404",
+			"lng": "9.706388473510742",
+			"tz": "Africa/Douala"
+		},
+		{
+			"city": "Dover",
+			"country": "United Kingdom",
+			"lat": "51.13333511352539",
+			"lng": "1.2833333015441895",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Dresden",
+			"country": "Germany",
+			"lat": "51.04999923706055",
+			"lng": "13.699999809265137",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Drogheda",
+			"country": "Ireland",
+			"lat": "53.71666717529297",
+			"lng": "-6.349999904632568",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "DuPont, WA",
+			"country": "United States",
+			"lat": "47.09694290161133",
+			"lng": "-122.62999725341797",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Dubai",
+			"country": "United Arab Emirates",
+			"lat": "25.21666717529297",
+			"lng": "55.28333282470703",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Dublin",
+			"country": "Ireland",
+			"lat": "53.333099365234375",
+			"lng": "-6.2489013671875",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Dublin, OH",
+			"country": "United States",
+			"lat": "40.09916687011719",
+			"lng": "-83.11416625976562",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Duesseldorf",
+			"country": "Germany",
+			"lat": "51.233333587646484",
+			"lng": "6.7833333015441895",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Duluth, MN",
+			"country": "United States",
+			"lat": "46.78666687011719",
+			"lng": "-92.10055541992188",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Dumaguete",
+			"country": "Philippines",
+			"lat": "9.314167022705078",
+			"lng": "123.3102798461914",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Dundee",
+			"country": "United Kingdom",
+			"lat": "56.46666717529297",
+			"lng": "-3.0",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Dunedin",
+			"country": "New Zealand",
+			"lat": "-45.883609771728516",
+			"lng": "170.4741668701172",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Dunkerque",
+			"country": "France",
+			"lat": "51.03333282470703",
+			"lng": "2.3499999046325684",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Durban",
+			"country": "South Africa",
+			"lat": "-29.866666793823242",
+			"lng": "30.983333587646484",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Durres",
+			"country": "Albania",
+			"lat": "41.32722091674805",
+			"lng": "19.454166412353516",
+			"tz": "Europe/Tirane"
+		},
+		{
+			"city": "Dushanbe",
+			"country": "Tajikistan",
+			"lat": "38.56666564941406",
+			"lng": "68.78333282470703",
+			"tz": "Asia/Dushanbe"
+		},
+		{
+			"city": "Duvall, WA",
+			"country": "United States",
+			"lat": "47.74305725097656",
+			"lng": "-121.98583221435547",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Dzerzhinsk",
+			"country": "Russia",
+			"lat": "56.266666412353516",
+			"lng": "43.349998474121094",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "East London",
+			"country": "South Africa",
+			"lat": "-32.96666717529297",
+			"lng": "27.866666793823242",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Edinburgh",
+			"country": "United Kingdom",
+			"lat": "55.94999694824219",
+			"lng": "-3.1999969482421875",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Edmonton, AB",
+			"country": "Canada",
+			"lat": "53.54083251953125",
+			"lng": "-113.49361419677734",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Eindhoven",
+			"country": "Netherlands",
+			"lat": "51.439998626708984",
+			"lng": "5.477499961853027",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Eirunepe",
+			"country": "Brazil",
+			"lat": "-6.660277843475342",
+			"lng": "-69.87444305419922",
+			"tz": "America/Eirunepe"
+		},
+		{
+			"city": "Ekaterinburg",
+			"country": "Russia",
+			"lat": "56.849998474121094",
+			"lng": "60.599998474121094",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "El Jem",
+			"country": "Tunisia",
+			"lat": "35.290000915527344",
+			"lng": "10.699999809265137",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "El Kef",
+			"country": "Tunisia",
+			"lat": "36.182220458984375",
+			"lng": "8.714722633361816",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "El Paso, TX",
+			"country": "United States",
+			"lat": "31.766387939453125",
+			"lng": "-106.4830551147461",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Ende",
+			"country": "Indonesia",
+			"lat": "-8.849166870117188",
+			"lng": "121.66222381591797",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Ensenada",
+			"country": "Mexico",
+			"lat": "31.869443893432617",
+			"lng": "-116.59361267089844",
+			"tz": "America/Tijuana"
+		},
+		{
+			"city": "Esfahan",
+			"country": "Iran",
+			"lat": "32.651390075683594",
+			"lng": "51.67916488647461",
+			"tz": "Asia/Tehran"
+		},
+		{
+			"city": "Essen",
+			"country": "Germany",
+			"lat": "51.46666717529297",
+			"lng": "7.0",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Etterbeek",
+			"country": "Belgium",
+			"lat": "50.836666107177734",
+			"lng": "4.38694429397583",
+			"tz": "Europe/Brussels"
+		},
+		{
+			"city": "Eugene, OR",
+			"country": "United States",
+			"lat": "44.040000915527344",
+			"lng": "-123.08222198486328",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Ezcaray",
+			"country": "Spain",
+			"lat": "42.32611083984375",
+			"lng": "-3.014444351196289",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Fairbanks, AK",
+			"country": "United States",
+			"lat": "64.81639099121094",
+			"lng": "-146.25",
+			"tz": "America/Anchorage"
+		},
+		{
+			"city": "Falmouth",
+			"country": "United Kingdom",
+			"lat": "50.150001525878906",
+			"lng": "-5.066666603088379",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Faro",
+			"country": "Portugal",
+			"lat": "37.016666412353516",
+			"lng": "-7.933333396911621",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Flic en Flac",
+			"country": "Mauritius",
+			"lat": "-20.280277252197266",
+			"lng": "57.37083435058594",
+			"tz": "Indian/Mauritius"
+		},
+		{
+			"city": "Florence",
+			"country": "Italy",
+			"lat": "43.768611907958984",
+			"lng": "11.25694465637207",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Florence, OR",
+			"country": "United States",
+			"lat": "43.983333587646484",
+			"lng": "-124.0999984741211",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Floro",
+			"country": "Norway",
+			"lat": "61.59972381591797",
+			"lng": "5.034722328186035",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Folcroft, PA",
+			"country": "United States",
+			"lat": "39.89083480834961",
+			"lng": "-75.28388977050781",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Folsom, CA",
+			"country": "United States",
+			"lat": "38.67805480957031",
+			"lng": "-121.17500305175781",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Fontainebleau",
+			"country": "France",
+			"lat": "48.40583419799805",
+			"lng": "2.701944351196289",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Fort Collins, CO",
+			"country": "United States",
+			"lat": "40.58527755737305",
+			"lng": "-105.08444213867188",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Fort Defiance, AZ",
+			"country": "United States",
+			"lat": "35.741943359375",
+			"lng": "-109.06666564941406",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Fort Worth, TX",
+			"country": "United States",
+			"lat": "32.733333587646484",
+			"lng": "-97.31666564941406",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Fort-de-France",
+			"country": "Martinique",
+			"lat": "14.600000381469727",
+			"lng": "-61.06666564941406",
+			"tz": "America/Martinique"
+		},
+		{
+			"city": "Fortaleza",
+			"country": "Brazil",
+			"lat": "-3.75",
+			"lng": "-38.58333206176758",
+			"tz": "America/Fortaleza"
+		},
+		{
+			"city": "Foshan",
+			"country": "China",
+			"lat": "23.02166748046875",
+			"lng": "113.12139129638672",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Foster City, CA",
+			"country": "United States",
+			"lat": "37.55861282348633",
+			"lng": "-122.27111053466797",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Foxton",
+			"country": "New Zealand",
+			"lat": "-40.47138977050781",
+			"lng": "175.28582763671875",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Fragneto Monforte",
+			"country": "Italy",
+			"lat": "41.246665954589844",
+			"lng": "14.763333320617676",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Frankfurt",
+			"country": "Germany",
+			"lat": "50.03333282470703",
+			"lng": "8.566666603088379",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Freetown",
+			"country": "Sierra Leone",
+			"lat": "8.483333587646484",
+			"lng": "-13.233333587646484",
+			"tz": "Africa/Freetown"
+		},
+		{
+			"city": "Fremont, CA",
+			"country": "United States",
+			"lat": "37.54999923706055",
+			"lng": "-121.98332977294922",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Ft. Lauderdale, FL",
+			"country": "United States",
+			"lat": "26.122222900390625",
+			"lng": "-80.1433334350586",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Fujairah",
+			"country": "United Arab Emirates",
+			"lat": "25.11888885498047",
+			"lng": "56.34944534301758",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Fukui",
+			"country": "Japan",
+			"lat": "36.06666564941406",
+			"lng": "136.21665954589844",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Fukuoka",
+			"country": "Japan",
+			"lat": "33.58333206176758",
+			"lng": "130.39999389648438",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Funafuti",
+			"country": "Tuvalu",
+			"lat": "-8.516666412353516",
+			"lng": "179.21665954589844"
+		},
+		{
+			"city": "Fuzhou",
+			"country": "China",
+			"lat": "26.066667556762695",
+			"lng": "119.30000305175781",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Gaborone",
+			"country": "Botswana",
+			"lat": "-24.649999618530273",
+			"lng": "25.91666603088379",
+			"tz": "Africa/Gaborone"
+		},
+		{
+			"city": "Galesburg, IL",
+			"country": "United States",
+			"lat": "40.947776794433594",
+			"lng": "-90.37110900878906",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Galle",
+			"country": "Sri Lanka",
+			"lat": "6.0333333015441895",
+			"lng": "80.21833038330078",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Galway",
+			"country": "Ireland",
+			"lat": "53.266666412353516",
+			"lng": "-9.066666603088379",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Gary, IN",
+			"country": "United States",
+			"lat": "41.59555435180664",
+			"lng": "-87.34527587890625",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Gatton",
+			"country": "Australia",
+			"lat": "-27.566667556762695",
+			"lng": "152.28334045410156",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Gavle",
+			"country": "Sweden",
+			"lat": "60.68333435058594",
+			"lng": "17.183332443237305"
+		},
+		{
+			"city": "Gaya",
+			"country": "India",
+			"lat": "24.780000686645508",
+			"lng": "85.0",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Gdansk",
+			"country": "Poland",
+			"lat": "54.35194396972656",
+			"lng": "18.64666748046875",
+			"tz": "Europe/Warsaw"
+		},
+		{
+			"city": "Gelendzhik",
+			"country": "Russia",
+			"lat": "44.54999923706055",
+			"lng": "38.08333206176758",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Geneva",
+			"country": "Switzerland",
+			"lat": "46.233333587646484",
+			"lng": "6.066666603088379",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"city": "Genoa",
+			"country": "Italy",
+			"lat": "44.41055679321289",
+			"lng": "8.935277938842773",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Gent",
+			"country": "Belgium",
+			"lat": "51.04999923706055",
+			"lng": "3.7333333492279053",
+			"tz": "Europe/Brussels"
+		},
+		{
+			"city": "George Town",
+			"country": "Cayman Islands",
+			"lat": "19.295833587646484",
+			"lng": "-81.3758316040039",
+			"tz": "America/Cayman"
+		},
+		{
+			"city": "George Town",
+			"country": "Malaysia",
+			"lat": "5.363611221313477",
+			"lng": "100.31083679199219",
+			"tz": "Asia/Kuala_Lumpur"
+		},
+		{
+			"city": "Georgetown",
+			"country": "Guyana",
+			"lat": "6.7833333015441895",
+			"lng": "-58.150001525878906",
+			"tz": "America/Guyana"
+		},
+		{
+			"city": "Ghatgaon",
+			"country": "India",
+			"lat": "21.40416717529297",
+			"lng": "85.88694763183594",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Ghumli",
+			"country": "India",
+			"lat": "21.885833740234375",
+			"lng": "69.76361083984375",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Gibraltar",
+			"country": "Gibraltar",
+			"lat": "36.13333511352539",
+			"lng": "-5.349999904632568",
+			"tz": "Europe/Gibraltar"
+		},
+		{
+			"city": "Gig Harbor, WA",
+			"country": "United States",
+			"lat": "47.32694625854492",
+			"lng": "-122.5955581665039",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Girona",
+			"country": "Spain",
+			"lat": "41.981666564941406",
+			"lng": "2.82361102104187",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Giurgiu",
+			"country": "Romania",
+			"lat": "43.900001525878906",
+			"lng": "25.96666717529297",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Gladstone",
+			"country": "Australia",
+			"lat": "-23.850000381469727",
+			"lng": "151.26666259765625",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Glasgow",
+			"country": "United Kingdom",
+			"lat": "55.86666488647461",
+			"lng": "-4.266666889190674",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Gloucester",
+			"country": "United Kingdom",
+			"lat": "51.88333511352539",
+			"lng": "-2.25",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Golden, BC",
+			"country": "Canada",
+			"lat": "51.296112060546875",
+			"lng": "-116.96305847167969",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Golra Sharif",
+			"country": "Pakistan",
+			"lat": "33.69388961791992",
+			"lng": "72.97694396972656",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Gosford",
+			"country": "Australia",
+			"lat": "-33.427223205566406",
+			"lng": "151.3433380126953",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Gothenburg",
+			"country": "Sweden",
+			"lat": "57.68333435058594",
+			"lng": "11.966666221618652",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Grafton",
+			"country": "Australia",
+			"lat": "-29.683332443237305",
+			"lng": "152.93333435058594",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Granada",
+			"country": "Spain",
+			"lat": "37.16666793823242",
+			"lng": "-3.5999999046325684",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Granada",
+			"country": "Nicaragua",
+			"lat": "11.928055763244629",
+			"lng": "-85.95999908447266",
+			"tz": "America/Managua"
+		},
+		{
+			"city": "Grand Rapids, MI",
+			"country": "United States",
+			"lat": "42.96666717529297",
+			"lng": "-85.66666412353516",
+			"tz": "America/Detroit"
+		},
+		{
+			"city": "Grand-Bassam",
+			"country": "Cote d'Ivoire",
+			"lat": "5.199999809265137",
+			"lng": "-3.7333333492279053",
+			"tz": "Africa/Abidjan"
+		},
+		{
+			"city": "Grasse",
+			"country": "France",
+			"lat": "43.65861129760742",
+			"lng": "6.923611164093018",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Gratkorn",
+			"country": "Austria",
+			"lat": "47.1349983215332",
+			"lng": "15.340277671813965",
+			"tz": "Europe/Vienna"
+		},
+		{
+			"city": "Graz",
+			"country": "Austria",
+			"lat": "47.070556640625",
+			"lng": "15.438055992126465",
+			"tz": "Europe/Vienna"
+		},
+		{
+			"city": "Great Falls, MT",
+			"country": "United States",
+			"lat": "47.50027847290039",
+			"lng": "-111.30083465576172",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Grenoble",
+			"country": "France",
+			"lat": "45.18333435058594",
+			"lng": "5.7166666984558105",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Guadalajara",
+			"country": "Mexico",
+			"lat": "20.666702270507812",
+			"lng": "-103.33329772949219",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Guangzhou",
+			"country": "China",
+			"lat": "23.116666793823242",
+			"lng": "113.26667022705078",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Guatemala City",
+			"country": "Guatemala",
+			"lat": "14.625",
+			"lng": "-90.53277587890625",
+			"tz": "America/Guatemala"
+		},
+		{
+			"city": "Guayaquil",
+			"country": "Ecuador",
+			"lat": "-2.200000047683716",
+			"lng": "-79.9000015258789",
+			"tz": "America/Guayaquil"
+		},
+		{
+			"city": "Guaymas",
+			"country": "Mexico",
+			"lat": "27.913888931274414",
+			"lng": "-110.9022216796875",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "Guelph, ON",
+			"country": "Canada",
+			"lat": "43.54999923706055",
+			"lng": "-80.25",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Gulbarga",
+			"country": "India",
+			"lat": "17.329999923706055",
+			"lng": "76.83000183105469",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Gyor",
+			"country": "Hungary",
+			"lat": "47.684165954589844",
+			"lng": "17.635000228881836",
+			"tz": "Europe/Budapest"
+		},
+		{
+			"city": "Gyumri",
+			"country": "Armenia",
+			"lat": "40.78944396972656",
+			"lng": "43.84749984741211",
+			"tz": "Asia/Yerevan"
+		},
+		{
+			"city": "Hagatna",
+			"country": "Guam",
+			"lat": "13.466666221618652",
+			"lng": "144.75",
+			"tz": "Pacific/Guam"
+		},
+		{
+			"city": "Hai Phong",
+			"country": "Vietnam",
+			"lat": "20.86138916015625",
+			"lng": "106.67972564697266",
+			"tz": "Asia/Ho_Chi_Minh"
+		},
+		{
+			"city": "Haifa",
+			"country": "Israel",
+			"lat": "32.81194305419922",
+			"lng": "34.9988899230957",
+			"tz": "Asia/Jerusalem"
+		},
+		{
+			"city": "Halab",
+			"country": "Syria",
+			"lat": "36.21666717529297",
+			"lng": "37.16666793823242",
+			"tz": "Asia/Damascus"
+		},
+		{
+			"city": "Halifax, NS",
+			"country": "Canada",
+			"lat": "44.64611053466797",
+			"lng": "-63.573612213134766"
+		},
+		{
+			"city": "Halle",
+			"country": "Belgium",
+			"lat": "50.73694610595703",
+			"lng": "4.237222194671631",
+			"tz": "Europe/Brussels"
+		},
+		{
+			"city": "Hama",
+			"country": "Syria",
+			"lat": "35.13333511352539",
+			"lng": "36.75",
+			"tz": "Asia/Damascus"
+		},
+		{
+			"city": "Hamburg",
+			"country": "Germany",
+			"lat": "53.54999923706055",
+			"lng": "10.0",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Hamilton",
+			"country": "Bermuda",
+			"lat": "32.29999923706055",
+			"lng": "-64.80000305175781",
+			"tz": "Atlantic/Bermuda"
+		},
+		{
+			"city": "Hamilton, ON",
+			"country": "Canada",
+			"lat": "43.25",
+			"lng": "-79.8499984741211",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Hammamet",
+			"country": "Tunisia",
+			"lat": "36.400001525878906",
+			"lng": "10.616666793823242",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Hammerfest",
+			"country": "Norway",
+			"lat": "70.68333435058594",
+			"lng": "23.700000762939453",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Hanamkonda",
+			"country": "India",
+			"lat": "18.016666412353516",
+			"lng": "79.63333129882812",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Hangzhou",
+			"country": "China",
+			"lat": "30.273611068725586",
+			"lng": "120.15528106689453",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Hanjiang",
+			"country": "China",
+			"lat": "25.46666717529297",
+			"lng": "119.11666870117188",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Hannover",
+			"country": "Germany",
+			"lat": "52.38333511352539",
+			"lng": "9.733333587646484",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Hanoi",
+			"country": "Vietnam",
+			"lat": "21.016666412353516",
+			"lng": "105.88333129882812",
+			"tz": "Asia/Ho_Chi_Minh"
+		},
+		{
+			"city": "Harare",
+			"country": "Zimbabwe",
+			"lat": "-17.83333396911621",
+			"lng": "31.049999237060547",
+			"tz": "Africa/Harare"
+		},
+		{
+			"city": "Harbin",
+			"country": "China",
+			"lat": "45.75",
+			"lng": "126.61666870117188",
+			"tz": "Asia/Harbin"
+		},
+		{
+			"city": "Harstad",
+			"country": "Norway",
+			"lat": "68.80000305175781",
+			"lng": "16.566667556762695",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Hassan",
+			"country": "India",
+			"lat": "13.007222175598145",
+			"lng": "76.09444427490234",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Hastings",
+			"country": "New Zealand",
+			"lat": "-39.63999938964844",
+			"lng": "176.8413848876953",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Hat Yai",
+			"country": "Thailand",
+			"lat": "7.001944541931152",
+			"lng": "100.45722198486328",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Havana",
+			"country": "Cuba",
+			"lat": "23.133054733276367",
+			"lng": "-81.61666870117188",
+			"tz": "America/Havana"
+		},
+		{
+			"city": "Heerlen",
+			"country": "Netherlands",
+			"lat": "50.883056640625",
+			"lng": "5.980833530426025",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Helena, MT",
+			"country": "United States",
+			"lat": "46.59111022949219",
+			"lng": "-112.02055358886719",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Helsingborg",
+			"country": "Sweden",
+			"lat": "56.04999923706055",
+			"lng": "12.699999809265137",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Helsingor",
+			"country": "Denmark",
+			"lat": "56.0363883972168",
+			"lng": "12.613333702087402",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Helsinki",
+			"country": "Finland",
+			"lat": "60.16666793823242",
+			"lng": "24.96666717529297",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Heredia",
+			"country": "Costa Rica",
+			"lat": "9.991944313049316",
+			"lng": "-84.12000274658203",
+			"tz": "America/Costa_Rica"
+		},
+		{
+			"city": "Hermosillo",
+			"country": "Mexico",
+			"lat": "29.09166717529297",
+			"lng": "-110.94583129882812",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "Hikkaduwa",
+			"country": "Sri Lanka",
+			"lat": "6.128055572509766",
+			"lng": "80.10444641113281",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Hillsboro, OR",
+			"country": "United States",
+			"lat": "45.52305603027344",
+			"lng": "-122.98860931396484",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Hilo, HI",
+			"country": "United States",
+			"lat": "19.69333267211914",
+			"lng": "-155.09056091308594",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Hiroshima",
+			"country": "Japan",
+			"lat": "34.38333511352539",
+			"lng": "132.43333435058594",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Ho Chi Minh",
+			"country": "Vietnam",
+			"lat": "10.783333778381348",
+			"lng": "106.69999694824219",
+			"tz": "Asia/Ho_Chi_Minh"
+		},
+		{
+			"city": "Hobart",
+			"country": "Australia",
+			"lat": "-42.88333511352539",
+			"lng": "147.31666564941406",
+			"tz": "Australia/Hobart"
+		},
+		{
+			"city": "Hohhot",
+			"country": "China",
+			"lat": "40.81666564941406",
+			"lng": "111.6500015258789",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Homagama",
+			"country": "Sri Lanka",
+			"lat": "6.8408331871032715",
+			"lng": "80.01388549804688",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Hong Kong",
+			"country": "China",
+			"lat": "22.28333282470703",
+			"lng": "114.16666412353516"
+		},
+		{
+			"city": "Honiara",
+			"country": "Solomon Islands",
+			"lat": "-9.433303833007812",
+			"lng": "159.95001220703125",
+			"tz": "Pacific/Guadalcanal"
+		},
+		{
+			"city": "Honokaa, HI",
+			"country": "United States",
+			"lat": "20.077499389648438",
+			"lng": "-155.46417236328125",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Honolulu, HI",
+			"country": "United States",
+			"lat": "21.316667556762695",
+			"lng": "-157.86666870117188",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Hope, BC",
+			"country": "Canada",
+			"lat": "49.38055419921875",
+			"lng": "-121.44444274902344",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Hora Sfakion",
+			"country": "Greece",
+			"lat": "35.20166778564453",
+			"lng": "24.136943817138672",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Horsens",
+			"country": "Denmark",
+			"lat": "55.86055374145508",
+			"lng": "9.849721908569336",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Hostalric",
+			"country": "Spain",
+			"lat": "41.74638748168945",
+			"lng": "2.6355555057525635",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Houston, TX",
+			"country": "United States",
+			"lat": "29.75",
+			"lng": "-95.383056640625",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Howland Island",
+			"country": "United States",
+			"lat": "0.809166669845581",
+			"lng": "-176.61749267578125"
+		},
+		{
+			"city": "Hua Hin",
+			"country": "Thailand",
+			"lat": "12.57027816772461",
+			"lng": "99.95777893066406",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Hubli",
+			"country": "India",
+			"lat": "15.350000381469727",
+			"lng": "75.13333129882812",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Hudson, MA",
+			"country": "United States",
+			"lat": "42.391666412353516",
+			"lng": "-71.56666564941406",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Huelva",
+			"country": "Spain",
+			"lat": "37.25",
+			"lng": "-6.949999809265137",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Huizhou",
+			"country": "China",
+			"lat": "23.1119441986084",
+			"lng": "114.4161148071289",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Huntingdon, QC",
+			"country": "Canada",
+			"lat": "45.09194564819336",
+			"lng": "-74.17666625976562",
+			"tz": "America/Montreal"
+		},
+		{
+			"city": "Huntington, WV",
+			"country": "United States",
+			"lat": "38.41055679321289",
+			"lng": "-82.4286117553711",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Hyderabad",
+			"country": "India",
+			"lat": "17.399999618530273",
+			"lng": "78.48332977294922",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Iasi",
+			"country": "Romania",
+			"lat": "47.1702766418457",
+			"lng": "27.58361053466797",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Ibadan",
+			"country": "Nigeria",
+			"lat": "7.396389007568359",
+			"lng": "3.9166667461395264",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Ibb",
+			"country": "Yemen",
+			"lat": "13.966388702392578",
+			"lng": "44.16638946533203",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Igoumenitsa",
+			"country": "Greece",
+			"lat": "39.504722595214844",
+			"lng": "20.26277732849121",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Iligan",
+			"country": "Philippines",
+			"lat": "8.23277759552002",
+			"lng": "124.24028015136719",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Incheon",
+			"country": "Korea, South",
+			"lat": "37.45916748046875",
+			"lng": "126.70388793945312",
+			"tz": "Asia/Seoul"
+		},
+		{
+			"city": "Indianapolis, IN",
+			"country": "United States",
+			"lat": "39.766387939453125",
+			"lng": "-86.1500015258789",
+			"tz": "America/Indiana/Indianapolis"
+		},
+		{
+			"city": "Inuvik, NT",
+			"country": "Canada",
+			"lat": "68.3580551147461",
+			"lng": "-133.72361755371094",
+			"tz": "America/Inuvik"
+		},
+		{
+			"city": "Iqaluit, NU",
+			"country": "Canada",
+			"lat": "63.741390228271484",
+			"lng": "-68.50971984863281",
+			"tz": "America/Iqaluit"
+		},
+		{
+			"city": "Iraklion",
+			"country": "Greece",
+			"lat": "35.32027816772461",
+			"lng": "25.143611907958984",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Irkutsk",
+			"country": "Russia",
+			"lat": "52.266387939453125",
+			"lng": "104.33305358886719",
+			"tz": "Asia/Irkutsk"
+		},
+		{
+			"city": "Irvine, CA",
+			"country": "United States",
+			"lat": "33.671390533447266",
+			"lng": "-117.79138946533203",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Islamabad",
+			"country": "Pakistan",
+			"lat": "33.66666793823242",
+			"lng": "73.133056640625",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Istanbul",
+			"country": "Turkey",
+			"lat": "41.016387939453125",
+			"lng": "28.950000762939453",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Itahari",
+			"country": "Nepal",
+			"lat": "26.66666603088379",
+			"lng": "87.28360748291016",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Ivalo",
+			"country": "Finland",
+			"lat": "68.6500015258789",
+			"lng": "27.58333396911621",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Ivanovo",
+			"country": "Russia",
+			"lat": "57.016666412353516",
+			"lng": "41.016666412353516",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Ixtapa",
+			"country": "Mexico",
+			"lat": "17.65333366394043",
+			"lng": "-101.59722137451172",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Izhevsk",
+			"country": "Russia",
+			"lat": "56.84972381591797",
+			"lng": "53.233333587646484",
+			"tz": "Europe/Samara"
+		},
+		{
+			"city": "Izmir",
+			"country": "Turkey",
+			"lat": "38.42388916015625",
+			"lng": "27.142778396606445",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Jackson, MS",
+			"country": "United States",
+			"lat": "32.29999923706055",
+			"lng": "-90.18333435058594",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Jacksonville, FL",
+			"country": "United States",
+			"lat": "30.33333396911621",
+			"lng": "-81.6500015258789",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Jacobabad",
+			"country": "Pakistan",
+			"lat": "28.276111602783203",
+			"lng": "68.43416595458984",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Jaen",
+			"country": "Spain",
+			"lat": "37.76583480834961",
+			"lng": "-3.7894444465637207",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Jaipur",
+			"country": "India",
+			"lat": "26.899999618530273",
+			"lng": "75.80000305175781",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Jakarta",
+			"country": "Indonesia",
+			"lat": "-6.1743927001953125",
+			"lng": "106.82940673828125",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Jamestown",
+			"country": "Saint Helena",
+			"lat": "-15.916666984558105",
+			"lng": "-5.699999809265137",
+			"tz": "Atlantic/St_Helena"
+		},
+		{
+			"city": "Jammu",
+			"country": "India",
+			"lat": "32.70888900756836",
+			"lng": "74.85250091552734",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Jamshedpur",
+			"country": "India",
+			"lat": "22.778610229492188",
+			"lng": "86.2088851928711",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Jasper, AB",
+			"country": "Canada",
+			"lat": "52.87916564941406",
+			"lng": "-118.08027648925781",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Jeddah",
+			"country": "Saudi Arabia",
+			"lat": "21.543611526489258",
+			"lng": "39.17305374145508",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Jefferson City, MO",
+			"country": "United States",
+			"lat": "38.57666778564453",
+			"lng": "-92.17361450195312",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Jersey City, NJ",
+			"country": "United States",
+			"lat": "40.72805404663086",
+			"lng": "-74.07777404785156",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Jerusalem",
+			"country": "Israel",
+			"lat": "31.766666412353516",
+			"lng": "35.233333587646484",
+			"tz": "Asia/Gaza"
+		},
+		{
+			"city": "Jeypore",
+			"country": "India",
+			"lat": "18.858055114746094",
+			"lng": "82.57083129882812",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Jilin",
+			"country": "China",
+			"lat": "43.849998474121094",
+			"lng": "126.56666564941406",
+			"tz": "Asia/Harbin"
+		},
+		{
+			"city": "Jinan",
+			"country": "China",
+			"lat": "36.650001525878906",
+			"lng": "116.96666717529297",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Jinzhou",
+			"country": "China",
+			"lat": "39.100276947021484",
+			"lng": "121.71916961669922",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Joao Pessoa",
+			"country": "Brazil",
+			"lat": "-7.131666660308838",
+			"lng": "-34.85388946533203",
+			"tz": "America/Fortaleza"
+		},
+		{
+			"city": "Johannesburg",
+			"country": "South Africa",
+			"lat": "-26.25",
+			"lng": "28.0",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Juba",
+			"country": "South Sudan",
+			"lat": "4.864999771118164",
+			"lng": "31.600276947021484",
+			"tz": "Africa/Khartoum"
+		},
+		{
+			"city": "Jujuy",
+			"country": "Argentina",
+			"lat": "-24.197778701782227",
+			"lng": "-65.30083465576172",
+			"tz": "America/Argentina/Jujuy"
+		},
+		{
+			"city": "Kabardinka",
+			"country": "Russia",
+			"lat": "44.650001525878906",
+			"lng": "37.95000076293945",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Kabul",
+			"country": "Afghanistan",
+			"lat": "34.516666412353516",
+			"lng": "69.18333435058594",
+			"tz": "Asia/Kabul"
+		},
+		{
+			"city": "Kaduna",
+			"country": "Nigeria",
+			"lat": "10.516666412353516",
+			"lng": "7.433333396911621",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Kagoshima",
+			"country": "Japan",
+			"lat": "31.566667556762695",
+			"lng": "130.5500030517578",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Kaikoura",
+			"country": "New Zealand",
+			"lat": "-42.4022216796875",
+			"lng": "173.68055725097656",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Kairouan",
+			"country": "Tunisia",
+			"lat": "35.6694450378418",
+			"lng": "10.092222213745117",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Kaliningrad",
+			"country": "Russia",
+			"lat": "54.70000076293945",
+			"lng": "20.5",
+			"tz": "Europe/Kaliningrad"
+		},
+		{
+			"city": "Kalmar",
+			"country": "Sweden",
+			"lat": "56.66666793823242",
+			"lng": "16.366666793823242",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Kalutara",
+			"country": "Sri Lanka",
+			"lat": "6.589444637298584",
+			"lng": "79.9808349609375",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Kamloops, BC",
+			"country": "Canada",
+			"lat": "50.676666259765625",
+			"lng": "-120.3388900756836",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Kampala",
+			"country": "Uganda",
+			"lat": "0.3166666626930237",
+			"lng": "32.58333206176758",
+			"tz": "Africa/Kampala"
+		},
+		{
+			"city": "Kamuela, HI",
+			"country": "United States",
+			"lat": "20.02055549621582",
+			"lng": "-155.66888427734375",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Kandahar",
+			"country": "Afghanistan",
+			"lat": "31.6108341217041",
+			"lng": "65.70027923583984",
+			"tz": "Asia/Kabul"
+		},
+		{
+			"city": "Kandy",
+			"country": "Sri Lanka",
+			"lat": "7.284444332122803",
+			"lng": "80.63749694824219",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Kanpur",
+			"country": "India",
+			"lat": "26.450000762939453",
+			"lng": "80.31666564941406",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kansas City, MO",
+			"country": "United States",
+			"lat": "39.09972381591797",
+			"lng": "-94.58333587646484",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Kanyakumari",
+			"country": "India",
+			"lat": "8.084166526794434",
+			"lng": "77.54194641113281",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Karachi",
+			"country": "Pakistan",
+			"lat": "24.866666793823242",
+			"lng": "67.05000305175781",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Karlovy Vary",
+			"country": "Czech Republic",
+			"lat": "50.23222351074219",
+			"lng": "12.87138843536377",
+			"tz": "Europe/Prague"
+		},
+		{
+			"city": "Karlstad",
+			"country": "Sweden",
+			"lat": "59.38333511352539",
+			"lng": "13.516666412353516",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Kasaragod",
+			"country": "India",
+			"lat": "12.5",
+			"lng": "74.98332977294922",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kasauli",
+			"country": "India",
+			"lat": "30.899723052978516",
+			"lng": "76.96722412109375",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kathmandu",
+			"country": "Nepal",
+			"lat": "27.700000762939453",
+			"lng": "85.31658935546875",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Kaunas",
+			"country": "Lithuania",
+			"lat": "54.900001525878906",
+			"lng": "23.899999618530273",
+			"tz": "Europe/Vilnius"
+		},
+		{
+			"city": "Kawasaki",
+			"country": "Japan",
+			"lat": "35.524166107177734",
+			"lng": "139.71417236328125",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Kazan",
+			"country": "Russia",
+			"lat": "55.75",
+			"lng": "49.13333511352539",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Keel",
+			"country": "Ireland",
+			"lat": "53.975833892822266",
+			"lng": "-10.08388900756836"
+		},
+		{
+			"city": "Kelowna, BC",
+			"country": "Canada",
+			"lat": "49.883609771728516",
+			"lng": "-119.49361419677734",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Kemerovo",
+			"country": "Russia",
+			"lat": "55.37138748168945",
+			"lng": "86.05249786376953",
+			"tz": "Asia/Novokuznetsk"
+		},
+		{
+			"city": "Kendari",
+			"country": "Indonesia",
+			"lat": "-3.968611001968384",
+			"lng": "122.52111053466797",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Kerikeri",
+			"country": "New Zealand",
+			"lat": "-35.22444534301758",
+			"lng": "173.95138549804688",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Khabarovsk",
+			"country": "Russia",
+			"lat": "48.41666793823242",
+			"lng": "135.11666870117188",
+			"tz": "Asia/Vladivostok"
+		},
+		{
+			"city": "Kharkov",
+			"country": "Ukraine",
+			"lat": "49.99361038208008",
+			"lng": "36.23027801513672",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Khartoum",
+			"country": "Sudan",
+			"lat": "15.583333015441895",
+			"lng": "32.53333282470703",
+			"tz": "Africa/Khartoum"
+		},
+		{
+			"city": "Kiel",
+			"country": "Germany",
+			"lat": "54.33333206176758",
+			"lng": "10.116666793823242",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Kiev",
+			"country": "Ukraine",
+			"lat": "50.43305587768555",
+			"lng": "30.516666412353516",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Kigali",
+			"country": "Rwanda",
+			"lat": "-1.9500000476837158",
+			"lng": "30.066667556762695",
+			"tz": "Africa/Kigali"
+		},
+		{
+			"city": "Killarney",
+			"country": "Ireland",
+			"lat": "52.06666564941406",
+			"lng": "-9.516666412353516",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Kimberley",
+			"country": "South Africa",
+			"lat": "-28.74333381652832",
+			"lng": "24.762500762939453",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Kingston",
+			"country": "Jamaica",
+			"lat": "17.96666717529297",
+			"lng": "-75.19999694824219"
+		},
+		{
+			"city": "Kingston, Norfolk Island",
+			"country": "Australia",
+			"lat": "-29.049999237060547",
+			"lng": "167.93333435058594"
+		},
+		{
+			"city": "Kingston, ON",
+			"country": "Canada",
+			"lat": "44.233333587646484",
+			"lng": "-76.5",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Kingstown",
+			"country": "Saint Vincent and the Grenadines",
+			"lat": "13.199999809265137",
+			"lng": "-61.266666412353516",
+			"tz": "America/St_Vincent"
+		},
+		{
+			"city": "Kinshasa",
+			"country": "Congo, Democratic Republic of the",
+			"lat": "-4.316666603088379",
+			"lng": "15.300000190734863",
+			"tz": "Africa/Kinshasa"
+		},
+		{
+			"city": "Kiruna",
+			"country": "Sweden",
+			"lat": "67.8499984741211",
+			"lng": "20.266666412353516",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Kitchener, ON",
+			"country": "Canada",
+			"lat": "43.45000076293945",
+			"lng": "-80.5",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Knysna",
+			"country": "South Africa",
+			"lat": "-34.06472396850586",
+			"lng": "23.08194351196289",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Kochi",
+			"country": "India",
+			"lat": "10.016666412353516",
+			"lng": "76.21666717529297",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kodaikanal",
+			"country": "India",
+			"lat": "10.235555648803711",
+			"lng": "77.48750305175781",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kolhapur",
+			"country": "India",
+			"lat": "16.697778701782227",
+			"lng": "74.22638702392578",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kolkata",
+			"country": "India",
+			"lat": "22.53333282470703",
+			"lng": "88.36959838867188",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Koloa, HI",
+			"country": "United States",
+			"lat": "21.906665802001953",
+			"lng": "-159.4691619873047",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Kolobrzeg",
+			"country": "Poland",
+			"lat": "54.18166732788086",
+			"lng": "15.569722175598145",
+			"tz": "Europe/Warsaw"
+		},
+		{
+			"city": "Kolomna",
+			"country": "Russia",
+			"lat": "55.086944580078125",
+			"lng": "38.77777862548828",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Kolonia",
+			"country": "Micronesia, Federated States of",
+			"lat": "6.960833549499512",
+			"lng": "158.20889282226562",
+			"tz": "Pacific/Pohnpei"
+		},
+		{
+			"city": "Konark",
+			"country": "India",
+			"lat": "19.899999618530273",
+			"lng": "86.19999694824219",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kone",
+			"country": "New Caledonia",
+			"lat": "-21.063888549804688",
+			"lng": "164.85360717773438",
+			"tz": "Pacific/Noumea"
+		},
+		{
+			"city": "Konin",
+			"country": "Poland",
+			"lat": "52.22305679321289",
+			"lng": "18.25111198425293",
+			"tz": "Europe/Warsaw"
+		},
+		{
+			"city": "Koror",
+			"country": "Palau",
+			"lat": "7.349999904632568",
+			"lng": "134.48333740234375",
+			"tz": "Pacific/Palau"
+		},
+		{
+			"city": "Kos",
+			"country": "Greece",
+			"lat": "36.897499084472656",
+			"lng": "27.28611183166504",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Kosciusko, MS",
+			"country": "United States",
+			"lat": "33.04999923706055",
+			"lng": "-89.58333587646484",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Kostroma",
+			"country": "Russia",
+			"lat": "57.766666412353516",
+			"lng": "40.95000076293945",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Kota Kinabalu",
+			"country": "Malaysia",
+			"lat": "5.976388931274414",
+			"lng": "116.11583709716797",
+			"tz": "Asia/Kuching"
+		},
+		{
+			"city": "Kotka",
+			"country": "Finland",
+			"lat": "60.46666717529297",
+			"lng": "26.933332443237305",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Kotor",
+			"country": "Montenegro",
+			"lat": "42.419166564941406",
+			"lng": "18.767499923706055",
+			"tz": "Europe/Podgorica"
+		},
+		{
+			"city": "Kovrov",
+			"country": "Russia",
+			"lat": "56.36666488647461",
+			"lng": "41.33333206176758",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Kowloon",
+			"country": "China",
+			"lat": "22.299999237060547",
+			"lng": "114.18333435058594",
+			"tz": "Asia/Hong_Kong"
+		},
+		{
+			"city": "Krakow",
+			"country": "Poland",
+			"lat": "50.05527877807617",
+			"lng": "19.927499771118164",
+			"tz": "Europe/Warsaw"
+		},
+		{
+			"city": "Krasnoyarsk",
+			"country": "Russia",
+			"lat": "56.00833511352539",
+			"lng": "92.76667022705078",
+			"tz": "Asia/Krasnoyarsk"
+		},
+		{
+			"city": "Kristiansand",
+			"country": "Norway",
+			"lat": "58.150001525878906",
+			"lng": "8.0",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Kristianstad",
+			"country": "Sweden",
+			"lat": "56.03333282470703",
+			"lng": "14.166666984558105",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Kronstadt",
+			"country": "Russia",
+			"lat": "59.983333587646484",
+			"lng": "29.78333282470703"
+		},
+		{
+			"city": "Kuala Lumpur",
+			"country": "Malaysia",
+			"lat": "3.1667022705078125",
+			"lng": "101.70001220703125",
+			"tz": "Asia/Kuala_Lumpur"
+		},
+		{
+			"city": "Kuching",
+			"country": "Malaysia",
+			"lat": "1.53083336353302",
+			"lng": "110.34416961669922",
+			"tz": "Asia/Kuching"
+		},
+		{
+			"city": "Kulusuk",
+			"country": "Greenland",
+			"lat": "65.56805419921875",
+			"lng": "-37.1875",
+			"tz": "America/Godthab"
+		},
+		{
+			"city": "Kumanovo",
+			"country": "Macedonia",
+			"lat": "42.13055419921875",
+			"lng": "21.721111297607422",
+			"tz": "Europe/Skopje"
+		},
+		{
+			"city": "Kumbakonam",
+			"country": "India",
+			"lat": "10.966666221618652",
+			"lng": "79.38333129882812",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Kungur",
+			"country": "Russia",
+			"lat": "57.43333435058594",
+			"lng": "56.95000076293945",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "Kunming",
+			"country": "China",
+			"lat": "25.066667556762695",
+			"lng": "102.68333435058594",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Kupang",
+			"country": "Indonesia",
+			"lat": "-10.166666984558105",
+			"lng": "123.58333587646484",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Kurgan",
+			"country": "Russia",
+			"lat": "55.453609466552734",
+			"lng": "65.34222412109375",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "Kursk",
+			"country": "Russia",
+			"lat": "51.733333587646484",
+			"lng": "36.166664123535156",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Kurunegala",
+			"country": "Sri Lanka",
+			"lat": "7.483333110809326",
+			"lng": "80.36666870117188",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Kuwait",
+			"country": "Kuwait",
+			"lat": "29.33333396911621",
+			"lng": "48.0",
+			"tz": "Asia/Kuwait"
+		},
+		{
+			"city": "Kyaikto",
+			"country": "Burma",
+			"lat": "17.308610916137695",
+			"lng": "97.01860809326172",
+			"tz": "Asia/Rangoon"
+		},
+		{
+			"city": "Kyoto",
+			"country": "Japan",
+			"lat": "35.016666412353516",
+			"lng": "135.75",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "La Jolla, CA",
+			"country": "United States",
+			"lat": "32.84749984741211",
+			"lng": "-117.27471923828125",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "La Libertad",
+			"country": "El Salvador",
+			"lat": "13.566666603088379",
+			"lng": "-89.28333282470703",
+			"tz": "America/El_Salvador"
+		},
+		{
+			"city": "La Paz",
+			"country": "Bolivia",
+			"lat": "-16.049999237060547",
+			"lng": "-68.01499938964844",
+			"tz": "America/La_Paz"
+		},
+		{
+			"city": "La Paz",
+			"country": "Mexico",
+			"lat": "24.13861083984375",
+			"lng": "-110.31749725341797",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "La Rioja",
+			"country": "Argentina",
+			"lat": "-29.412776947021484",
+			"lng": "-66.85472106933594",
+			"tz": "America/Argentina/La_Rioja"
+		},
+		{
+			"city": "La Union",
+			"country": "El Salvador",
+			"lat": "13.333333015441895",
+			"lng": "-87.8499984741211",
+			"tz": "America/El_Salvador"
+		},
+		{
+			"city": "Labuan",
+			"country": "Malaysia",
+			"lat": "5.291388988494873",
+			"lng": "115.24583435058594",
+			"tz": "Asia/Kuching"
+		},
+		{
+			"city": "Lafayette, LA",
+			"country": "United States",
+			"lat": "30.224166870117188",
+			"lng": "-92.01972198486328",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Lagos",
+			"country": "Nigeria",
+			"lat": "6.449999809265137",
+			"lng": "3.4666666984558105",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Lahore",
+			"country": "Pakistan",
+			"lat": "31.545000076293945",
+			"lng": "74.3405532836914",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Lakeland, FL",
+			"country": "United States",
+			"lat": "28.039443969726562",
+			"lng": "-81.94972229003906",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Langkawi",
+			"country": "Malaysia",
+			"lat": "6.324166774749756",
+			"lng": "99.850830078125",
+			"tz": "Asia/Kuala_Lumpur"
+		},
+		{
+			"city": "Lansing, MI",
+			"country": "United States",
+			"lat": "42.733612060546875",
+			"lng": "-84.54666900634766",
+			"tz": "America/Detroit"
+		},
+		{
+			"city": "Lanzhou",
+			"country": "China",
+			"lat": "36.06666564941406",
+			"lng": "103.75",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Las Varas",
+			"country": "Mexico",
+			"lat": "21.178611755371094",
+			"lng": "-105.13555908203125",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Las Vegas, NV",
+			"country": "United States",
+			"lat": "36.233055114746094",
+			"lng": "-115.24666595458984",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Latakia",
+			"country": "Syria",
+			"lat": "35.52138900756836",
+			"lng": "35.79249954223633",
+			"tz": "Asia/Damascus"
+		},
+		{
+			"city": "Launceston",
+			"country": "Australia",
+			"lat": "-41.45000076293945",
+			"lng": "147.13333129882812",
+			"tz": "Australia/Hobart"
+		},
+		{
+			"city": "Laupahoehoe, HI",
+			"country": "United States",
+			"lat": "19.984722137451172",
+			"lng": "-155.23611450195312",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Le Havre",
+			"country": "France",
+			"lat": "49.5",
+			"lng": "0.13333334028720856",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Leeds",
+			"country": "United Kingdom",
+			"lat": "53.81666564941406",
+			"lng": "-1.5",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Leicester",
+			"country": "United Kingdom",
+			"lat": "52.63333511352539",
+			"lng": "-1.1333333253860474",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Leipzig",
+			"country": "Germany",
+			"lat": "51.349998474121094",
+			"lng": "12.399999618530273",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Leixlip",
+			"country": "Ireland",
+			"lat": "53.366943359375",
+			"lng": "-6.488888740539551",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Leon",
+			"country": "Spain",
+			"lat": "42.599998474121094",
+			"lng": "-5.566666603088379",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Leon",
+			"country": "Mexico",
+			"lat": "21.123611450195312",
+			"lng": "-101.68055725097656",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Lexington, KY",
+			"country": "United States",
+			"lat": "38.03166580200195",
+			"lng": "-84.49527740478516",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Libreville",
+			"country": "Gabon",
+			"lat": "0.5",
+			"lng": "9.416666984558105",
+			"tz": "Africa/Libreville"
+		},
+		{
+			"city": "Lille",
+			"country": "France",
+			"lat": "50.63333511352539",
+			"lng": "3.066666603088379",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Lilongwe",
+			"country": "Malawi",
+			"lat": "-13.983333587646484",
+			"lng": "33.766666412353516",
+			"tz": "Africa/Blantyre"
+		},
+		{
+			"city": "Lima",
+			"country": "Peru",
+			"lat": "-12.050000190734863",
+			"lng": "-77.05000305175781",
+			"tz": "America/Lima"
+		},
+		{
+			"city": "Limassol",
+			"country": "Cyprus",
+			"lat": "35.0",
+			"lng": "33.0",
+			"tz": "Asia/Nicosia"
+		},
+		{
+			"city": "Limerick",
+			"country": "Ireland",
+			"lat": "52.66666793823242",
+			"lng": "-8.633333206176758"
+		},
+		{
+			"city": "Limoux",
+			"country": "France",
+			"lat": "43.054443359375",
+			"lng": "2.221388816833496",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Lincoln, NE",
+			"country": "United States",
+			"lat": "40.8136100769043",
+			"lng": "-96.70249938964844",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Linkoping",
+			"country": "Sweden",
+			"lat": "58.41583251953125",
+			"lng": "15.625555992126465",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Lipetsk",
+			"country": "Russia",
+			"lat": "52.61666488647461",
+			"lng": "39.56666564941406",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Lisbon",
+			"country": "Portugal",
+			"lat": "38.71666717529297",
+			"lng": "-9.133333206176758",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Lismore",
+			"country": "Australia",
+			"lat": "-28.8125",
+			"lng": "153.2786102294922",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Little Rock, AR",
+			"country": "United States",
+			"lat": "34.72444534301758",
+			"lng": "-92.27889251708984",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Liverpool",
+			"country": "United Kingdom",
+			"lat": "53.41666793823242",
+			"lng": "-2.9666666984558105",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Ljubljana",
+			"country": "Slovenia",
+			"lat": "46.04999923706055",
+			"lng": "14.514404296875",
+			"tz": "Europe/Ljubljana"
+		},
+		{
+			"city": "Lome",
+			"country": "Togo",
+			"lat": "6.166666507720947",
+			"lng": "1.350000023841858",
+			"tz": "Africa/Lome"
+		},
+		{
+			"city": "London",
+			"country": "United Kingdom",
+			"lat": "51.46666717529297",
+			"lng": "0.30000001192092896",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "London, ON",
+			"country": "Canada",
+			"lat": "42.98249816894531",
+			"lng": "-81.25389099121094",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Long Beach, CA",
+			"country": "United States",
+			"lat": "33.78972244262695",
+			"lng": "-118.15194702148438",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Long Branch, NJ",
+			"country": "United States",
+			"lat": "40.295833587646484",
+			"lng": "-73.99055480957031",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Longyearbyen",
+			"country": "Svalbard",
+			"lat": "78.21666717529297",
+			"lng": "15.649999618530273",
+			"tz": "Arctic/Longyearbyen"
+		},
+		{
+			"city": "Los Angeles, CA",
+			"country": "United States",
+			"lat": "34.052223205566406",
+			"lng": "-118.24333190917969",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Los Mochis",
+			"country": "Mexico",
+			"lat": "25.79166603088379",
+			"lng": "-108.98722076416016",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Louisville, KY",
+			"country": "United States",
+			"lat": "38.25",
+			"lng": "-85.76667022705078",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Luancheng",
+			"country": "China",
+			"lat": "37.88333511352539",
+			"lng": "114.6500015258789",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Luanda",
+			"country": "Angola",
+			"lat": "-7.166666507720947",
+			"lng": "13.333333015441895",
+			"tz": "Africa/Luanda"
+		},
+		{
+			"city": "Lubbock, TX",
+			"country": "United States",
+			"lat": "33.57777786254883",
+			"lng": "-101.85527801513672",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Luchegorsk",
+			"country": "Russia",
+			"lat": "46.43333435058594",
+			"lng": "134.3000030517578",
+			"tz": "Asia/Vladivostok"
+		},
+		{
+			"city": "Lucknow",
+			"country": "India",
+			"lat": "26.850000381469727",
+			"lng": "80.91666412353516",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Lugano",
+			"country": "Switzerland",
+			"lat": "46.003334045410156",
+			"lng": "8.953332901000977",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"city": "Lugansk",
+			"country": "Ukraine",
+			"lat": "48.559444427490234",
+			"lng": "39.29833221435547",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Lulea",
+			"country": "Sweden",
+			"lat": "65.58333587646484",
+			"lng": "22.21666717529297",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Lumbini",
+			"country": "Nepal",
+			"lat": "27.487499237060547",
+			"lng": "83.26305389404297",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Lund",
+			"country": "Sweden",
+			"lat": "55.70277786254883",
+			"lng": "13.192777633666992",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Lusaka",
+			"country": "Zambia",
+			"lat": "-15.399999618530273",
+			"lng": "28.28333282470703",
+			"tz": "Africa/Lusaka"
+		},
+		{
+			"city": "Luxembourg",
+			"country": "Luxembourg",
+			"lat": "49.61666488647461",
+			"lng": "6.150000095367432",
+			"tz": "Europe/Luxembourg"
+		},
+		{
+			"city": "Luxor",
+			"country": "Egypt",
+			"lat": "25.7005558013916",
+			"lng": "32.63916778564453",
+			"tz": "Africa/Cairo"
+		},
+		{
+			"city": "Lviv",
+			"country": "Ukraine",
+			"lat": "49.83305740356445",
+			"lng": "24.0",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Lyon",
+			"country": "France",
+			"lat": "45.75777816772461",
+			"lng": "4.832221984863281",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Macapa",
+			"country": "Brazil",
+			"lat": "0.03444444388151169",
+			"lng": "-51.06666564941406",
+			"tz": "America/Belem"
+		},
+		{
+			"city": "Macau",
+			"country": "China",
+			"lat": "22.200000762939453",
+			"lng": "113.55000305175781",
+			"tz": "Asia/Macau"
+		},
+		{
+			"city": "Mackay",
+			"country": "Australia",
+			"lat": "-21.149999618530273",
+			"lng": "149.18333435058594",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Madikeri",
+			"country": "India",
+			"lat": "12.416666030883789",
+			"lng": "75.75",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Madison, WI",
+			"country": "United States",
+			"lat": "43.06305694580078",
+			"lng": "-89.40083312988281",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Madrid",
+			"country": "Spain",
+			"lat": "40.399993896484375",
+			"lng": "-3.6833038330078125",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Madurai",
+			"country": "India",
+			"lat": "9.916666984558105",
+			"lng": "78.11666870117188",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Magadan",
+			"country": "Russia",
+			"lat": "59.56669616699219",
+			"lng": "150.79998779296875",
+			"tz": "Asia/Magadan"
+		},
+		{
+			"city": "Magdeburg",
+			"country": "Germany",
+			"lat": "52.13333511352539",
+			"lng": "11.616666793823242",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Magnolia, TX",
+			"country": "United States",
+			"lat": "30.20916748046875",
+			"lng": "-95.75055694580078",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Mahabalipuram",
+			"country": "India",
+			"lat": "12.616666793823242",
+			"lng": "80.19166564941406",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Mahdia",
+			"country": "Tunisia",
+			"lat": "35.502498626708984",
+			"lng": "11.045833587646484",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Mainz",
+			"country": "Germany",
+			"lat": "49.994998931884766",
+			"lng": "8.267499923706055",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Majuro",
+			"country": "Marshall Islands",
+			"lat": "7.116666793823242",
+			"lng": "171.06666564941406",
+			"tz": "Pacific/Majuro"
+		},
+		{
+			"city": "Makassar",
+			"country": "Indonesia",
+			"lat": "-5.151944637298584",
+			"lng": "119.41222381591797",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Malabo",
+			"country": "Equatorial Guinea",
+			"lat": "3.75",
+			"lng": "8.783333778381348",
+			"tz": "Africa/Malabo"
+		},
+		{
+			"city": "Malaga",
+			"country": "Spain",
+			"lat": "36.71666717529297",
+			"lng": "-4.416666507720947"
+		},
+		{
+			"city": "Male",
+			"country": "Maldives",
+			"lat": "4.166666507720947",
+			"lng": "73.5",
+			"tz": "Indian/Maldives"
+		},
+		{
+			"city": "Malmo",
+			"country": "Sweden",
+			"lat": "55.60333251953125",
+			"lng": "13.001388549804688",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Mamoudzou",
+			"country": "Mayotte",
+			"lat": "-12.783333778381348",
+			"lng": "45.21666717529297",
+			"tz": "Indian/Mayotte"
+		},
+		{
+			"city": "Managua",
+			"country": "Nicaragua",
+			"lat": "12.100000381469727",
+			"lng": "-85.69999694824219",
+			"tz": "America/Managua"
+		},
+		{
+			"city": "Manama",
+			"country": "Bahrain",
+			"lat": "26.200000762939453",
+			"lng": "50.599998474121094",
+			"tz": "Asia/Bahrain"
+		},
+		{
+			"city": "Manaus",
+			"country": "Brazil",
+			"lat": "-3.116666555404663",
+			"lng": "-60.016666412353516",
+			"tz": "America/Manaus"
+		},
+		{
+			"city": "Manchester",
+			"country": "United Kingdom",
+			"lat": "53.483333587646484",
+			"lng": "-2.2666666507720947",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Mandalay",
+			"country": "Burma",
+			"lat": "21.975000381469727",
+			"lng": "96.08333587646484",
+			"tz": "Asia/Rangoon"
+		},
+		{
+			"city": "Mandarmoni",
+			"country": "India",
+			"lat": "21.650278091430664",
+			"lng": "87.65833282470703"
+		},
+		{
+			"city": "Mandurah",
+			"country": "Australia",
+			"lat": "-32.53333282470703",
+			"lng": "115.75",
+			"tz": "Australia/Perth"
+		},
+		{
+			"city": "Mangalia",
+			"country": "Romania",
+			"lat": "43.81666564941406",
+			"lng": "28.58333396911621",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Mangalore",
+			"country": "India",
+			"lat": "12.866666793823242",
+			"lng": "74.8499984741211",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Manila",
+			"country": "Philippines",
+			"lat": "14.583333015441895",
+			"lng": "121.0",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Manisa",
+			"country": "Turkey",
+			"lat": "38.622222900390625",
+			"lng": "27.42972183227539",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "Mannheim",
+			"country": "Germany",
+			"lat": "49.48472213745117",
+			"lng": "8.476666450500488",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Manzanillo",
+			"country": "Cuba",
+			"lat": "20.350000381469727",
+			"lng": "-77.11666870117188",
+			"tz": "America/Havana"
+		},
+		{
+			"city": "Manzanillo",
+			"country": "Mexico",
+			"lat": "19.050556182861328",
+			"lng": "-104.31722259521484",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Maputo",
+			"country": "Mozambique",
+			"lat": "-25.96666717529297",
+			"lng": "32.53333282470703"
+		},
+		{
+			"city": "Maram Bazar",
+			"country": "India",
+			"lat": "25.475555419921875",
+			"lng": "94.13694763183594",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Marawi",
+			"country": "Philippines",
+			"lat": "8.002778053283691",
+			"lng": "124.29194641113281",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Marmaris",
+			"country": "Turkey",
+			"lat": "36.85472106933594",
+			"lng": "28.27083396911621"
+		},
+		{
+			"city": "Marrakech",
+			"country": "Morocco",
+			"lat": "31.633333206176758",
+			"lng": "-8.0",
+			"tz": "Africa/Casablanca"
+		},
+		{
+			"city": "Marseille",
+			"country": "France",
+			"lat": "43.28333282470703",
+			"lng": "5.383333206176758",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Masafi",
+			"country": "United Arab Emirates",
+			"lat": "25.303333282470703",
+			"lng": "56.16472244262695",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Maseru",
+			"country": "Lesotho",
+			"lat": "-29.299999237060547",
+			"lng": "27.483333587646484",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Masohi",
+			"country": "Indonesia",
+			"lat": "-3.340277671813965",
+			"lng": "128.92361450195312"
+		},
+		{
+			"city": "Mata-Utu",
+			"country": "Wallis and Futuna",
+			"lat": "-13.300000190734863",
+			"lng": "-176.1666717529297",
+			"tz": "Pacific/Wallis"
+		},
+		{
+			"city": "Matale",
+			"country": "Sri Lanka",
+			"lat": "7.4666666984558105",
+			"lng": "80.61666870117188",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Matamoros",
+			"country": "Mexico",
+			"lat": "25.86111068725586",
+			"lng": "-97.5022201538086",
+			"tz": "America/Matamoros"
+		},
+		{
+			"city": "Mataram",
+			"country": "Indonesia",
+			"lat": "-8.581944465637207",
+			"lng": "116.10694122314453",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Mathura",
+			"country": "India",
+			"lat": "27.49250030517578",
+			"lng": "77.67361450195312",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Mazari Sharif",
+			"country": "Afghanistan",
+			"lat": "36.70750045776367",
+			"lng": "67.1080551147461",
+			"tz": "Asia/Kabul"
+		},
+		{
+			"city": "Mazatlan",
+			"country": "Mexico",
+			"lat": "23.21666717529297",
+			"lng": "-106.41666412353516",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Mbabane",
+			"country": "Swaziland",
+			"lat": "-26.316667556762695",
+			"lng": "31.149999618530273",
+			"tz": "Africa/Mbabane"
+		},
+		{
+			"city": "Mbour",
+			"country": "Senegal",
+			"lat": "14.416666984558105",
+			"lng": "-16.96666717529297",
+			"tz": "Africa/Dakar"
+		},
+		{
+			"city": "Mdina",
+			"country": "Malta",
+			"lat": "35.885833740234375",
+			"lng": "14.401666641235352",
+			"tz": "Europe/Malta"
+		},
+		{
+			"city": "Mecca",
+			"country": "Saudi Arabia",
+			"lat": "21.41666603088379",
+			"lng": "39.81666564941406",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Medan",
+			"country": "Indonesia",
+			"lat": "3.5833332538604736",
+			"lng": "98.68333435058594",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Medellin",
+			"country": "Colombia",
+			"lat": "6.235833168029785",
+			"lng": "-75.57527923583984",
+			"tz": "America/Bogota"
+		},
+		{
+			"city": "Medina",
+			"country": "Saudi Arabia",
+			"lat": "24.460832595825195",
+			"lng": "39.620277404785156",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Melaque",
+			"country": "Mexico",
+			"lat": "19.225276947021484",
+			"lng": "-104.70388793945312",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Melbourne",
+			"country": "Australia",
+			"lat": "-37.81669616699219",
+			"lng": "144.96670532226562",
+			"tz": "Australia/Melbourne"
+		},
+		{
+			"city": "Melbourne, FL",
+			"country": "United States",
+			"lat": "28.08333396911621",
+			"lng": "-80.5999984741211",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Memphis, TN",
+			"country": "United States",
+			"lat": "35.150001525878906",
+			"lng": "-90.05000305175781",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Mendoza",
+			"country": "Argentina",
+			"lat": "-32.88249969482422",
+			"lng": "-68.81639099121094",
+			"tz": "America/Argentina/Mendoza"
+		},
+		{
+			"city": "Menlo Park, CA",
+			"country": "United States",
+			"lat": "37.453887939453125",
+			"lng": "-122.18111419677734",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Merida",
+			"country": "Mexico",
+			"lat": "20.97972297668457",
+			"lng": "-89.61583709716797",
+			"tz": "America/Merida"
+		},
+		{
+			"city": "Mexicali",
+			"country": "Mexico",
+			"lat": "32.650001525878906",
+			"lng": "-115.46666717529297",
+			"tz": "America/Tijuana"
+		},
+		{
+			"city": "Mexico City",
+			"country": "Mexico",
+			"lat": "19.433055877685547",
+			"lng": "-99.133056640625",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Miami, FL",
+			"country": "United States",
+			"lat": "25.774166107177734",
+			"lng": "-80.19027709960938",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Milan",
+			"country": "Italy",
+			"lat": "45.46666717529297",
+			"lng": "9.183333396911621",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Mill Valley, CA",
+			"country": "United States",
+			"lat": "37.90611267089844",
+			"lng": "-122.54499816894531",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Milwaukee, WI",
+			"country": "United States",
+			"lat": "43.03333282470703",
+			"lng": "-87.9000015258789",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Minneapolis, MN",
+			"country": "United States",
+			"lat": "44.977500915527344",
+			"lng": "-93.26444244384766",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Minsk",
+			"country": "Belarus",
+			"lat": "53.89999008178711",
+			"lng": "27.56669044494629",
+			"tz": "Europe/Minsk"
+		},
+		{
+			"city": "Miramar, FL",
+			"country": "United States",
+			"lat": "25.97861099243164",
+			"lng": "-80.33361053466797",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Mission, BC",
+			"country": "Canada",
+			"lat": "49.133331298828125",
+			"lng": "-122.30000305175781",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Mississauga, ON",
+			"country": "Canada",
+			"lat": "43.54861068725586",
+			"lng": "-79.62638854980469",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Mo",
+			"country": "Norway",
+			"lat": "66.33333587646484",
+			"lng": "14.183333396911621",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Mobile, AL",
+			"country": "United States",
+			"lat": "30.69444465637207",
+			"lng": "-88.04305267333984",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Mogadishu",
+			"country": "Somalia",
+			"lat": "2.0333333015441895",
+			"lng": "45.349998474121094",
+			"tz": "Africa/Mogadishu"
+		},
+		{
+			"city": "Molalla, OR",
+			"country": "United States",
+			"lat": "45.147499084472656",
+			"lng": "-122.57722473144531",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Monaco",
+			"country": "Monaco",
+			"lat": "43.73249816894531",
+			"lng": "7.418889045715332"
+		},
+		{
+			"city": "Monastir",
+			"country": "Tunisia",
+			"lat": "35.78333282470703",
+			"lng": "10.83666706085205"
+		},
+		{
+			"city": "Moncton, NB",
+			"country": "Canada",
+			"lat": "46.094444274902344",
+			"lng": "-64.77527618408203",
+			"tz": "America/Moncton"
+		},
+		{
+			"city": "Monrovia",
+			"country": "Liberia",
+			"lat": "6.300000190734863",
+			"lng": "-10.783333778381348",
+			"tz": "Africa/Monrovia"
+		},
+		{
+			"city": "Monte Carlo",
+			"country": "Monaco",
+			"lat": "43.74055480957031",
+			"lng": "7.42555570602417"
+		},
+		{
+			"city": "Monterey, CA",
+			"country": "United States",
+			"lat": "36.600276947021484",
+			"lng": "-121.89472198486328",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Monterrey",
+			"country": "Mexico",
+			"lat": "25.666702270507812",
+			"lng": "-100.31670379638672",
+			"tz": "America/Monterrey"
+		},
+		{
+			"city": "Montevideo",
+			"country": "Uruguay",
+			"lat": "-34.900001525878906",
+			"lng": "-56.150001525878906",
+			"tz": "America/Montevideo"
+		},
+		{
+			"city": "Montgomery, AL",
+			"country": "United States",
+			"lat": "32.37555694580078",
+			"lng": "-86.29972076416016",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Montgomery, TX",
+			"country": "United States",
+			"lat": "30.3880558013916",
+			"lng": "-95.69611358642578",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Montpelier, VT",
+			"country": "United States",
+			"lat": "44.262779235839844",
+			"lng": "-72.57166290283203",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Montpellier",
+			"country": "France",
+			"lat": "43.61666488647461",
+			"lng": "3.866666555404663",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Montpeyroux",
+			"country": "France",
+			"lat": "43.695556640625",
+			"lng": "3.505000114440918",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Montreal, QC",
+			"country": "Canada",
+			"lat": "45.545555114746094",
+			"lng": "-73.63916778564453",
+			"tz": "America/Montreal"
+		},
+		{
+			"city": "Moroni",
+			"country": "Comoros",
+			"lat": "-11.699999809265137",
+			"lng": "43.25",
+			"tz": "Indian/Comoro"
+		},
+		{
+			"city": "Moscow",
+			"country": "Russia",
+			"lat": "55.752197265625",
+			"lng": "37.58333206176758",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Motul",
+			"country": "Mexico",
+			"lat": "21.094444274902344",
+			"lng": "-89.28360748291016",
+			"tz": "America/Merida"
+		},
+		{
+			"city": "Mount Hagen",
+			"country": "Papua New Guinea",
+			"lat": "-5.86472225189209",
+			"lng": "144.22000122070312",
+			"tz": "Pacific/Port_Moresby"
+		},
+		{
+			"city": "Mount Shasta City, CA",
+			"country": "United States",
+			"lat": "41.310001373291016",
+			"lng": "-122.31055450439453",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Mountain View, CA",
+			"country": "United States",
+			"lat": "37.38333511352539",
+			"lng": "-122.08333587646484",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Mudumalai",
+			"country": "India",
+			"lat": "11.57638931274414",
+			"lng": "76.58305358886719",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Mukachevo",
+			"country": "Ukraine",
+			"lat": "48.45000076293945",
+			"lng": "22.71666717529297",
+			"tz": "Europe/Uzhgorod"
+		},
+		{
+			"city": "Multan",
+			"country": "Pakistan",
+			"lat": "30.190277099609375",
+			"lng": "71.45805358886719",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Mumbai",
+			"country": "India",
+			"lat": "18.933332443237305",
+			"lng": "72.8499984741211"
+		},
+		{
+			"city": "Munich",
+			"country": "Germany",
+			"lat": "48.13333511352539",
+			"lng": "11.583333015441895",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Munnar",
+			"country": "India",
+			"lat": "10.084722518920898",
+			"lng": "77.06138610839844",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Murmansk",
+			"country": "Russia",
+			"lat": "68.98332977294922",
+			"lng": "33.13333511352539",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Murom",
+			"country": "Russia",
+			"lat": "55.56666564941406",
+			"lng": "42.016666412353516",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Murree",
+			"country": "Pakistan",
+			"lat": "33.90638732910156",
+			"lng": "73.39389038085938",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Muscat",
+			"country": "Oman",
+			"lat": "23.600000381469727",
+			"lng": "58.58333206176758",
+			"tz": "Asia/Muscat"
+		},
+		{
+			"city": "Myrtle Beach, SC",
+			"country": "United States",
+			"lat": "33.6966667175293",
+			"lng": "-78.8941650390625",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Mysore",
+			"country": "India",
+			"lat": "12.295833587646484",
+			"lng": "76.63944244384766",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "N'Djamena",
+			"country": "Chad",
+			"lat": "12.100000381469727",
+			"lng": "15.050000190734863",
+			"tz": "Africa/Ndjamena"
+		},
+		{
+			"city": "Nabeul",
+			"country": "Tunisia",
+			"lat": "36.454444885253906",
+			"lng": "10.734444618225098",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Nadiad",
+			"country": "India",
+			"lat": "22.700000762939453",
+			"lng": "72.87000274658203",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Nagasaki",
+			"country": "Japan",
+			"lat": "32.766666412353516",
+			"lng": "129.86666870117188",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Nagoya",
+			"country": "Japan",
+			"lat": "35.150001525878906",
+			"lng": "136.9166717529297",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Nagpur",
+			"country": "India",
+			"lat": "21.155834197998047",
+			"lng": "79.08916473388672",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Naha",
+			"country": "Japan",
+			"lat": "26.204721450805664",
+			"lng": "127.69249725341797",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Nairobi",
+			"country": "Kenya",
+			"lat": "-1.2832900285720825",
+			"lng": "36.81669616699219",
+			"tz": "Africa/Nairobi"
+		},
+		{
+			"city": "Nakhodka",
+			"country": "Russia",
+			"lat": "42.81638717651367",
+			"lng": "132.86666870117188",
+			"tz": "Asia/Vladivostok"
+		},
+		{
+			"city": "Nanaimo, BC",
+			"country": "Canada",
+			"lat": "49.16444396972656",
+			"lng": "-123.9366683959961",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Nanjing",
+			"country": "China",
+			"lat": "32.04999923706055",
+			"lng": "118.78333282470703",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Nantes",
+			"country": "France",
+			"lat": "47.21666717529297",
+			"lng": "-1.5666667222976685",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Napier",
+			"country": "New Zealand",
+			"lat": "-39.505001068115234",
+			"lng": "176.89971923828125",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Naples",
+			"country": "Italy",
+			"lat": "40.84000015258789",
+			"lng": "14.252778053283691",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Narvik",
+			"country": "Norway",
+			"lat": "68.44999694824219",
+			"lng": "17.433332443237305",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Nashville, TN",
+			"country": "United States",
+			"lat": "36.16666793823242",
+			"lng": "-86.78333282470703",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Nassau",
+			"country": "Bahamas",
+			"lat": "25.066667556762695",
+			"lng": "-77.33333587646484",
+			"tz": "America/Nassau"
+		},
+		{
+			"city": "Navasota, TX",
+			"country": "United States",
+			"lat": "30.383333206176758",
+			"lng": "-96.08333587646484",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Navi Mumbai",
+			"country": "India",
+			"lat": "19.033056259155273",
+			"lng": "73.02972412109375",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Negombo",
+			"country": "Sri Lanka",
+			"lat": "7.209444522857666",
+			"lng": "79.83416748046875",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Neuquen",
+			"country": "Argentina",
+			"lat": "-38.95000076293945",
+			"lng": "-68.06666564941406",
+			"tz": "America/Argentina/Salta"
+		},
+		{
+			"city": "New Delhi",
+			"country": "India",
+			"lat": "28.616666793823242",
+			"lng": "77.21670532226562",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "New Orleans, LA",
+			"country": "United States",
+			"lat": "29.953332901000977",
+			"lng": "-90.06888580322266",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "New Ross",
+			"country": "Ireland",
+			"lat": "52.400001525878906",
+			"lng": "-6.949999809265137",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "New Westminster, BC",
+			"country": "Canada",
+			"lat": "49.203609466552734",
+			"lng": "-122.91471862792969",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "New York, NY",
+			"country": "United States",
+			"lat": "40.733333587646484",
+			"lng": "-73.91638946533203",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Newark, NJ",
+			"country": "United States",
+			"lat": "40.73555374145508",
+			"lng": "-74.17250061035156",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Newcastle",
+			"country": "Australia",
+			"lat": "-32.926387786865234",
+			"lng": "151.78111267089844"
+		},
+		{
+			"city": "Newcastle upon Tyne",
+			"country": "United Kingdom",
+			"lat": "54.975833892822266",
+			"lng": "-1.610277771949768",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Newport",
+			"country": "United Kingdom",
+			"lat": "51.599998474121094",
+			"lng": "-2.9833333492279053",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Niagara Falls, NY",
+			"country": "United States",
+			"lat": "43.099998474121094",
+			"lng": "-79.05000305175781",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Niagara Falls, ON",
+			"country": "Canada",
+			"lat": "43.099998474121094",
+			"lng": "-79.0999984741211",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Niamey",
+			"country": "Niger",
+			"lat": "13.516666412353516",
+			"lng": "2.116666555404663",
+			"tz": "Africa/Niamey"
+		},
+		{
+			"city": "Nice",
+			"country": "France",
+			"lat": "43.70000076293945",
+			"lng": "7.266666889190674"
+		},
+		{
+			"city": "Nicosia",
+			"country": "Cyprus",
+			"lat": "35.16666793823242",
+			"lng": "33.36666488647461",
+			"tz": "Asia/Nicosia"
+		},
+		{
+			"city": "Niigata",
+			"country": "Japan",
+			"lat": "37.91666793823242",
+			"lng": "139.0500030517578",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Nikolaev",
+			"country": "Ukraine",
+			"lat": "46.96666717529297",
+			"lng": "32.016387939453125",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Nimes",
+			"country": "France",
+			"lat": "43.849998474121094",
+			"lng": "4.349999904632568",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Ningbo",
+			"country": "China",
+			"lat": "29.86833381652832",
+			"lng": "121.54389190673828",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Nizhniy Novgorod",
+			"country": "Russia",
+			"lat": "56.28333282470703",
+			"lng": "43.93333435058594",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Nogales",
+			"country": "Mexico",
+			"lat": "31.330833435058594",
+			"lng": "-110.9447250366211",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "Nome, AK",
+			"country": "United States",
+			"lat": "64.5330581665039",
+			"lng": "-164.60000610351562",
+			"tz": "America/Nome"
+		},
+		{
+			"city": "Norfolk, VA",
+			"country": "United States",
+			"lat": "36.849998474121094",
+			"lng": "-76.28333282470703",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "North Bay, ON",
+			"country": "Canada",
+			"lat": "46.31916809082031",
+			"lng": "-79.43416595458984",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "North Bend, OR",
+			"country": "United States",
+			"lat": "43.40638732910156",
+			"lng": "-124.22444152832031",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "North Ryde",
+			"country": "Australia",
+			"lat": "-33.79666519165039",
+			"lng": "151.12445068359375",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Norwich",
+			"country": "United Kingdom",
+			"lat": "52.650001525878906",
+			"lng": "1.2833333015441895",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Nouakchott",
+			"country": "Mauritania",
+			"lat": "18.08333396911621",
+			"lng": "-15.983333587646484",
+			"tz": "Africa/Nouakchott"
+		},
+		{
+			"city": "Noumea",
+			"country": "New Caledonia",
+			"lat": "-22.266666412353516",
+			"lng": "166.4499969482422",
+			"tz": "Pacific/Noumea"
+		},
+		{
+			"city": "Novgorod",
+			"country": "Russia",
+			"lat": "58.54999923706055",
+			"lng": "31.28333282470703",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Novorossiysk",
+			"country": "Russia",
+			"lat": "44.71666717529297",
+			"lng": "37.78333282470703",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Novosibirsk",
+			"country": "Russia",
+			"lat": "55.041107177734375",
+			"lng": "82.91666412353516",
+			"tz": "Asia/Novosibirsk"
+		},
+		{
+			"city": "Nuevo Laredo",
+			"country": "Mexico",
+			"lat": "27.481111526489258",
+			"lng": "-99.56055450439453",
+			"tz": "America/Matamoros"
+		},
+		{
+			"city": "Nuku'alofa",
+			"country": "Tonga",
+			"lat": "-21.016666412353516",
+			"lng": "-174.0"
+		},
+		{
+			"city": "Nurnberg",
+			"country": "Germany",
+			"lat": "49.45000076293945",
+			"lng": "11.066666603088379",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Nuuk",
+			"country": "Greenland",
+			"lat": "64.18333435058594",
+			"lng": "-51.71666717529297",
+			"tz": "America/Godthab"
+		},
+		{
+			"city": "Ocala, FL",
+			"country": "United States",
+			"lat": "29.18777847290039",
+			"lng": "-82.13055419921875",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Odense",
+			"country": "Denmark",
+			"lat": "55.39638900756836",
+			"lng": "10.390832901000977",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Odessa",
+			"country": "Ukraine",
+			"lat": "46.46666717529297",
+			"lng": "30.71666717529297",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Ohrid",
+			"country": "Macedonia",
+			"lat": "41.121665954589844",
+			"lng": "20.81944465637207",
+			"tz": "Europe/Skopje"
+		},
+		{
+			"city": "Ojinaga",
+			"country": "Mexico",
+			"lat": "29.55583381652832",
+			"lng": "-104.41777801513672",
+			"tz": "America/Ojinaga"
+		},
+		{
+			"city": "Okara",
+			"country": "Pakistan",
+			"lat": "30.801389694213867",
+			"lng": "73.44833374023438",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Okha",
+			"country": "Russia",
+			"lat": "53.58305740356445",
+			"lng": "142.93333435058594",
+			"tz": "Asia/Sakhalin"
+		},
+		{
+			"city": "Okhotsk",
+			"country": "Russia",
+			"lat": "59.349998474121094",
+			"lng": "143.1999969482422"
+		},
+		{
+			"city": "Okinawa",
+			"country": "Japan",
+			"lat": "26.33888816833496",
+			"lng": "127.8155517578125",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Oklahoma City, OK",
+			"country": "United States",
+			"lat": "35.46666717529297",
+			"lng": "-97.51667022705078",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Olanchito",
+			"country": "Honduras",
+			"lat": "15.483333587646484",
+			"lng": "-86.56639099121094",
+			"tz": "America/Tegucigalpa"
+		},
+		{
+			"city": "Olinda",
+			"country": "Brazil",
+			"lat": "-8.0",
+			"lng": "-34.849998474121094",
+			"tz": "America/Recife"
+		},
+		{
+			"city": "Olympia, WA",
+			"country": "United States",
+			"lat": "47.04499816894531",
+			"lng": "-122.90166473388672",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Omaha, NE",
+			"country": "United States",
+			"lat": "41.25972366333008",
+			"lng": "-95.94222259521484",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Omsk",
+			"country": "Russia",
+			"lat": "55.06666564941406",
+			"lng": "73.25",
+			"tz": "Asia/Omsk"
+		},
+		{
+			"city": "Onitsha",
+			"country": "Nigeria",
+			"lat": "6.166666507720947",
+			"lng": "6.7833333015441895",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Ootacamund",
+			"country": "India",
+			"lat": "11.411666870117188",
+			"lng": "76.6947250366211",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Oradea",
+			"country": "Romania",
+			"lat": "47.04999923706055",
+			"lng": "21.933332443237305",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Orange",
+			"country": "Australia",
+			"lat": "-33.28361129760742",
+			"lng": "149.10000610351562",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Oranjestad",
+			"country": "Aruba",
+			"lat": "12.524444580078125",
+			"lng": "-70.0263900756836",
+			"tz": "America/Aruba"
+		},
+		{
+			"city": "Orlando, FL",
+			"country": "United States",
+			"lat": "28.533056259155273",
+			"lng": "-81.383056640625",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Osaka",
+			"country": "Japan",
+			"lat": "34.66670227050781",
+			"lng": "135.5",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Oshawa, ON",
+			"country": "Canada",
+			"lat": "43.88999938964844",
+			"lng": "-78.86000061035156",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Oslo",
+			"country": "Norway",
+			"lat": "59.93333435058594",
+			"lng": "10.683333396911621",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Ostrov",
+			"country": "Russia",
+			"lat": "57.349998474121094",
+			"lng": "28.316667556762695",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Ottawa, ON",
+			"country": "Canada",
+			"lat": "45.42361068725586",
+			"lng": "-75.69805908203125",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Ouagadougou",
+			"country": "Burkina Faso",
+			"lat": "12.366666793823242",
+			"lng": "-1.5333333015441895",
+			"tz": "Africa/Ouagadougou"
+		},
+		{
+			"city": "Oulu",
+			"country": "Finland",
+			"lat": "65.01667022705078",
+			"lng": "25.46666717529297"
+		},
+		{
+			"city": "Oviedo",
+			"country": "Spain",
+			"lat": "43.36666488647461",
+			"lng": "-5.849999904632568",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Padang",
+			"country": "Indonesia",
+			"lat": "-0.949999988079071",
+			"lng": "100.3499984741211",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Pahoa, HI",
+			"country": "United States",
+			"lat": "19.497499465942383",
+			"lng": "-154.95083618164062",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Palembang",
+			"country": "Indonesia",
+			"lat": "-2.9833333492279053",
+			"lng": "104.75",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Palikir",
+			"country": "Micronesia, Federated States of",
+			"lat": "6.916666507720947",
+			"lng": "158.18333435058594",
+			"tz": "Pacific/Pohnpei"
+		},
+		{
+			"city": "Palma",
+			"country": "Spain",
+			"lat": "39.599998474121094",
+			"lng": "2.6500000953674316",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Palmas",
+			"country": "Brazil",
+			"lat": "-10.168889045715332",
+			"lng": "-48.3316650390625",
+			"tz": "America/Araguaina"
+		},
+		{
+			"city": "Palo Alto, CA",
+			"country": "United States",
+			"lat": "37.45000076293945",
+			"lng": "-122.1500015258789",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Panaji",
+			"country": "India",
+			"lat": "15.49222183227539",
+			"lng": "73.8183364868164",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Panama City",
+			"country": "Panama",
+			"lat": "8.949722290039062",
+			"lng": "-78.5",
+			"tz": "America/Panama"
+		},
+		{
+			"city": "Pangkor",
+			"country": "Malaysia",
+			"lat": "4.212777614593506",
+			"lng": "100.56805419921875",
+			"tz": "Asia/Kuala_Lumpur"
+		},
+		{
+			"city": "Papeete",
+			"country": "French Polynesia",
+			"lat": "-17.53333282470703",
+			"lng": "-149.56666564941406",
+			"tz": "Pacific/Tahiti"
+		},
+		{
+			"city": "Paramaribo",
+			"country": "Suriname",
+			"lat": "5.816666603088379",
+			"lng": "-55.16666793823242",
+			"tz": "America/Paramaribo"
+		},
+		{
+			"city": "Paraparaumu",
+			"country": "New Zealand",
+			"lat": "-40.913612365722656",
+			"lng": "175.00889587402344",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Paris",
+			"country": "France",
+			"lat": "48.86669921875",
+			"lng": "2.3332977294921875",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Parsippany, NJ",
+			"country": "United States",
+			"lat": "40.8577766418457",
+			"lng": "-74.42694091796875",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Patna",
+			"country": "India",
+			"lat": "25.613889694213867",
+			"lng": "85.1352767944336",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Patras",
+			"country": "Greece",
+			"lat": "38.25361251831055",
+			"lng": "21.73638916015625",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Pearl, MS",
+			"country": "United States",
+			"lat": "32.274444580078125",
+			"lng": "-90.13194274902344",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Pedro Juan Caballero",
+			"country": "Paraguay",
+			"lat": "-22.53333282470703",
+			"lng": "-55.75",
+			"tz": "America/Asuncion"
+		},
+		{
+			"city": "Pensacola, FL",
+			"country": "United States",
+			"lat": "30.473888397216797",
+			"lng": "-87.21221923828125",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Penza",
+			"country": "Russia",
+			"lat": "53.20000076293945",
+			"lng": "45.0",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Perm",
+			"country": "Russia",
+			"lat": "58.0",
+			"lng": "56.25",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "Perth",
+			"country": "Australia",
+			"lat": "-31.96666717529297",
+			"lng": "115.81666564941406",
+			"tz": "Australia/Perth"
+		},
+		{
+			"city": "Peshawar",
+			"country": "Pakistan",
+			"lat": "34.00416564941406",
+			"lng": "71.54472351074219",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Peterhof",
+			"country": "Russia",
+			"lat": "59.86666488647461",
+			"lng": "29.91666603088379",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Petropavlovsk",
+			"country": "Russia",
+			"lat": "53.016387939453125",
+			"lng": "158.64971923828125",
+			"tz": "Asia/Kamchatka"
+		},
+		{
+			"city": "Petropolis",
+			"country": "Brazil",
+			"lat": "-22.504722595214844",
+			"lng": "-43.182220458984375",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Philadelphia, PA",
+			"country": "United States",
+			"lat": "39.95166778564453",
+			"lng": "-75.16388702392578",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Philipsburg",
+			"country": "Sint Maarten",
+			"lat": "18.02916717529297",
+			"lng": "-63.04750061035156",
+			"tz": "America/Curacao"
+		},
+		{
+			"city": "Phnom Penh",
+			"country": "Cambodia",
+			"lat": "11.566666603088379",
+			"lng": "104.91666412353516",
+			"tz": "Asia/Phnom_Penh"
+		},
+		{
+			"city": "Phoenix, AZ",
+			"country": "United States",
+			"lat": "33.45000076293945",
+			"lng": "-112.06639099121094",
+			"tz": "America/Phoenix"
+		},
+		{
+			"city": "Phuket",
+			"country": "Thailand",
+			"lat": "7.883333206176758",
+			"lng": "98.38333129882812",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Pickering, ON",
+			"country": "Canada",
+			"lat": "43.83805465698242",
+			"lng": "-79.08361053466797",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Piedras Negras",
+			"country": "Mexico",
+			"lat": "28.697778701782227",
+			"lng": "-100.52471923828125",
+			"tz": "America/Matamoros"
+		},
+		{
+			"city": "Pierre, SD",
+			"country": "United States",
+			"lat": "44.377498626708984",
+			"lng": "-100.31777954101562",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Piestany",
+			"country": "Slovakia",
+			"lat": "48.599998474121094",
+			"lng": "17.816667556762695",
+			"tz": "Europe/Bratislava"
+		},
+		{
+			"city": "Pirot",
+			"country": "Serbia",
+			"lat": "43.16638946533203",
+			"lng": "22.601388931274414",
+			"tz": "Europe/Belgrade"
+		},
+		{
+			"city": "Pisa",
+			"country": "Italy",
+			"lat": "43.71611022949219",
+			"lng": "10.396666526794434",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Pittsburgh, PA",
+			"country": "United States",
+			"lat": "40.438331604003906",
+			"lng": "-80.00194549560547",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Piura",
+			"country": "Peru",
+			"lat": "-5.193611145019531",
+			"lng": "-80.62472534179688",
+			"tz": "America/Lima"
+		},
+		{
+			"city": "Playa del Carmen",
+			"country": "Mexico",
+			"lat": "20.628610610961914",
+			"lng": "-87.07971954345703",
+			"tz": "America/Cancun"
+		},
+		{
+			"city": "Plymouth",
+			"country": "United Kingdom",
+			"lat": "50.400001525878906",
+			"lng": "-4.166666507720947",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Podgorica",
+			"country": "Montenegro",
+			"lat": "42.442501068115234",
+			"lng": "19.268611907958984",
+			"tz": "Europe/Podgorica"
+		},
+		{
+			"city": "Point Pleasant Beach, NJ",
+			"country": "United States",
+			"lat": "40.09166717529297",
+			"lng": "-74.04972076416016",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Polonnaruwa",
+			"country": "Sri Lanka",
+			"lat": "7.9327778816223145",
+			"lng": "81.008056640625",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Pomalaa",
+			"country": "Indonesia",
+			"lat": "-4.053333282470703",
+			"lng": "121.59583282470703",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Ponta Delgada",
+			"country": "Portugal",
+			"lat": "37.75",
+			"lng": "-25.66666603088379",
+			"tz": "Atlantic/Azores"
+		},
+		{
+			"city": "Poole",
+			"country": "United Kingdom",
+			"lat": "50.71500015258789",
+			"lng": "-1.9872221946716309"
+		},
+		{
+			"city": "Porbandar",
+			"country": "India",
+			"lat": "21.643333435058594",
+			"lng": "69.61194610595703",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Porirua",
+			"country": "New Zealand",
+			"lat": "-41.1341667175293",
+			"lng": "174.8413848876953",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Port Angeles, WA",
+			"country": "United States",
+			"lat": "48.1158332824707",
+			"lng": "-123.46083068847656",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Port Arthur",
+			"country": "Australia",
+			"lat": "-43.150001525878906",
+			"lng": "147.85000610351562"
+		},
+		{
+			"city": "Port Elizabeth",
+			"country": "South Africa",
+			"lat": "-33.96666717529297",
+			"lng": "25.58333396911621",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Port Harcourt",
+			"country": "Nigeria",
+			"lat": "4.7166666984558105",
+			"lng": "7.0",
+			"tz": "Africa/Lagos"
+		},
+		{
+			"city": "Port Hedland",
+			"country": "Australia",
+			"lat": "-20.316667556762695",
+			"lng": "118.5999984741211",
+			"tz": "Australia/Perth"
+		},
+		{
+			"city": "Port Louis",
+			"country": "Mauritius",
+			"lat": "-20.161945343017578",
+			"lng": "57.4988899230957",
+			"tz": "Indian/Mauritius"
+		},
+		{
+			"city": "Port Moresby",
+			"country": "Papua New Guinea",
+			"lat": "-9.464706420898438",
+			"lng": "147.1925048828125",
+			"tz": "Pacific/Port_Moresby"
+		},
+		{
+			"city": "Port Orange, FL",
+			"country": "United States",
+			"lat": "29.133333206176758",
+			"lng": "-81.0",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Port Vila",
+			"country": "Vanuatu",
+			"lat": "-17.733333587646484",
+			"lng": "168.31666564941406",
+			"tz": "Pacific/Efate"
+		},
+		{
+			"city": "Port of Spain",
+			"country": "Trinidad and Tobago",
+			"lat": "10.666666984558105",
+			"lng": "-61.5",
+			"tz": "America/Port_of_Spain"
+		},
+		{
+			"city": "Port-au-Prince",
+			"country": "Haiti",
+			"lat": "18.533056259155273",
+			"lng": "-72.33333587646484",
+			"tz": "America/Port-au-Prince"
+		},
+		{
+			"city": "Portland, OR",
+			"country": "United States",
+			"lat": "45.52333450317383",
+			"lng": "-122.66999816894531",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Porto",
+			"country": "Portugal",
+			"lat": "41.16666793823242",
+			"lng": "-8.583333015441895",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Porto Alegre",
+			"country": "Brazil",
+			"lat": "-30.03333282470703",
+			"lng": "-51.20000076293945",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Porto Novo",
+			"country": "Benin",
+			"lat": "6.483333110809326",
+			"lng": "2.633333444595337",
+			"tz": "Africa/Porto-Novo"
+		},
+		{
+			"city": "Portsmouth",
+			"country": "United Kingdom",
+			"lat": "50.81666564941406",
+			"lng": "-1.0833333730697632",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Posadas",
+			"country": "Argentina",
+			"lat": "-27.399723052978516",
+			"lng": "-55.900001525878906",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Prague",
+			"country": "Czech Republic",
+			"lat": "50.08333206176758",
+			"lng": "14.433333396911621",
+			"tz": "Europe/Prague"
+		},
+		{
+			"city": "Praia",
+			"country": "Cape Verde",
+			"lat": "14.916666984558105",
+			"lng": "-23.516666412353516",
+			"tz": "Atlantic/Cape_Verde"
+		},
+		{
+			"city": "Prievidza",
+			"country": "Slovakia",
+			"lat": "48.77083206176758",
+			"lng": "18.620832443237305",
+			"tz": "Europe/Bratislava"
+		},
+		{
+			"city": "Prince George, BC",
+			"country": "Canada",
+			"lat": "53.91722106933594",
+			"lng": "-122.74972534179688",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Princeton, NJ",
+			"country": "United States",
+			"lat": "40.34972381591797",
+			"lng": "-74.65972137451172",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Pristina",
+			"country": "Kosovo",
+			"lat": "42.67416763305664",
+			"lng": "21.17888832092285",
+			"tz": "Europe/Belgrade"
+		},
+		{
+			"city": "Progreso",
+			"country": "Mexico",
+			"lat": "21.280000686645508",
+			"lng": "-89.66999816894531",
+			"tz": "America/Merida"
+		},
+		{
+			"city": "Pskov",
+			"country": "Russia",
+			"lat": "57.81666564941406",
+			"lng": "28.350000381469727",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Puebla",
+			"country": "Mexico",
+			"lat": "19.049999237060547",
+			"lng": "-98.16666412353516",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Puerto Ayora",
+			"country": "Ecuador",
+			"lat": "-0.7452777624130249",
+			"lng": "-90.31361389160156",
+			"tz": "Pacific/Galapagos"
+		},
+		{
+			"city": "Puerto Baquerizo Moreno",
+			"country": "Ecuador",
+			"lat": "-0.9013888835906982",
+			"lng": "-89.61055755615234",
+			"tz": "Pacific/Galapagos"
+		},
+		{
+			"city": "Puerto Penasco",
+			"country": "Mexico",
+			"lat": "31.318056106567383",
+			"lng": "-113.53666687011719",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "Puerto Plata",
+			"country": "Dominican Republic",
+			"lat": "19.796667098999023",
+			"lng": "-70.69249725341797",
+			"tz": "America/Santo_Domingo"
+		},
+		{
+			"city": "Puerto Vallarta",
+			"country": "Mexico",
+			"lat": "20.650833129882812",
+			"lng": "-105.21527862548828",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Pune",
+			"country": "India",
+			"lat": "18.53333282470703",
+			"lng": "73.86666870117188",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Puri",
+			"country": "India",
+			"lat": "19.799165725708008",
+			"lng": "85.82499694824219",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Puttgarden",
+			"country": "Germany",
+			"lat": "54.49611282348633",
+			"lng": "11.212499618530273",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Pyongyang",
+			"country": "Korea, North",
+			"lat": "39.0",
+			"lng": "125.7830581665039",
+			"tz": "Asia/Pyongyang"
+		},
+		{
+			"city": "Qatif",
+			"country": "Saudi Arabia",
+			"lat": "26.66666603088379",
+			"lng": "49.962223052978516",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Qingdao",
+			"country": "China",
+			"lat": "36.08333206176758",
+			"lng": "120.33333587646484",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Quartzsite, AZ",
+			"country": "United States",
+			"lat": "33.66388702392578",
+			"lng": "-114.2300033569336",
+			"tz": "America/Phoenix"
+		},
+		{
+			"city": "Quebec City, QC",
+			"country": "Canada",
+			"lat": "46.8125",
+			"lng": "-71.2147216796875",
+			"tz": "America/Montreal"
+		},
+		{
+			"city": "Quetta",
+			"country": "Pakistan",
+			"lat": "30.209999084472656",
+			"lng": "67.02249908447266",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Quezaltenango",
+			"country": "Guatemala",
+			"lat": "14.833333015441895",
+			"lng": "-91.51667022705078",
+			"tz": "America/Guatemala"
+		},
+		{
+			"city": "Quito",
+			"country": "Ecuador",
+			"lat": "-0.216705322265625",
+			"lng": "-78.5",
+			"tz": "America/Guayaquil"
+		},
+		{
+			"city": "Rabat",
+			"country": "Morocco",
+			"lat": "34.03305435180664",
+			"lng": "-5.150000095367432",
+			"tz": "Africa/Casablanca"
+		},
+		{
+			"city": "Rahim Yar Khan",
+			"country": "Pakistan",
+			"lat": "28.41666603088379",
+			"lng": "70.29972076416016",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Rajahmundry",
+			"country": "India",
+			"lat": "17.010278701782227",
+			"lng": "81.78778076171875",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Raleigh, NC",
+			"country": "United States",
+			"lat": "35.77972412109375",
+			"lng": "-78.6433334350586",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Ramstein",
+			"country": "Germany",
+			"lat": "49.45000076293945",
+			"lng": "7.550000190734863",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Ranchi",
+			"country": "India",
+			"lat": "23.358612060546875",
+			"lng": "85.3338851928711",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Rangoon",
+			"country": "Burma",
+			"lat": "16.78333282470703",
+			"lng": "96.16666412353516",
+			"tz": "Asia/Rangoon"
+		},
+		{
+			"city": "Rapallo",
+			"country": "Italy",
+			"lat": "44.349998474121094",
+			"lng": "9.233888626098633",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Ras Al Khaimah",
+			"country": "United Arab Emirates",
+			"lat": "25.788610458374023",
+			"lng": "55.94444274902344",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Rawson",
+			"country": "Argentina",
+			"lat": "-43.29999923706055",
+			"lng": "-65.10028076171875",
+			"tz": "America/Argentina/Catamarca"
+		},
+		{
+			"city": "Reading",
+			"country": "United Kingdom",
+			"lat": "51.45500183105469",
+			"lng": "-0.9691666960716248",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Recife",
+			"country": "Brazil",
+			"lat": "-8.054166793823242",
+			"lng": "-34.875831604003906",
+			"tz": "America/Recife"
+		},
+		{
+			"city": "Red Deer, AB",
+			"country": "Canada",
+			"lat": "52.2680549621582",
+			"lng": "-113.81111145019531",
+			"tz": "America/Edmonton"
+		},
+		{
+			"city": "Redmond, WA",
+			"country": "United States",
+			"lat": "47.66666793823242",
+			"lng": "-122.11666870117188",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Regina, SK",
+			"country": "Canada",
+			"lat": "50.44722366333008",
+			"lng": "-104.61805725097656",
+			"tz": "America/Regina"
+		},
+		{
+			"city": "Reims",
+			"country": "France",
+			"lat": "49.233333587646484",
+			"lng": "4.0333333015441895",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Rennes",
+			"country": "France",
+			"lat": "48.11666488647461",
+			"lng": "-1.6833332777023315",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Reno, NV",
+			"country": "United States",
+			"lat": "39.530277252197266",
+			"lng": "-119.81444549560547",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Revelstoke, BC",
+			"country": "Canada",
+			"lat": "50.996944427490234",
+			"lng": "-118.1977767944336",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Reykjavik",
+			"country": "Iceland",
+			"lat": "64.1500015258789",
+			"lng": "-20.03333282470703",
+			"tz": "Atlantic/Reykjavik"
+		},
+		{
+			"city": "Reynosa",
+			"country": "Mexico",
+			"lat": "26.066667556762695",
+			"lng": "-98.2830581665039",
+			"tz": "America/Matamoros"
+		},
+		{
+			"city": "Rhodes",
+			"country": "Greece",
+			"lat": "36.43361282348633",
+			"lng": "28.219999313354492",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Richmond, IN",
+			"country": "United States",
+			"lat": "39.828887939453125",
+			"lng": "-84.89027404785156",
+			"tz": "America/Indiana/Indianapolis"
+		},
+		{
+			"city": "Richmond, VA",
+			"country": "United States",
+			"lat": "37.553611755371094",
+			"lng": "-77.46055603027344",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Riga",
+			"country": "Latvia",
+			"lat": "56.949989318847656",
+			"lng": "24.100000381469727",
+			"tz": "Europe/Riga"
+		},
+		{
+			"city": "Rio Branco",
+			"country": "Brazil",
+			"lat": "-9.973889350891113",
+			"lng": "-67.80750274658203",
+			"tz": "America/Rio_Branco"
+		},
+		{
+			"city": "Rio Cuarto",
+			"country": "Argentina",
+			"lat": "-33.128055572509766",
+			"lng": "-64.35472106933594",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Rio Gallegos",
+			"country": "Argentina",
+			"lat": "-51.616390228271484",
+			"lng": "-69.2330551147461",
+			"tz": "America/Argentina/Rio_Gallegos"
+		},
+		{
+			"city": "Rio Rancho, NM",
+			"country": "United States",
+			"lat": "35.286109924316406",
+			"lng": "-106.6705551147461",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Rio de Janeiro",
+			"country": "Brazil",
+			"lat": "-22.903610229492188",
+			"lng": "-43.20944595336914",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Rivera",
+			"country": "Uruguay",
+			"lat": "-30.899999618530273",
+			"lng": "-55.54999923706055",
+			"tz": "America/Montevideo"
+		},
+		{
+			"city": "Riverton, UT",
+			"country": "United States",
+			"lat": "40.522220611572266",
+			"lng": "-111.93888854980469",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Riyadh",
+			"country": "Saudi Arabia",
+			"lat": "24.633333206176758",
+			"lng": "46.71666717529297",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Road Town",
+			"country": "Virgin Islands, British",
+			"lat": "18.433332443237305",
+			"lng": "-64.61666870117188"
+		},
+		{
+			"city": "Rodby",
+			"country": "Denmark",
+			"lat": "54.69583511352539",
+			"lng": "11.38611125946045",
+			"tz": "Europe/Copenhagen"
+		},
+		{
+			"city": "Rome",
+			"country": "Italy",
+			"lat": "41.89999008178711",
+			"lng": "12.483333587646484",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Rosario",
+			"country": "Argentina",
+			"lat": "-32.93333435058594",
+			"lng": "-60.66666793823242",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Roseau",
+			"country": "Dominica",
+			"lat": "15.300000190734863",
+			"lng": "-61.38333511352539",
+			"tz": "America/Dominica"
+		},
+		{
+			"city": "Rostock",
+			"country": "Germany",
+			"lat": "54.099998474121094",
+			"lng": "12.083333015441895",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Rostov na Donu",
+			"country": "Russia",
+			"lat": "47.233333587646484",
+			"lng": "39.68333435058594",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Rotterdam",
+			"country": "Netherlands",
+			"lat": "51.91666793823242",
+			"lng": "4.483333110809326",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Rovaniemi",
+			"country": "Finland",
+			"lat": "66.4969482421875",
+			"lng": "25.724721908569336",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Russell Springs, KY",
+			"country": "United States",
+			"lat": "37.05611038208008",
+			"lng": "-85.07194519042969",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Ryazan",
+			"country": "Russia",
+			"lat": "54.599998474121094",
+			"lng": "39.70000076293945",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Rybinsk",
+			"country": "Russia",
+			"lat": "58.04999923706055",
+			"lng": "38.81666564941406",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Sacramento, CA",
+			"country": "United States",
+			"lat": "38.573612213134766",
+			"lng": "-121.48722076416016",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Saint George's",
+			"country": "Grenada",
+			"lat": "12.050000190734863",
+			"lng": "-61.75",
+			"tz": "America/Grenada"
+		},
+		{
+			"city": "Saint John, NB",
+			"country": "Canada",
+			"lat": "45.27305603027344",
+			"lng": "-66.0633316040039",
+			"tz": "America/Moncton"
+		},
+		{
+			"city": "Saint-Denis",
+			"country": "Reunion",
+			"lat": "-20.883333206176758",
+			"lng": "55.45000076293945",
+			"tz": "Indian/Reunion"
+		},
+		{
+			"city": "Saint-Pierre",
+			"country": "Saint Pierre and Miquelon",
+			"lat": "46.78305435180664",
+			"lng": "-56.18333435058594"
+		},
+		{
+			"city": "Saipan",
+			"country": "Northern Mariana Islands",
+			"lat": "15.183333396911621",
+			"lng": "145.75",
+			"tz": "Pacific/Saipan"
+		},
+		{
+			"city": "Salem, OR",
+			"country": "United States",
+			"lat": "44.93694305419922",
+			"lng": "-123.0272216796875",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Salt Lake City, UT",
+			"country": "United States",
+			"lat": "40.77166748046875",
+			"lng": "-111.88805389404297",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Salta",
+			"country": "Argentina",
+			"lat": "-24.789167404174805",
+			"lng": "-65.4080581665039",
+			"tz": "America/Argentina/Salta"
+		},
+		{
+			"city": "Salto",
+			"country": "Uruguay",
+			"lat": "-31.399999618530273",
+			"lng": "-57.96666717529297",
+			"tz": "America/Montevideo"
+		},
+		{
+			"city": "Salvador",
+			"country": "Brazil",
+			"lat": "-11.033333778381348",
+			"lng": "-37.516387939453125",
+			"tz": "America/Maceio"
+		},
+		{
+			"city": "Salzburg",
+			"country": "Austria",
+			"lat": "47.900001525878906",
+			"lng": "13.050000190734863",
+			"tz": "Europe/Vienna"
+		},
+		{
+			"city": "Samara",
+			"country": "Russia",
+			"lat": "53.13333511352539",
+			"lng": "50.09972381591797",
+			"tz": "Europe/Samara"
+		},
+		{
+			"city": "Samsun",
+			"country": "Turkey",
+			"lat": "41.29277801513672",
+			"lng": "36.331390380859375",
+			"tz": "Europe/Istanbul"
+		},
+		{
+			"city": "San Antonio, TX",
+			"country": "United States",
+			"lat": "29.424999237060547",
+			"lng": "-98.49361419677734",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "San Bruno, CA",
+			"country": "United States",
+			"lat": "37.627498626708984",
+			"lng": "-122.43138885498047",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Carlos",
+			"country": "Uruguay",
+			"lat": "-34.79999923706055",
+			"lng": "-54.91666793823242",
+			"tz": "America/Montevideo"
+		},
+		{
+			"city": "San Carlos",
+			"country": "Mexico",
+			"lat": "27.96388816833496",
+			"lng": "-111.04360961914062",
+			"tz": "America/Hermosillo"
+		},
+		{
+			"city": "San Diego, CA",
+			"country": "United States",
+			"lat": "32.71888732910156",
+			"lng": "-117.16388702392578",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Francisco, CA",
+			"country": "United States",
+			"lat": "37.78305435180664",
+			"lng": "-122.43333435058594",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Isidro",
+			"country": "Costa Rica",
+			"lat": "9.368888854980469",
+			"lng": "-83.70694732666016",
+			"tz": "America/Costa_Rica"
+		},
+		{
+			"city": "San Jose",
+			"country": "Costa Rica",
+			"lat": "9.933333396911621",
+			"lng": "-84.08333587646484",
+			"tz": "America/Costa_Rica"
+		},
+		{
+			"city": "San Jose, CA",
+			"country": "United States",
+			"lat": "37.33333206176758",
+			"lng": "-121.9000015258789",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Juan",
+			"country": "Puerto Rico",
+			"lat": "18.433332443237305",
+			"lng": "-66.13333129882812",
+			"tz": "America/Puerto_Rico"
+		},
+		{
+			"city": "San Juan",
+			"country": "Argentina",
+			"lat": "-31.53444480895996",
+			"lng": "-68.52694702148438",
+			"tz": "America/Argentina/San_Juan"
+		},
+		{
+			"city": "San Lorenzo",
+			"country": "Argentina",
+			"lat": "-32.75",
+			"lng": "-60.766387939453125",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "San Luis",
+			"country": "Argentina",
+			"lat": "-33.315834045410156",
+			"lng": "-66.34750366210938",
+			"tz": "America/Argentina/San_Luis"
+		},
+		{
+			"city": "San Luis Obispo, CA",
+			"country": "United States",
+			"lat": "35.28277587890625",
+			"lng": "-120.65860748291016",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Marino",
+			"country": "San Marino",
+			"lat": "43.95000076293945",
+			"lng": "12.449999809265137",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "San Mateo, CA",
+			"country": "United States",
+			"lat": "37.56666564941406",
+			"lng": "-122.33333587646484",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "San Pedro Sula",
+			"country": "Honduras",
+			"lat": "15.5",
+			"lng": "-88.0330581665039",
+			"tz": "America/Tegucigalpa"
+		},
+		{
+			"city": "San Salvador",
+			"country": "El Salvador",
+			"lat": "13.699999809265137",
+			"lng": "-89.19999694824219",
+			"tz": "America/El_Salvador"
+		},
+		{
+			"city": "San Sebastian",
+			"country": "Spain",
+			"lat": "43.31666564941406",
+			"lng": "-1.9833333492279053",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "San Sebastian del Oeste",
+			"country": "Mexico",
+			"lat": "20.761110305786133",
+			"lng": "-104.85277557373047",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Sanaa",
+			"country": "Yemen",
+			"lat": "15.350000381469727",
+			"lng": "44.20000076293945",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Santa Ana",
+			"country": "El Salvador",
+			"lat": "13.996110916137695",
+			"lng": "-89.55249786376953",
+			"tz": "America/El_Salvador"
+		},
+		{
+			"city": "Santa Clara",
+			"country": "Cuba",
+			"lat": "22.41638946533203",
+			"lng": "-79.96666717529297",
+			"tz": "America/Havana"
+		},
+		{
+			"city": "Santa Clara, CA",
+			"country": "United States",
+			"lat": "37.349998474121094",
+			"lng": "-121.94999694824219",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Santa Cruz",
+			"country": "Philippines",
+			"lat": "13.480555534362793",
+			"lng": "122.03250122070312",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Santa Cruz de Tenerife",
+			"country": "Spain",
+			"lat": "28.46666717529297",
+			"lng": "-16.25",
+			"tz": "Atlantic/Canary"
+		},
+		{
+			"city": "Santa Fe",
+			"country": "Argentina",
+			"lat": "-31.616666793823242",
+			"lng": "-60.70000076293945",
+			"tz": "America/Argentina/Cordoba"
+		},
+		{
+			"city": "Santa Fe, NM",
+			"country": "United States",
+			"lat": "35.68166732788086",
+			"lng": "-105.93805694580078",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Santa Rosa",
+			"country": "Honduras",
+			"lat": "14.766388893127441",
+			"lng": "-88.7830581665039",
+			"tz": "America/Tegucigalpa"
+		},
+		{
+			"city": "Santa Rosa",
+			"country": "Argentina",
+			"lat": "-36.627498626708984",
+			"lng": "-64.28778076171875",
+			"tz": "America/Argentina/Salta"
+		},
+		{
+			"city": "Santarem",
+			"country": "Brazil",
+			"lat": "-2.4405555725097656",
+			"lng": "-54.698612213134766",
+			"tz": "America/Santarem"
+		},
+		{
+			"city": "Santiago",
+			"country": "Chile",
+			"lat": "-33.44999694824219",
+			"lng": "-70.66670227050781",
+			"tz": "America/Santiago"
+		},
+		{
+			"city": "Santiago",
+			"country": "Mexico",
+			"lat": "25.427778244018555",
+			"lng": "-100.15083312988281",
+			"tz": "America/Monterrey"
+		},
+		{
+			"city": "Santiago de Cuba",
+			"country": "Cuba",
+			"lat": "20.016387939453125",
+			"lng": "-75.81639099121094",
+			"tz": "America/Havana"
+		},
+		{
+			"city": "Santiago de los Caballeros",
+			"country": "Dominican Republic",
+			"lat": "19.450000762939453",
+			"lng": "-70.69999694824219",
+			"tz": "America/Santo_Domingo"
+		},
+		{
+			"city": "Santo Domingo",
+			"country": "Dominican Republic",
+			"lat": "18.483333587646484",
+			"lng": "-69.91666412353516",
+			"tz": "America/Santo_Domingo"
+		},
+		{
+			"city": "Sanxiang",
+			"country": "China",
+			"lat": "22.350000381469727",
+			"lng": "113.41666412353516",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Sao Jose do Rio Preto",
+			"country": "Brazil",
+			"lat": "-20.808055877685547",
+			"lng": "-49.38083267211914",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Sao Paulo",
+			"country": "Brazil",
+			"lat": "-22.433332443237305",
+			"lng": "-45.36666488647461",
+			"tz": "America/Sao_Paulo"
+		},
+		{
+			"city": "Sao Tome",
+			"country": "Sao Tome and Principe",
+			"lat": "0.3333333432674408",
+			"lng": "6.733333110809326",
+			"tz": "Africa/Sao_Tome"
+		},
+		{
+			"city": "Sapporo",
+			"country": "Japan",
+			"lat": "43.05470275878906",
+			"lng": "141.35391235351562",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Sarajevo",
+			"country": "Bosnia and Herzegovina",
+			"lat": "43.86666488647461",
+			"lng": "18.41666603088379",
+			"tz": "Europe/Sarajevo"
+		},
+		{
+			"city": "Saransk",
+			"country": "Russia",
+			"lat": "54.18333435058594",
+			"lng": "45.16666793823242",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Saskatoon, SK",
+			"country": "Canada",
+			"lat": "52.12916564941406",
+			"lng": "-106.67028045654297",
+			"tz": "America/Regina"
+		},
+		{
+			"city": "Saxonburg, PA",
+			"country": "United States",
+			"lat": "40.75",
+			"lng": "-79.81666564941406",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Schaffhausen",
+			"country": "Switzerland",
+			"lat": "47.70000076293945",
+			"lng": "8.633333206176758",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"city": "Schluechtern",
+			"country": "Germany",
+			"lat": "50.34944534301758",
+			"lng": "9.525555610656738",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Seattle, WA",
+			"country": "United States",
+			"lat": "47.62083435058594",
+			"lng": "-122.34750366210938",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Secunderabad",
+			"country": "India",
+			"lat": "17.49916648864746",
+			"lng": "78.54194641113281",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Semarang",
+			"country": "Indonesia",
+			"lat": "-6.9666666984558105",
+			"lng": "110.43333435058594",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Sendai",
+			"country": "Japan",
+			"lat": "38.25",
+			"lng": "140.88333129882812",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Seoul",
+			"country": "Korea, South",
+			"lat": "37.54999923706055",
+			"lng": "126.96666717529297",
+			"tz": "Asia/Seoul"
+		},
+		{
+			"city": "Sergiev Posad",
+			"country": "Russia",
+			"lat": "56.31666564941406",
+			"lng": "38.133331298828125",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Sete",
+			"country": "France",
+			"lat": "43.401668548583984",
+			"lng": "3.696666717529297"
+		},
+		{
+			"city": "Sevastopol",
+			"country": "Russia",
+			"lat": "44.59972381591797",
+			"lng": "33.53305435180664",
+			"tz": "Europe/Simferopol"
+		},
+		{
+			"city": "Severodonetsk",
+			"country": "Ukraine",
+			"lat": "48.950279235839844",
+			"lng": "38.497501373291016",
+			"tz": "Europe/Kiev"
+		},
+		{
+			"city": "Sevilla",
+			"country": "Spain",
+			"lat": "37.38333511352539",
+			"lng": "-5.9666666984558105",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Shanghai",
+			"country": "China",
+			"lat": "31.233333587646484",
+			"lng": "121.44999694824219",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Shannon",
+			"country": "Ireland",
+			"lat": "52.70000076293945",
+			"lng": "-8.916666984558105",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Sharjah",
+			"country": "United Arab Emirates",
+			"lat": "25.371944427490234",
+			"lng": "55.41055679321289",
+			"tz": "Asia/Dubai"
+		},
+		{
+			"city": "Sharm El Sheikh",
+			"country": "Egypt",
+			"lat": "27.978055953979492",
+			"lng": "34.391666412353516",
+			"tz": "Africa/Cairo"
+		},
+		{
+			"city": "Sheffield",
+			"country": "United Kingdom",
+			"lat": "53.383056640625",
+			"lng": "-1.4647222757339478",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Shekou",
+			"country": "China",
+			"lat": "22.488611221313477",
+			"lng": "113.91805267333984",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Shenyang",
+			"country": "China",
+			"lat": "41.79999923706055",
+			"lng": "123.38333129882812",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Shenzhen",
+			"country": "China",
+			"lat": "22.549999237060547",
+			"lng": "114.11666870117188",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Shijiazhuang",
+			"country": "China",
+			"lat": "38.04999923706055",
+			"lng": "114.5",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Shikarpur",
+			"country": "Pakistan",
+			"lat": "27.961666107177734",
+			"lng": "68.64221954345703",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Shimla",
+			"country": "India",
+			"lat": "31.10361099243164",
+			"lng": "77.16444396972656",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Shiraz",
+			"country": "Iran",
+			"lat": "29.601943969726562",
+			"lng": "52.53138732910156",
+			"tz": "Asia/Tehran"
+		},
+		{
+			"city": "Sialkot",
+			"country": "Pakistan",
+			"lat": "32.516666412353516",
+			"lng": "74.5552749633789",
+			"tz": "Asia/Karachi"
+		},
+		{
+			"city": "Sibiu",
+			"country": "Romania",
+			"lat": "45.78333282470703",
+			"lng": "24.149999618530273",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Sidi Bou Said",
+			"country": "Tunisia",
+			"lat": "36.869998931884766",
+			"lng": "10.341388702392578",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Siem Reap",
+			"country": "Cambodia",
+			"lat": "13.358888626098633",
+			"lng": "103.86166381835938",
+			"tz": "Asia/Phnom_Penh"
+		},
+		{
+			"city": "Sigiriya",
+			"country": "Sri Lanka",
+			"lat": "7.95805549621582",
+			"lng": "80.72916412353516",
+			"tz": "Asia/Colombo"
+		},
+		{
+			"city": "Silang",
+			"country": "Philippines",
+			"lat": "14.230555534362793",
+			"lng": "120.9749984741211",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Simatai",
+			"country": "China",
+			"lat": "40.64555740356445",
+			"lng": "117.26249694824219",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Simferopol",
+			"country": "Russia",
+			"lat": "44.95000076293945",
+			"lng": "34.09972381591797",
+			"tz": "Europe/Simferopol"
+		},
+		{
+			"city": "Sines",
+			"country": "Portugal",
+			"lat": "37.95000076293945",
+			"lng": "-8.866666793823242"
+		},
+		{
+			"city": "Singapore",
+			"country": "Singapore",
+			"lat": "1.2999999523162842",
+			"lng": "103.8499984741211",
+			"tz": "Asia/Singapore"
+		},
+		{
+			"city": "Sittard",
+			"country": "Netherlands",
+			"lat": "51.0",
+			"lng": "5.866666793823242",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Sivakasi",
+			"country": "India",
+			"lat": "9.44861125946045",
+			"lng": "77.79805755615234",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Skopje",
+			"country": "Macedonia",
+			"lat": "42.0",
+			"lng": "21.433303833007812",
+			"tz": "Europe/Skopje"
+		},
+		{
+			"city": "Sligo",
+			"country": "Ireland",
+			"lat": "54.28333282470703",
+			"lng": "-8.466666221618652",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Sliven",
+			"country": "Bulgaria",
+			"lat": "42.690555572509766",
+			"lng": "26.33277702331543",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Sneek",
+			"country": "Netherlands",
+			"lat": "53.03388977050781",
+			"lng": "5.661110877990723",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Sochi",
+			"country": "Russia",
+			"lat": "43.56666564941406",
+			"lng": "39.75",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Sofia",
+			"country": "Bulgaria",
+			"lat": "42.68330383300781",
+			"lng": "23.316696166992188",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Solovki",
+			"country": "Russia",
+			"lat": "65.01666259765625",
+			"lng": "35.733333587646484",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Songkhla",
+			"country": "Thailand",
+			"lat": "7.197500228881836",
+			"lng": "100.5977783203125",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Sousse",
+			"country": "Tunisia",
+			"lat": "35.82555389404297",
+			"lng": "10.608333587646484",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "South Jordan, UT",
+			"country": "United States",
+			"lat": "40.56222152709961",
+			"lng": "-111.92972564697266",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "South Tarawa",
+			"country": "Kiribati",
+			"lat": "1.3166667222976685",
+			"lng": "172.96665954589844",
+			"tz": "Pacific/Tarawa"
+		},
+		{
+			"city": "Southampton",
+			"country": "United Kingdom",
+			"lat": "50.90972137451172",
+			"lng": "-1.4047222137451172",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Spijkenisse",
+			"country": "Netherlands",
+			"lat": "51.83333206176758",
+			"lng": "4.3333330154418945",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Spokane, WA",
+			"country": "United States",
+			"lat": "47.65361022949219",
+			"lng": "-117.41139221191406",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Spring Hill, FL",
+			"country": "United States",
+			"lat": "28.483055114746094",
+			"lng": "-82.53722381591797",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "St. Catharines, ON",
+			"country": "Canada",
+			"lat": "43.16666793823242",
+			"lng": "-79.25",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "St. John's",
+			"country": "Antigua and Barbuda",
+			"lat": "17.116666793823242",
+			"lng": "-61.83333206176758",
+			"tz": "America/Antigua"
+		},
+		{
+			"city": "St. John's, NL",
+			"country": "Canada",
+			"lat": "47.57666778564453",
+			"lng": "-52.70111083984375",
+			"tz": "America/St_Johns"
+		},
+		{
+			"city": "St. Louis, MO",
+			"country": "United States",
+			"lat": "38.63333511352539",
+			"lng": "-90.19999694824219",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "St. Paul, MN",
+			"country": "United States",
+			"lat": "44.94472122192383",
+			"lng": "-93.10277557373047",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "St. Petersburg",
+			"country": "Russia",
+			"lat": "59.89439392089844",
+			"lng": "30.264205932617188",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Stamford, CT",
+			"country": "United States",
+			"lat": "41.05527877807617",
+			"lng": "-73.53111267089844",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Stanley",
+			"country": "Falkland Islands",
+			"lat": "-51.70000076293945",
+			"lng": "-57.84972381591797",
+			"tz": "Atlantic/Stanley"
+		},
+		{
+			"city": "Stavanger",
+			"country": "Norway",
+			"lat": "58.96666717529297",
+			"lng": "5.733333110809326",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Stavropol",
+			"country": "Russia",
+			"lat": "45.06666564941406",
+			"lng": "41.96666717529297",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Steinkjer",
+			"country": "Norway",
+			"lat": "64.01667022705078",
+			"lng": "11.5",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Stenungsund",
+			"country": "Sweden",
+			"lat": "58.06666564941406",
+			"lng": "11.833333015441895",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Stockholm",
+			"country": "Sweden",
+			"lat": "59.33300018310547",
+			"lng": "18.049999237060547",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Strasbourg",
+			"country": "France",
+			"lat": "48.58305740356445",
+			"lng": "7.743888854980469",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Stuttgart",
+			"country": "Germany",
+			"lat": "48.78333282470703",
+			"lng": "9.183333396911621",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Suifenhe",
+			"country": "China",
+			"lat": "44.39555740356445",
+			"lng": "131.14027404785156",
+			"tz": "Asia/Harbin"
+		},
+		{
+			"city": "Sulaimaniya",
+			"country": "Iraq",
+			"lat": "35.561668395996094",
+			"lng": "45.440555572509766",
+			"tz": "Asia/Baghdad"
+		},
+		{
+			"city": "Sullana",
+			"country": "Peru",
+			"lat": "-4.891944408416748",
+			"lng": "-80.68416595458984",
+			"tz": "America/Lima"
+		},
+		{
+			"city": "Sundsvall",
+			"country": "Sweden",
+			"lat": "62.400001525878906",
+			"lng": "17.33333396911621",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Sunnyvale, CA",
+			"country": "United States",
+			"lat": "37.36888885498047",
+			"lng": "-122.0352783203125",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Surabaya",
+			"country": "Indonesia",
+			"lat": "-7.2833333015441895",
+			"lng": "112.73332977294922",
+			"tz": "Asia/Jakarta"
+		},
+		{
+			"city": "Surat",
+			"country": "India",
+			"lat": "21.19499969482422",
+			"lng": "72.81944274902344",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Surprise, AZ",
+			"country": "United States",
+			"lat": "33.63833236694336",
+			"lng": "-112.45500183105469",
+			"tz": "America/Phoenix"
+		},
+		{
+			"city": "Suva",
+			"country": "Fiji",
+			"lat": "-18.013334274291992",
+			"lng": "178.4166717529297",
+			"tz": "Pacific/Fiji"
+		},
+		{
+			"city": "Suzdal",
+			"country": "Russia",
+			"lat": "56.41666793823242",
+			"lng": "40.45000076293945",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Suzhou",
+			"country": "China",
+			"lat": "33.63333511352539",
+			"lng": "117.0",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Swansea",
+			"country": "United Kingdom",
+			"lat": "51.63333511352539",
+			"lng": "-3.950000047683716",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Swindon",
+			"country": "United Kingdom",
+			"lat": "51.5613899230957",
+			"lng": "-1.7658333778381348",
+			"tz": "Europe/London"
+		},
+		{
+			"city": "Sydney",
+			"country": "Australia",
+			"lat": "-33.86666488647461",
+			"lng": "151.21665954589844",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Sydney, NS",
+			"country": "Canada",
+			"lat": "46.150001525878906",
+			"lng": "-60.20000076293945"
+		},
+		{
+			"city": "Sylhet",
+			"country": "Bangladesh",
+			"lat": "24.897777557373047",
+			"lng": "91.87139129638672",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Syracuse, NY",
+			"country": "United States",
+			"lat": "43.04805374145508",
+			"lng": "-76.14778137207031",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Szombathely",
+			"country": "Hungary",
+			"lat": "47.23555374145508",
+			"lng": "16.621389389038086",
+			"tz": "Europe/Budapest"
+		},
+		{
+			"city": "Tacoma, WA",
+			"country": "United States",
+			"lat": "47.253055572509766",
+			"lng": "-122.44305419921875",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Tacuarembo",
+			"country": "Uruguay",
+			"lat": "-31.700000762939453",
+			"lng": "-55.983333587646484",
+			"tz": "America/Montevideo"
+		},
+		{
+			"city": "Taganrog",
+			"country": "Russia",
+			"lat": "47.21666717529297",
+			"lng": "38.91666793823242",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Taguig",
+			"country": "Philippines",
+			"lat": "14.521111488342285",
+			"lng": "121.06222534179688",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Taian",
+			"country": "China",
+			"lat": "36.18333435058594",
+			"lng": "117.13333129882812",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Taichung",
+			"country": "Taiwan",
+			"lat": "24.149999618530273",
+			"lng": "120.66666412353516",
+			"tz": "Asia/Taipei"
+		},
+		{
+			"city": "Taif",
+			"country": "Saudi Arabia",
+			"lat": "21.2772216796875",
+			"lng": "40.421112060546875",
+			"tz": "Asia/Riyadh"
+		},
+		{
+			"city": "Taiohae",
+			"country": "French Polynesia",
+			"lat": "-8.90666675567627",
+			"lng": "-140.10360717773438",
+			"tz": "Pacific/Marquesas"
+		},
+		{
+			"city": "Taipei",
+			"country": "Taiwan",
+			"lat": "25.049999237060547",
+			"lng": "121.52499389648438",
+			"tz": "Asia/Taipei"
+		},
+		{
+			"city": "Taiyuan",
+			"country": "China",
+			"lat": "37.8930549621582",
+			"lng": "112.55166625976562",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Taiz",
+			"country": "Yemen",
+			"lat": "13.569722175598145",
+			"lng": "44.01472091674805",
+			"tz": "Asia/Aden"
+		},
+		{
+			"city": "Takab",
+			"country": "Iran",
+			"lat": "36.400001525878906",
+			"lng": "47.106388092041016",
+			"tz": "Asia/Tehran"
+		},
+		{
+			"city": "Takrouna",
+			"country": "Tunisia",
+			"lat": "36.1511116027832",
+			"lng": "10.328611373901367",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Tallinn",
+			"country": "Estonia",
+			"lat": "59.41666793823242",
+			"lng": "24.75",
+			"tz": "Europe/Tallinn"
+		},
+		{
+			"city": "Tampa, FL",
+			"country": "United States",
+			"lat": "27.950000762939453",
+			"lng": "-82.46666717529297",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Tamuning",
+			"country": "Guam",
+			"lat": "13.483888626098633",
+			"lng": "144.77667236328125",
+			"tz": "Pacific/Guam"
+		},
+		{
+			"city": "Tangail",
+			"country": "Bangladesh",
+			"lat": "24.247499465942383",
+			"lng": "89.92111206054688",
+			"tz": "Asia/Dhaka"
+		},
+		{
+			"city": "Tanggu",
+			"country": "China",
+			"lat": "39.0",
+			"lng": "117.68333435058594",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Tangshan",
+			"country": "China",
+			"lat": "39.61666488647461",
+			"lng": "118.18333435058594",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Tanjay City",
+			"country": "Philippines",
+			"lat": "9.519721984863281",
+			"lng": "123.16055297851562",
+			"tz": "Asia/Manila"
+		},
+		{
+			"city": "Tashkent",
+			"country": "Uzbekistan",
+			"lat": "41.33333206176758",
+			"lng": "69.30000305175781",
+			"tz": "Asia/Tashkent"
+		},
+		{
+			"city": "Tbilisi",
+			"country": "Georgia",
+			"lat": "41.71666717529297",
+			"lng": "44.81666564941406",
+			"tz": "Asia/Tbilisi"
+		},
+		{
+			"city": "Tegucigalpa",
+			"country": "Honduras",
+			"lat": "14.100000381469727",
+			"lng": "-87.21666717529297",
+			"tz": "America/Tegucigalpa"
+		},
+		{
+			"city": "Tehran",
+			"country": "Iran",
+			"lat": "35.671905517578125",
+			"lng": "51.43333435058594",
+			"tz": "Asia/Tehran"
+		},
+		{
+			"city": "Tel Aviv",
+			"country": "Israel",
+			"lat": "32.04999923706055",
+			"lng": "34.766666412353516",
+			"tz": "Asia/Jerusalem"
+		},
+		{
+			"city": "Telluride, CO",
+			"country": "United States",
+			"lat": "37.9375",
+			"lng": "-107.81222534179688",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Tepic",
+			"country": "Mexico",
+			"lat": "21.503889083862305",
+			"lng": "-104.89444732666016",
+			"tz": "America/Mazatlan"
+		},
+		{
+			"city": "Thaton",
+			"country": "Burma",
+			"lat": "16.919721603393555",
+			"lng": "97.3677749633789",
+			"tz": "Asia/Rangoon"
+		},
+		{
+			"city": "The Hague",
+			"country": "Netherlands",
+			"lat": "52.133331298828125",
+			"lng": "4.5",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Thessaloniki",
+			"country": "Greece",
+			"lat": "40.625",
+			"lng": "22.95111083984375"
+		},
+		{
+			"city": "Thies",
+			"country": "Senegal",
+			"lat": "14.800000190734863",
+			"lng": "-16.91666603088379",
+			"tz": "Africa/Dakar"
+		},
+		{
+			"city": "Thimphu",
+			"country": "Bhutan",
+			"lat": "27.450000762939453",
+			"lng": "89.66666412353516",
+			"tz": "Asia/Thimphu"
+		},
+		{
+			"city": "Thiruvananthapuram",
+			"country": "India",
+			"lat": "8.5",
+			"lng": "76.94999694824219",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Tianjin",
+			"country": "China",
+			"lat": "39.13333511352539",
+			"lng": "117.18333435058594",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Tijuana",
+			"country": "Mexico",
+			"lat": "32.533294677734375",
+			"lng": "-117.0167007446289",
+			"tz": "America/Tijuana"
+		},
+		{
+			"city": "Timisoara",
+			"country": "Romania",
+			"lat": "45.75",
+			"lng": "21.233333587646484",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Tirana",
+			"country": "Albania",
+			"lat": "41.33333206176758",
+			"lng": "19.799999237060547",
+			"tz": "Europe/Tirane"
+		},
+		{
+			"city": "Tiraspol",
+			"country": "Moldova",
+			"lat": "46.85222244262695",
+			"lng": "29.63194465637207",
+			"tz": "Europe/Chisinau"
+		},
+		{
+			"city": "Tiruchirapalli",
+			"country": "India",
+			"lat": "10.800000190734863",
+			"lng": "78.69999694824219",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Tizimin",
+			"country": "Mexico",
+			"lat": "21.14583396911621",
+			"lng": "-88.1500015258789",
+			"tz": "America/Merida"
+		},
+		{
+			"city": "Toalmas",
+			"country": "Hungary",
+			"lat": "47.51250076293945",
+			"lng": "19.66777801513672",
+			"tz": "Europe/Budapest"
+		},
+		{
+			"city": "Tokyo",
+			"country": "Japan",
+			"lat": "35.650001525878906",
+			"lng": "139.73333740234375",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Toledo, OH",
+			"country": "United States",
+			"lat": "41.66666793823242",
+			"lng": "-83.55000305175781",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Toluca de Lerdo",
+			"country": "Mexico",
+			"lat": "19.292499542236328",
+			"lng": "-99.65694427490234",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Tomsk",
+			"country": "Russia",
+			"lat": "56.463890075683594",
+			"lng": "84.9625015258789",
+			"tz": "Asia/Novosibirsk"
+		},
+		{
+			"city": "Toowoomba",
+			"country": "Australia",
+			"lat": "-27.566667556762695",
+			"lng": "151.96665954589844",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Toronto, ON",
+			"country": "Canada",
+			"lat": "43.6702766418457",
+			"lng": "-79.38666534423828",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Torshavn",
+			"country": "Faroe Islands",
+			"lat": "62.016666412353516",
+			"lng": "-6.766666889190674",
+			"tz": "Atlantic/Faroe"
+		},
+		{
+			"city": "Toulon",
+			"country": "France",
+			"lat": "43.124168395996094",
+			"lng": "5.928055763244629",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Toulouse",
+			"country": "France",
+			"lat": "43.599998474121094",
+			"lng": "1.4500000476837158",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Tours",
+			"country": "France",
+			"lat": "47.38333511352539",
+			"lng": "0.699999988079071",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Townsville",
+			"country": "Australia",
+			"lat": "-19.28333282470703",
+			"lng": "146.8000030517578",
+			"tz": "Australia/Brisbane"
+		},
+		{
+			"city": "Tozeur",
+			"country": "Tunisia",
+			"lat": "33.91666793823242",
+			"lng": "8.133333206176758",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Trelleborg",
+			"country": "Sweden",
+			"lat": "55.36666488647461",
+			"lng": "13.166666984558105"
+		},
+		{
+			"city": "Trier",
+			"country": "Germany",
+			"lat": "49.75361251831055",
+			"lng": "6.646111011505127",
+			"tz": "Europe/Berlin"
+		},
+		{
+			"city": "Trieste",
+			"country": "Italy",
+			"lat": "45.65638732910156",
+			"lng": "13.778611183166504",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Tripoli",
+			"country": "Libya",
+			"lat": "32.88333511352539",
+			"lng": "13.183333396911621",
+			"tz": "Africa/Tripoli"
+		},
+		{
+			"city": "Tromso",
+			"country": "Norway",
+			"lat": "69.66139221191406",
+			"lng": "18.95027732849121",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Trondheim",
+			"country": "Norway",
+			"lat": "63.41666793823242",
+			"lng": "10.416666984558105",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Trujillo",
+			"country": "Peru",
+			"lat": "-8.112500190734863",
+			"lng": "-79.02999877929688",
+			"tz": "America/Lima"
+		},
+		{
+			"city": "Tshwane",
+			"country": "South Africa",
+			"lat": "-25.700000762939453",
+			"lng": "28.233333587646484",
+			"tz": "Africa/Johannesburg"
+		},
+		{
+			"city": "Tuapse",
+			"country": "Russia",
+			"lat": "44.099998474121094",
+			"lng": "39.06666564941406",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Tucson, AZ",
+			"country": "United States",
+			"lat": "32.21666717529297",
+			"lng": "-110.93333435058594",
+			"tz": "America/Phoenix"
+		},
+		{
+			"city": "Tucuman",
+			"country": "Argentina",
+			"lat": "-26.808332443237305",
+			"lng": "-65.21749877929688",
+			"tz": "America/Argentina/Tucuman"
+		},
+		{
+			"city": "Tula",
+			"country": "Russia",
+			"lat": "54.21666717529297",
+			"lng": "37.599998474121094",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Tulcea",
+			"country": "Romania",
+			"lat": "45.18333435058594",
+			"lng": "28.799999237060547",
+			"tz": "Europe/Bucharest"
+		},
+		{
+			"city": "Tulsa, OK",
+			"country": "United States",
+			"lat": "36.099998474121094",
+			"lng": "-95.91666412353516",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Tunis",
+			"country": "Tunisia",
+			"lat": "36.81638717651367",
+			"lng": "10.166666984558105",
+			"tz": "Africa/Tunis"
+		},
+		{
+			"city": "Turin",
+			"country": "Italy",
+			"lat": "45.06666564941406",
+			"lng": "7.666666507720947",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Turku",
+			"country": "Finland",
+			"lat": "60.45000076293945",
+			"lng": "22.266666412353516",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Tuticorin",
+			"country": "India",
+			"lat": "8.816666603088379",
+			"lng": "78.13333129882812",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Tuzla",
+			"country": "Bosnia and Herzegovina",
+			"lat": "44.53277587890625",
+			"lng": "18.670278549194336",
+			"tz": "Europe/Sarajevo"
+		},
+		{
+			"city": "Tver'",
+			"country": "Russia",
+			"lat": "56.86666488647461",
+			"lng": "35.91666793823242",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Ubon Ratchathani",
+			"country": "Thailand",
+			"lat": "15.229722023010254",
+			"lng": "104.85610961914062",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Ubud",
+			"country": "Indonesia",
+			"lat": "-8.4975004196167",
+			"lng": "115.26583099365234",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Udon Thani",
+			"country": "Thailand",
+			"lat": "17.406665802001953",
+			"lng": "102.79000091552734",
+			"tz": "Asia/Bangkok"
+		},
+		{
+			"city": "Ufa",
+			"country": "Russia",
+			"lat": "54.83333206176758",
+			"lng": "56.099998474121094",
+			"tz": "Asia/Yekaterinburg"
+		},
+		{
+			"city": "Ulaanbaatar",
+			"country": "Mongolia",
+			"lat": "47.91666793823242",
+			"lng": "106.88333129882812",
+			"tz": "Asia/Ulaanbaatar"
+		},
+		{
+			"city": "Ulan-Ude",
+			"country": "Russia",
+			"lat": "51.84583282470703",
+			"lng": "107.5647201538086",
+			"tz": "Asia/Irkutsk"
+		},
+		{
+			"city": "Ulyanovsk",
+			"country": "Russia",
+			"lat": "54.31666564941406",
+			"lng": "48.36666488647461",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Upper Hutt",
+			"country": "New Zealand",
+			"lat": "-41.13944625854492",
+			"lng": "175.0316619873047",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Uppsala",
+			"country": "Sweden",
+			"lat": "59.849998474121094",
+			"lng": "17.649999618530273",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Urumqi",
+			"country": "China",
+			"lat": "43.79999923706055",
+			"lng": "87.58333587646484",
+			"tz": "Asia/Urumqi"
+		},
+		{
+			"city": "Ushuaia",
+			"country": "Argentina",
+			"lat": "-54.78305435180664",
+			"lng": "-68.31639099121094",
+			"tz": "America/Argentina/Ushuaia"
+		},
+		{
+			"city": "Utrecht",
+			"country": "Netherlands",
+			"lat": "52.09138870239258",
+			"lng": "5.122777938842773",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Uzhhorod",
+			"country": "Ukraine",
+			"lat": "48.624168395996094",
+			"lng": "22.293888092041016",
+			"tz": "Europe/Uzhgorod"
+		},
+		{
+			"city": "Vaasa",
+			"country": "Finland",
+			"lat": "63.099998474121094",
+			"lng": "21.616666793823242",
+			"tz": "Europe/Helsinki"
+		},
+		{
+			"city": "Vadodara",
+			"country": "India",
+			"lat": "22.30638885498047",
+			"lng": "73.1875",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Vaduz",
+			"country": "Liechtenstein",
+			"lat": "47.150001525878906",
+			"lng": "9.533333778381348",
+			"tz": "Europe/Vaduz"
+		},
+		{
+			"city": "Valaam",
+			"country": "Russia",
+			"lat": "61.38888931274414",
+			"lng": "30.947500228881836",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Valdivia",
+			"country": "Chile",
+			"lat": "-39.82416534423828",
+			"lng": "-73.21333312988281",
+			"tz": "America/Santiago"
+		},
+		{
+			"city": "Valencia",
+			"country": "Spain",
+			"lat": "39.46666717529297",
+			"lng": "-0.36666667461395264",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Valladolid",
+			"country": "Spain",
+			"lat": "41.648887634277344",
+			"lng": "-4.726110935211182",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Vallauris",
+			"country": "France",
+			"lat": "43.579444885253906",
+			"lng": "7.053055763244629",
+			"tz": "Europe/Paris"
+		},
+		{
+			"city": "Valletta",
+			"country": "Malta",
+			"lat": "35.900001525878906",
+			"lng": "14.516666412353516",
+			"tz": "Europe/Malta"
+		},
+		{
+			"city": "Valparaiso",
+			"country": "Chile",
+			"lat": "-33.045555114746094",
+			"lng": "-71.62027740478516",
+			"tz": "America/Santiago"
+		},
+		{
+			"city": "Vancouver, BC",
+			"country": "Canada",
+			"lat": "49.26361083984375",
+			"lng": "-123.13861083984375",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Vardo",
+			"country": "Norway",
+			"lat": "70.38333129882812",
+			"lng": "31.08333396911621",
+			"tz": "Europe/Oslo"
+		},
+		{
+			"city": "Varna",
+			"country": "Bulgaria",
+			"lat": "43.21666717529297",
+			"lng": "27.911945343017578",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Vatican City",
+			"country": "Holy See (Vatican City)",
+			"lat": "41.900001525878906",
+			"lng": "12.449999809265137",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Velikiye Luki",
+			"country": "Russia",
+			"lat": "56.33333206176758",
+			"lng": "30.53333282470703",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Venice",
+			"country": "Italy",
+			"lat": "45.43333435058594",
+			"lng": "12.333333015441895",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Veracruz",
+			"country": "Mexico",
+			"lat": "19.17277717590332",
+			"lng": "-96.13333129882812",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Verona",
+			"country": "Italy",
+			"lat": "45.43333435058594",
+			"lng": "10.983333587646484",
+			"tz": "Europe/Rome"
+		},
+		{
+			"city": "Vevey",
+			"country": "Switzerland",
+			"lat": "46.463890075683594",
+			"lng": "6.840277671813965",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"city": "Viana do Castello",
+			"country": "Portugal",
+			"lat": "41.70000076293945",
+			"lng": "-8.816666603088379",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Victoria",
+			"country": "Seychelles",
+			"lat": "-4.616666793823242",
+			"lng": "55.45000076293945",
+			"tz": "Indian/Mahe"
+		},
+		{
+			"city": "Victoria",
+			"country": "Malta",
+			"lat": "36.045555114746094",
+			"lng": "14.243611335754395",
+			"tz": "Europe/Malta"
+		},
+		{
+			"city": "Victoria, BC",
+			"country": "Canada",
+			"lat": "48.4275016784668",
+			"lng": "-123.36722564697266",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Vidin",
+			"country": "Bulgaria",
+			"lat": "43.99702453613281",
+			"lng": "22.882619857788086",
+			"tz": "Europe/Sofia"
+		},
+		{
+			"city": "Viedma",
+			"country": "Argentina",
+			"lat": "-40.8136100769043",
+			"lng": "-62.99416732788086",
+			"tz": "America/Argentina/Buenos_Aires"
+		},
+		{
+			"city": "Vienna",
+			"country": "Austria",
+			"lat": "48.21666717529297",
+			"lng": "16.33333396911621",
+			"tz": "Europe/Vienna"
+		},
+		{
+			"city": "Vienna, VA",
+			"country": "United States",
+			"lat": "38.9011116027832",
+			"lng": "-77.26527404785156",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Vientiane",
+			"country": "Laos",
+			"lat": "17.96666717529297",
+			"lng": "102.61666870117188",
+			"tz": "Asia/Vientiane"
+		},
+		{
+			"city": "Vila Real",
+			"country": "Portugal",
+			"lat": "41.29999923706055",
+			"lng": "-7.733333110809326",
+			"tz": "Europe/Lisbon"
+		},
+		{
+			"city": "Vilnius",
+			"country": "Lithuania",
+			"lat": "54.68330383300781",
+			"lng": "25.316696166992188",
+			"tz": "Europe/Vilnius"
+		},
+		{
+			"city": "Vina del Mar",
+			"country": "Chile",
+			"lat": "-33.024444580078125",
+			"lng": "-71.5522232055664",
+			"tz": "America/Santiago"
+		},
+		{
+			"city": "Visby",
+			"country": "Sweden",
+			"lat": "57.64083480834961",
+			"lng": "18.296112060546875",
+			"tz": "Europe/Stockholm"
+		},
+		{
+			"city": "Vishakhapatnam",
+			"country": "India",
+			"lat": "17.733333587646484",
+			"lng": "83.30000305175781",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Vitoria",
+			"country": "Spain",
+			"lat": "42.849998474121094",
+			"lng": "-2.6666667461395264",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Vizianagaram",
+			"country": "India",
+			"lat": "18.113889694213867",
+			"lng": "83.4094467163086",
+			"tz": "Asia/Kolkata"
+		},
+		{
+			"city": "Vladimir",
+			"country": "Russia",
+			"lat": "56.150001525878906",
+			"lng": "40.36666488647461",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Vladivostok",
+			"country": "Russia",
+			"lat": "43.133056640625",
+			"lng": "131.89971923828125",
+			"tz": "Asia/Vladivostok"
+		},
+		{
+			"city": "Volgograd",
+			"country": "Russia",
+			"lat": "48.80470275878906",
+			"lng": "44.58580017089844",
+			"tz": "Europe/Volgograd"
+		},
+		{
+			"city": "Vologda",
+			"country": "Russia",
+			"lat": "59.21666717529297",
+			"lng": "39.86666488647461",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Volokolamsk",
+			"country": "Russia",
+			"lat": "56.06666564941406",
+			"lng": "35.93333435058594",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Voronezh",
+			"country": "Russia",
+			"lat": "51.71666717529297",
+			"lng": "39.266666412353516",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Votkinsk",
+			"country": "Russia",
+			"lat": "57.057498931884766",
+			"lng": "53.994998931884766",
+			"tz": "Europe/Samara"
+		},
+		{
+			"city": "Waikanae",
+			"country": "New Zealand",
+			"lat": "-40.87527847290039",
+			"lng": "175.0641632080078",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "Waikoloa, HI",
+			"country": "United States",
+			"lat": "19.93722152709961",
+			"lng": "-155.79110717773438",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Wailua, HI",
+			"country": "United States",
+			"lat": "22.052221298217773",
+			"lng": "-159.33778381347656",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Waimea, HI",
+			"country": "United States",
+			"lat": "21.95861053466797",
+			"lng": "-159.67083740234375",
+			"tz": "Pacific/Honolulu"
+		},
+		{
+			"city": "Waingapu",
+			"country": "Indonesia",
+			"lat": "-9.6627779006958",
+			"lng": "120.2669448852539",
+			"tz": "Asia/Makassar"
+		},
+		{
+			"city": "Wakkana",
+			"country": "Japan",
+			"lat": "45.401668548583984",
+			"lng": "141.6827850341797",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Warrnambool",
+			"country": "Australia",
+			"lat": "-38.38333511352539",
+			"lng": "142.48333740234375",
+			"tz": "Australia/Melbourne"
+		},
+		{
+			"city": "Warsaw",
+			"country": "Poland",
+			"lat": "52.25",
+			"lng": "21.0",
+			"tz": "Europe/Warsaw"
+		},
+		{
+			"city": "Washington, DC",
+			"country": "United States",
+			"lat": "38.88333511352539",
+			"lng": "-77.03333282470703",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Waterford",
+			"country": "Ireland",
+			"lat": "52.25",
+			"lng": "-7.133333206176758",
+			"tz": "Europe/Dublin"
+		},
+		{
+			"city": "Waterloo, ON",
+			"country": "Canada",
+			"lat": "43.53333282470703",
+			"lng": "-80.53333282470703",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Wellington",
+			"country": "New Zealand",
+			"lat": "-41.28333282470703",
+			"lng": "174.78329467773438",
+			"tz": "Pacific/Auckland"
+		},
+		{
+			"city": "West Wendover, NV",
+			"country": "United States",
+			"lat": "40.739166259765625",
+			"lng": "-114.07333374023438",
+			"tz": "America/Los_Angeles"
+		},
+		{
+			"city": "Westford, MA",
+			"country": "United States",
+			"lat": "42.579166412353516",
+			"lng": "-71.4383316040039",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Whistler, BC",
+			"country": "Canada",
+			"lat": "50.11666488647461",
+			"lng": "-122.96666717529297",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "White Rock, BC",
+			"country": "Canada",
+			"lat": "49.023887634277344",
+			"lng": "-122.80110931396484",
+			"tz": "America/Vancouver"
+		},
+		{
+			"city": "Whitehorse, YT",
+			"country": "Canada",
+			"lat": "60.719722747802734",
+			"lng": "-135.05194091796875",
+			"tz": "America/Whitehorse"
+		},
+		{
+			"city": "Wichita, KS",
+			"country": "United States",
+			"lat": "37.70000076293945",
+			"lng": "-97.33333587646484",
+			"tz": "America/Chicago"
+		},
+		{
+			"city": "Willemstad",
+			"country": "Curacao",
+			"lat": "12.100000381469727",
+			"lng": "-68.93333435058594",
+			"tz": "America/Curacao"
+		},
+		{
+			"city": "Windhoek",
+			"country": "Namibia",
+			"lat": "-22.566667556762695",
+			"lng": "17.08333396911621",
+			"tz": "Africa/Windhoek"
+		},
+		{
+			"city": "Window Rock, AZ",
+			"country": "United States",
+			"lat": "35.67277908325195",
+			"lng": "-109.06222534179688",
+			"tz": "America/Denver"
+		},
+		{
+			"city": "Windsor, ON",
+			"country": "Canada",
+			"lat": "42.29277801513672",
+			"lng": "-82.99361419677734",
+			"tz": "America/Toronto"
+		},
+		{
+			"city": "Winnipeg, MB",
+			"country": "Canada",
+			"lat": "49.89555740356445",
+			"lng": "-97.13833618164062",
+			"tz": "America/Winnipeg"
+		},
+		{
+			"city": "Winston-Salem, NC",
+			"country": "United States",
+			"lat": "36.094722747802734",
+			"lng": "-80.24333190917969",
+			"tz": "America/New_York"
+		},
+		{
+			"city": "Wodonga",
+			"country": "Australia",
+			"lat": "-36.03333282470703",
+			"lng": "146.56666564941406",
+			"tz": "Australia/Melbourne"
+		},
+		{
+			"city": "Wollongong",
+			"country": "Australia",
+			"lat": "-34.41666793823242",
+			"lng": "150.86666870117188",
+			"tz": "Australia/Sydney"
+		},
+		{
+			"city": "Wuhan",
+			"country": "China",
+			"lat": "30.594722747802734",
+			"lng": "114.3022232055664",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Xiamen",
+			"country": "China",
+			"lat": "24.47972297668457",
+			"lng": "118.08944702148438"
+		},
+		{
+			"city": "Xian",
+			"country": "China",
+			"lat": "34.266666412353516",
+			"lng": "108.88333129882812",
+			"tz": "Asia/Chongqing"
+		},
+		{
+			"city": "Yakutsk",
+			"country": "Russia",
+			"lat": "62.033905029296875",
+			"lng": "129.73309326171875",
+			"tz": "Asia/Yakutsk"
+		},
+		{
+			"city": "Yalta",
+			"country": "Russia",
+			"lat": "44.5",
+			"lng": "34.16666793823242",
+			"tz": "Europe/Simferopol"
+		},
+		{
+			"city": "Yamoussoukro",
+			"country": "Cote d'Ivoire",
+			"lat": "6.816666603088379",
+			"lng": "-5.2833333015441895",
+			"tz": "Africa/Abidjan"
+		},
+		{
+			"city": "Yantai",
+			"country": "China",
+			"lat": "37.54999923706055",
+			"lng": "121.36666870117188",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Yaounde",
+			"country": "Cameroon",
+			"lat": "3.866666555404663",
+			"lng": "11.516666412353516",
+			"tz": "Africa/Douala"
+		},
+		{
+			"city": "Yaroslavl",
+			"country": "Russia",
+			"lat": "57.599998474121094",
+			"lng": "39.849998474121094",
+			"tz": "Europe/Moscow"
+		},
+		{
+			"city": "Yasok",
+			"country": "Nepal",
+			"lat": "27.06833267211914",
+			"lng": "87.64778137207031",
+			"tz": "Asia/Kathmandu"
+		},
+		{
+			"city": "Yawnghwe",
+			"country": "Burma",
+			"lat": "20.65416717529297",
+			"lng": "96.9344482421875",
+			"tz": "Asia/Rangoon"
+		},
+		{
+			"city": "Yazd",
+			"country": "Iran",
+			"lat": "31.89666748046875",
+			"lng": "54.36055374145508",
+			"tz": "Asia/Tehran"
+		},
+		{
+			"city": "Yellowknife, NT",
+			"country": "Canada",
+			"lat": "62.45527648925781",
+			"lng": "-114.3691635131836",
+			"tz": "America/Yellowknife"
+		},
+		{
+			"city": "Yerevan",
+			"country": "Armenia",
+			"lat": "40.18110656738281",
+			"lng": "44.5",
+			"tz": "Asia/Yerevan"
+		},
+		{
+			"city": "Yevpatoriya",
+			"country": "Russia",
+			"lat": "45.21666717529297",
+			"lng": "33.38333511352539",
+			"tz": "Europe/Simferopol"
+		},
+		{
+			"city": "Yigo",
+			"country": "Guam",
+			"lat": "13.533333778381348",
+			"lng": "144.89999389648438",
+			"tz": "Pacific/Guam"
+		},
+		{
+			"city": "Yokohama",
+			"country": "Japan",
+			"lat": "35.43333435058594",
+			"lng": "139.64999389648438",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Yokosuka",
+			"country": "Japan",
+			"lat": "35.25",
+			"lng": "139.6666717529297",
+			"tz": "Asia/Tokyo"
+		},
+		{
+			"city": "Yuzhno-Sakhalinsk",
+			"country": "Russia",
+			"lat": "46.95000076293945",
+			"lng": "142.73333740234375",
+			"tz": "Asia/Sakhalin"
+		},
+		{
+			"city": "Zaandam",
+			"country": "Netherlands",
+			"lat": "52.4386100769043",
+			"lng": "4.825555324554443",
+			"tz": "Europe/Amsterdam"
+		},
+		{
+			"city": "Zagreb",
+			"country": "Croatia",
+			"lat": "45.79999923706055",
+			"lng": "15.966666221618652",
+			"tz": "Europe/Zagreb"
+		},
+		{
+			"city": "Zakynthos",
+			"country": "Greece",
+			"lat": "37.78333282470703",
+			"lng": "20.89666748046875",
+			"tz": "Europe/Athens"
+		},
+		{
+			"city": "Zaporozhye",
+			"country": "Ukraine",
+			"lat": "47.84972381591797",
+			"lng": "35.150001525878906",
+			"tz": "Europe/Zaporozhye"
+		},
+		{
+			"city": "Zaragoza",
+			"country": "Spain",
+			"lat": "41.650001525878906",
+			"lng": "-0.8833333253860474",
+			"tz": "Europe/Madrid"
+		},
+		{
+			"city": "Zaysan",
+			"country": "Kazakhstan",
+			"lat": "47.4647216796875",
+			"lng": "84.87055206298828",
+			"tz": "Asia/Almaty"
+		},
+		{
+			"city": "Zhengzhou",
+			"country": "China",
+			"lat": "34.75",
+			"lng": "113.66666412353516",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Zhongshan",
+			"country": "China",
+			"lat": "22.516666412353516",
+			"lng": "113.39277648925781",
+			"tz": "Asia/Shanghai"
+		},
+		{
+			"city": "Zihuatanejo",
+			"country": "Mexico",
+			"lat": "17.64444351196289",
+			"lng": "-101.55110931396484",
+			"tz": "America/Mexico_City"
+		},
+		{
+			"city": "Zupanja",
+			"country": "Croatia",
+			"lat": "45.06916809082031",
+			"lng": "18.697221755981445",
+			"tz": "Europe/Zagreb"
+		},
+		{
+			"city": "Zurich",
+			"country": "Switzerland",
+			"lat": "47.36666488647461",
+			"lng": "8.550000190734863",
+			"tz": "Europe/Zurich"
+		},
+		{
+			"tz": "Europe/Zurich"
+		}
+	];
 
 /***/ },
 /* 269 */
-/***/ function(module, exports) {
-
-	/**
-	 * Parses an URI
-	 *
-	 * @author Steven Levithan <stevenlevithan.com> (MIT license)
-	 * @api private
-	 */
-
-	var re = /^(?:(?![^:@]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
-
-	var parts = [
-	    'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
-	];
-
-	module.exports = function parseuri(str) {
-	    var src = str,
-	        b = str.indexOf('['),
-	        e = str.indexOf(']');
-
-	    if (b != -1 && e != -1) {
-	        str = str.substring(0, b) + str.substring(b, e).replace(/:/g, ';') + str.substring(e, str.length);
-	    }
-
-	    var m = re.exec(str || ''),
-	        uri = {},
-	        i = 14;
-
-	    while (i--) {
-	        uri[parts[i]] = m[i] || '';
-	    }
-
-	    if (b != -1 && e != -1) {
-	        uri.source = src;
-	        uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ':');
-	        uri.authority = uri.authority.replace('[', '').replace(']', '').replace(/;/g, ':');
-	        uri.ipv6uri = true;
-	    }
-
-	    return uri;
-	};
-
-
-/***/ },
-/* 270 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * This is the web browser implementation of `debug()`.
-	 *
-	 * Expose `debug()` as the module.
-	 */
-
-	exports = module.exports = __webpack_require__(271);
-	exports.log = log;
-	exports.formatArgs = formatArgs;
-	exports.save = save;
-	exports.load = load;
-	exports.useColors = useColors;
-	exports.storage = 'undefined' != typeof chrome
-	               && 'undefined' != typeof chrome.storage
-	                  ? chrome.storage.local
-	                  : localstorage();
-
-	/**
-	 * Colors.
-	 */
-
-	exports.colors = [
-	  'lightseagreen',
-	  'forestgreen',
-	  'goldenrod',
-	  'dodgerblue',
-	  'darkorchid',
-	  'crimson'
-	];
-
-	/**
-	 * Currently only WebKit-based Web Inspectors, Firefox >= v31,
-	 * and the Firebug extension (any Firefox version) are known
-	 * to support "%c" CSS customizations.
-	 *
-	 * TODO: add a `localStorage` variable to explicitly enable/disable colors
-	 */
-
-	function useColors() {
-	  // is webkit? http://stackoverflow.com/a/16459606/376773
-	  return ('WebkitAppearance' in document.documentElement.style) ||
-	    // is firebug? http://stackoverflow.com/a/398120/376773
-	    (window.console && (console.firebug || (console.exception && console.table))) ||
-	    // is firefox >= v31?
-	    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-	    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
-	}
-
-	/**
-	 * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
-	 */
-
-	exports.formatters.j = function(v) {
-	  return JSON.stringify(v);
-	};
-
-
-	/**
-	 * Colorize log arguments if enabled.
-	 *
-	 * @api public
-	 */
-
-	function formatArgs() {
-	  var args = arguments;
-	  var useColors = this.useColors;
-
-	  args[0] = (useColors ? '%c' : '')
-	    + this.namespace
-	    + (useColors ? ' %c' : ' ')
-	    + args[0]
-	    + (useColors ? '%c ' : ' ')
-	    + '+' + exports.humanize(this.diff);
-
-	  if (!useColors) return args;
-
-	  var c = 'color: ' + this.color;
-	  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
-
-	  // the final "%c" is somewhat tricky, because there could be other
-	  // arguments passed either before or after the %c, so we need to
-	  // figure out the correct index to insert the CSS into
-	  var index = 0;
-	  var lastC = 0;
-	  args[0].replace(/%[a-z%]/g, function(match) {
-	    if ('%%' === match) return;
-	    index++;
-	    if ('%c' === match) {
-	      // we only are interested in the *last* %c
-	      // (the user may have provided their own)
-	      lastC = index;
-	    }
-	  });
-
-	  args.splice(lastC, 0, c);
-	  return args;
-	}
-
-	/**
-	 * Invokes `console.log()` when available.
-	 * No-op when `console.log` is not a "function".
-	 *
-	 * @api public
-	 */
-
-	function log() {
-	  // this hackery is required for IE8/9, where
-	  // the `console.log` function doesn't have 'apply'
-	  return 'object' === typeof console
-	    && console.log
-	    && Function.prototype.apply.call(console.log, console, arguments);
-	}
-
-	/**
-	 * Save `namespaces`.
-	 *
-	 * @param {String} namespaces
-	 * @api private
-	 */
-
-	function save(namespaces) {
-	  try {
-	    if (null == namespaces) {
-	      exports.storage.removeItem('debug');
-	    } else {
-	      exports.storage.debug = namespaces;
-	    }
-	  } catch(e) {}
-	}
-
-	/**
-	 * Load `namespaces`.
-	 *
-	 * @return {String} returns the previously persisted debug modes
-	 * @api private
-	 */
-
-	function load() {
-	  var r;
-	  try {
-	    r = exports.storage.debug;
-	  } catch(e) {}
-	  return r;
-	}
-
-	/**
-	 * Enable namespaces listed in `localStorage.debug` initially.
-	 */
-
-	exports.enable(load());
-
-	/**
-	 * Localstorage attempts to return the localstorage.
-	 *
-	 * This is necessary because safari throws
-	 * when a user disables cookies/localstorage
-	 * and you attempt to access it.
-	 *
-	 * @return {LocalStorage}
-	 * @api private
-	 */
-
-	function localstorage(){
-	  try {
-	    return window.localStorage;
-	  } catch (e) {}
-	}
-
-
-/***/ },
-/* 271 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * This is the common logic for both the Node.js and web browser
-	 * implementations of `debug()`.
-	 *
-	 * Expose `debug()` as the module.
-	 */
-
-	exports = module.exports = debug;
-	exports.coerce = coerce;
-	exports.disable = disable;
-	exports.enable = enable;
-	exports.enabled = enabled;
-	exports.humanize = __webpack_require__(272);
-
-	/**
-	 * The currently active debug mode names, and names to skip.
-	 */
-
-	exports.names = [];
-	exports.skips = [];
-
-	/**
-	 * Map of special "%n" handling functions, for the debug "format" argument.
-	 *
-	 * Valid key names are a single, lowercased letter, i.e. "n".
-	 */
-
-	exports.formatters = {};
-
-	/**
-	 * Previously assigned color.
-	 */
-
-	var prevColor = 0;
-
-	/**
-	 * Previous log timestamp.
-	 */
-
-	var prevTime;
-
-	/**
-	 * Select a color.
-	 *
-	 * @return {Number}
-	 * @api private
-	 */
-
-	function selectColor() {
-	  return exports.colors[prevColor++ % exports.colors.length];
-	}
-
-	/**
-	 * Create a debugger with the given `namespace`.
-	 *
-	 * @param {String} namespace
-	 * @return {Function}
-	 * @api public
-	 */
-
-	function debug(namespace) {
-
-	  // define the `disabled` version
-	  function disabled() {
-	  }
-	  disabled.enabled = false;
-
-	  // define the `enabled` version
-	  function enabled() {
-
-	    var self = enabled;
-
-	    // set `diff` timestamp
-	    var curr = +new Date();
-	    var ms = curr - (prevTime || curr);
-	    self.diff = ms;
-	    self.prev = prevTime;
-	    self.curr = curr;
-	    prevTime = curr;
-
-	    // add the `color` if not set
-	    if (null == self.useColors) self.useColors = exports.useColors();
-	    if (null == self.color && self.useColors) self.color = selectColor();
-
-	    var args = Array.prototype.slice.call(arguments);
-
-	    args[0] = exports.coerce(args[0]);
-
-	    if ('string' !== typeof args[0]) {
-	      // anything else let's inspect with %o
-	      args = ['%o'].concat(args);
-	    }
-
-	    // apply any `formatters` transformations
-	    var index = 0;
-	    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
-	      // if we encounter an escaped % then don't increase the array index
-	      if (match === '%%') return match;
-	      index++;
-	      var formatter = exports.formatters[format];
-	      if ('function' === typeof formatter) {
-	        var val = args[index];
-	        match = formatter.call(self, val);
-
-	        // now we need to remove `args[index]` since it's inlined in the `format`
-	        args.splice(index, 1);
-	        index--;
-	      }
-	      return match;
-	    });
-
-	    if ('function' === typeof exports.formatArgs) {
-	      args = exports.formatArgs.apply(self, args);
-	    }
-	    var logFn = enabled.log || exports.log || console.log.bind(console);
-	    logFn.apply(self, args);
-	  }
-	  enabled.enabled = true;
-
-	  var fn = exports.enabled(namespace) ? enabled : disabled;
-
-	  fn.namespace = namespace;
-
-	  return fn;
-	}
-
-	/**
-	 * Enables a debug mode by namespaces. This can include modes
-	 * separated by a colon and wildcards.
-	 *
-	 * @param {String} namespaces
-	 * @api public
-	 */
-
-	function enable(namespaces) {
-	  exports.save(namespaces);
-
-	  var split = (namespaces || '').split(/[\s,]+/);
-	  var len = split.length;
-
-	  for (var i = 0; i < len; i++) {
-	    if (!split[i]) continue; // ignore empty strings
-	    namespaces = split[i].replace(/\*/g, '.*?');
-	    if (namespaces[0] === '-') {
-	      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-	    } else {
-	      exports.names.push(new RegExp('^' + namespaces + '$'));
-	    }
-	  }
-	}
-
-	/**
-	 * Disable debug output.
-	 *
-	 * @api public
-	 */
-
-	function disable() {
-	  exports.enable('');
-	}
-
-	/**
-	 * Returns true if the given mode name is enabled, false otherwise.
-	 *
-	 * @param {String} name
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	function enabled(name) {
-	  var i, len;
-	  for (i = 0, len = exports.skips.length; i < len; i++) {
-	    if (exports.skips[i].test(name)) {
-	      return false;
-	    }
-	  }
-	  for (i = 0, len = exports.names.length; i < len; i++) {
-	    if (exports.names[i].test(name)) {
-	      return true;
-	    }
-	  }
-	  return false;
-	}
-
-	/**
-	 * Coerce `val`.
-	 *
-	 * @param {Mixed} val
-	 * @return {Mixed}
-	 * @api private
-	 */
-
-	function coerce(val) {
-	  if (val instanceof Error) return val.stack || val.message;
-	  return val;
-	}
-
-
-/***/ },
-/* 272 */
-/***/ function(module, exports) {
-
-	/**
-	 * Helpers.
-	 */
-
-	var s = 1000;
-	var m = s * 60;
-	var h = m * 60;
-	var d = h * 24;
-	var y = d * 365.25;
-
-	/**
-	 * Parse or format the given `val`.
-	 *
-	 * Options:
-	 *
-	 *  - `long` verbose formatting [false]
-	 *
-	 * @param {String|Number} val
-	 * @param {Object} options
-	 * @return {String|Number}
-	 * @api public
-	 */
-
-	module.exports = function(val, options){
-	  options = options || {};
-	  if ('string' == typeof val) return parse(val);
-	  return options.long
-	    ? long(val)
-	    : short(val);
-	};
-
-	/**
-	 * Parse the given `str` and return milliseconds.
-	 *
-	 * @param {String} str
-	 * @return {Number}
-	 * @api private
-	 */
-
-	function parse(str) {
-	  str = '' + str;
-	  if (str.length > 10000) return;
-	  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
-	  if (!match) return;
-	  var n = parseFloat(match[1]);
-	  var type = (match[2] || 'ms').toLowerCase();
-	  switch (type) {
-	    case 'years':
-	    case 'year':
-	    case 'yrs':
-	    case 'yr':
-	    case 'y':
-	      return n * y;
-	    case 'days':
-	    case 'day':
-	    case 'd':
-	      return n * d;
-	    case 'hours':
-	    case 'hour':
-	    case 'hrs':
-	    case 'hr':
-	    case 'h':
-	      return n * h;
-	    case 'minutes':
-	    case 'minute':
-	    case 'mins':
-	    case 'min':
-	    case 'm':
-	      return n * m;
-	    case 'seconds':
-	    case 'second':
-	    case 'secs':
-	    case 'sec':
-	    case 's':
-	      return n * s;
-	    case 'milliseconds':
-	    case 'millisecond':
-	    case 'msecs':
-	    case 'msec':
-	    case 'ms':
-	      return n;
-	  }
-	}
-
-	/**
-	 * Short format for `ms`.
-	 *
-	 * @param {Number} ms
-	 * @return {String}
-	 * @api private
-	 */
-
-	function short(ms) {
-	  if (ms >= d) return Math.round(ms / d) + 'd';
-	  if (ms >= h) return Math.round(ms / h) + 'h';
-	  if (ms >= m) return Math.round(ms / m) + 'm';
-	  if (ms >= s) return Math.round(ms / s) + 's';
-	  return ms + 'ms';
-	}
-
-	/**
-	 * Long format for `ms`.
-	 *
-	 * @param {Number} ms
-	 * @return {String}
-	 * @api private
-	 */
-
-	function long(ms) {
-	  return plural(ms, d, 'day')
-	    || plural(ms, h, 'hour')
-	    || plural(ms, m, 'minute')
-	    || plural(ms, s, 'second')
-	    || ms + ' ms';
-	}
-
-	/**
-	 * Pluralization helper.
-	 */
-
-	function plural(ms, n, name) {
-	  if (ms < n) return;
-	  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-	  return Math.ceil(ms / n) + ' ' + name + 's';
-	}
-
-
-/***/ },
-/* 273 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * Module dependencies.
-	 */
-
-	var debug = __webpack_require__(270)('socket.io-parser');
-	var json = __webpack_require__(274);
-	var isArray = __webpack_require__(276);
-	var Emitter = __webpack_require__(277);
-	var binary = __webpack_require__(278);
-	var isBuf = __webpack_require__(279);
-
-	/**
-	 * Protocol version.
-	 *
-	 * @api public
-	 */
-
-	exports.protocol = 4;
-
-	/**
-	 * Packet types.
-	 *
-	 * @api public
-	 */
-
-	exports.types = [
-	  'CONNECT',
-	  'DISCONNECT',
-	  'EVENT',
-	  'ACK',
-	  'ERROR',
-	  'BINARY_EVENT',
-	  'BINARY_ACK'
-	];
-
-	/**
-	 * Packet type `connect`.
-	 *
-	 * @api public
-	 */
-
-	exports.CONNECT = 0;
-
-	/**
-	 * Packet type `disconnect`.
-	 *
-	 * @api public
-	 */
-
-	exports.DISCONNECT = 1;
-
-	/**
-	 * Packet type `event`.
-	 *
-	 * @api public
-	 */
-
-	exports.EVENT = 2;
-
-	/**
-	 * Packet type `ack`.
-	 *
-	 * @api public
-	 */
-
-	exports.ACK = 3;
-
-	/**
-	 * Packet type `error`.
-	 *
-	 * @api public
-	 */
-
-	exports.ERROR = 4;
-
-	/**
-	 * Packet type 'binary event'
-	 *
-	 * @api public
-	 */
-
-	exports.BINARY_EVENT = 5;
-
-	/**
-	 * Packet type `binary ack`. For acks with binary arguments.
-	 *
-	 * @api public
-	 */
-
-	exports.BINARY_ACK = 6;
-
-	/**
-	 * Encoder constructor.
-	 *
-	 * @api public
-	 */
-
-	exports.Encoder = Encoder;
-
-	/**
-	 * Decoder constructor.
-	 *
-	 * @api public
-	 */
-
-	exports.Decoder = Decoder;
-
-	/**
-	 * A socket.io Encoder instance
-	 *
-	 * @api public
-	 */
-
-	function Encoder() {}
-
-	/**
-	 * Encode a packet as a single string if non-binary, or as a
-	 * buffer sequence, depending on packet type.
-	 *
-	 * @param {Object} obj - packet object
-	 * @param {Function} callback - function to handle encodings (likely engine.write)
-	 * @return Calls callback with Array of encodings
-	 * @api public
-	 */
-
-	Encoder.prototype.encode = function(obj, callback){
-	  debug('encoding packet %j', obj);
-
-	  if (exports.BINARY_EVENT == obj.type || exports.BINARY_ACK == obj.type) {
-	    encodeAsBinary(obj, callback);
-	  }
-	  else {
-	    var encoding = encodeAsString(obj);
-	    callback([encoding]);
-	  }
-	};
-
-	/**
-	 * Encode packet as string.
-	 *
-	 * @param {Object} packet
-	 * @return {String} encoded
-	 * @api private
-	 */
-
-	function encodeAsString(obj) {
-	  var str = '';
-	  var nsp = false;
-
-	  // first is type
-	  str += obj.type;
-
-	  // attachments if we have them
-	  if (exports.BINARY_EVENT == obj.type || exports.BINARY_ACK == obj.type) {
-	    str += obj.attachments;
-	    str += '-';
-	  }
-
-	  // if we have a namespace other than `/`
-	  // we append it followed by a comma `,`
-	  if (obj.nsp && '/' != obj.nsp) {
-	    nsp = true;
-	    str += obj.nsp;
-	  }
-
-	  // immediately followed by the id
-	  if (null != obj.id) {
-	    if (nsp) {
-	      str += ',';
-	      nsp = false;
-	    }
-	    str += obj.id;
-	  }
-
-	  // json data
-	  if (null != obj.data) {
-	    if (nsp) str += ',';
-	    str += json.stringify(obj.data);
-	  }
-
-	  debug('encoded %j as %s', obj, str);
-	  return str;
-	}
-
-	/**
-	 * Encode packet as 'buffer sequence' by removing blobs, and
-	 * deconstructing packet into object with placeholders and
-	 * a list of buffers.
-	 *
-	 * @param {Object} packet
-	 * @return {Buffer} encoded
-	 * @api private
-	 */
-
-	function encodeAsBinary(obj, callback) {
-
-	  function writeEncoding(bloblessData) {
-	    var deconstruction = binary.deconstructPacket(bloblessData);
-	    var pack = encodeAsString(deconstruction.packet);
-	    var buffers = deconstruction.buffers;
-
-	    buffers.unshift(pack); // add packet info to beginning of data list
-	    callback(buffers); // write all the buffers
-	  }
-
-	  binary.removeBlobs(obj, writeEncoding);
-	}
-
-	/**
-	 * A socket.io Decoder instance
-	 *
-	 * @return {Object} decoder
-	 * @api public
-	 */
-
-	function Decoder() {
-	  this.reconstructor = null;
-	}
-
-	/**
-	 * Mix in `Emitter` with Decoder.
-	 */
-
-	Emitter(Decoder.prototype);
-
-	/**
-	 * Decodes an ecoded packet string into packet JSON.
-	 *
-	 * @param {String} obj - encoded packet
-	 * @return {Object} packet
-	 * @api public
-	 */
-
-	Decoder.prototype.add = function(obj) {
-	  var packet;
-	  if ('string' == typeof obj) {
-	    packet = decodeString(obj);
-	    if (exports.BINARY_EVENT == packet.type || exports.BINARY_ACK == packet.type) { // binary packet's json
-	      this.reconstructor = new BinaryReconstructor(packet);
-
-	      // no attachments, labeled binary but no binary data to follow
-	      if (this.reconstructor.reconPack.attachments === 0) {
-	        this.emit('decoded', packet);
-	      }
-	    } else { // non-binary full packet
-	      this.emit('decoded', packet);
-	    }
-	  }
-	  else if (isBuf(obj) || obj.base64) { // raw binary data
-	    if (!this.reconstructor) {
-	      throw new Error('got binary data when not reconstructing a packet');
-	    } else {
-	      packet = this.reconstructor.takeBinaryData(obj);
-	      if (packet) { // received final buffer
-	        this.reconstructor = null;
-	        this.emit('decoded', packet);
-	      }
-	    }
-	  }
-	  else {
-	    throw new Error('Unknown type: ' + obj);
-	  }
-	};
-
-	/**
-	 * Decode a packet String (JSON data)
-	 *
-	 * @param {String} str
-	 * @return {Object} packet
-	 * @api private
-	 */
-
-	function decodeString(str) {
-	  var p = {};
-	  var i = 0;
-
-	  // look up type
-	  p.type = Number(str.charAt(0));
-	  if (null == exports.types[p.type]) return error();
-
-	  // look up attachments if type binary
-	  if (exports.BINARY_EVENT == p.type || exports.BINARY_ACK == p.type) {
-	    var buf = '';
-	    while (str.charAt(++i) != '-') {
-	      buf += str.charAt(i);
-	      if (i == str.length) break;
-	    }
-	    if (buf != Number(buf) || str.charAt(i) != '-') {
-	      throw new Error('Illegal attachments');
-	    }
-	    p.attachments = Number(buf);
-	  }
-
-	  // look up namespace (if any)
-	  if ('/' == str.charAt(i + 1)) {
-	    p.nsp = '';
-	    while (++i) {
-	      var c = str.charAt(i);
-	      if (',' == c) break;
-	      p.nsp += c;
-	      if (i == str.length) break;
-	    }
-	  } else {
-	    p.nsp = '/';
-	  }
-
-	  // look up id
-	  var next = str.charAt(i + 1);
-	  if ('' !== next && Number(next) == next) {
-	    p.id = '';
-	    while (++i) {
-	      var c = str.charAt(i);
-	      if (null == c || Number(c) != c) {
-	        --i;
-	        break;
-	      }
-	      p.id += str.charAt(i);
-	      if (i == str.length) break;
-	    }
-	    p.id = Number(p.id);
-	  }
-
-	  // look up json data
-	  if (str.charAt(++i)) {
-	    try {
-	      p.data = json.parse(str.substr(i));
-	    } catch(e){
-	      return error();
-	    }
-	  }
-
-	  debug('decoded %s as %j', str, p);
-	  return p;
-	}
-
-	/**
-	 * Deallocates a parser's resources
-	 *
-	 * @api public
-	 */
-
-	Decoder.prototype.destroy = function() {
-	  if (this.reconstructor) {
-	    this.reconstructor.finishedReconstruction();
-	  }
-	};
-
-	/**
-	 * A manager of a binary event's 'buffer sequence'. Should
-	 * be constructed whenever a packet of type BINARY_EVENT is
-	 * decoded.
-	 *
-	 * @param {Object} packet
-	 * @return {BinaryReconstructor} initialized reconstructor
-	 * @api private
-	 */
-
-	function BinaryReconstructor(packet) {
-	  this.reconPack = packet;
-	  this.buffers = [];
-	}
-
-	/**
-	 * Method to be called when binary data received from connection
-	 * after a BINARY_EVENT packet.
-	 *
-	 * @param {Buffer | ArrayBuffer} binData - the raw binary data received
-	 * @return {null | Object} returns null if more binary data is expected or
-	 *   a reconstructed packet object if all buffers have been received.
-	 * @api private
-	 */
-
-	BinaryReconstructor.prototype.takeBinaryData = function(binData) {
-	  this.buffers.push(binData);
-	  if (this.buffers.length == this.reconPack.attachments) { // done with buffer list
-	    var packet = binary.reconstructPacket(this.reconPack, this.buffers);
-	    this.finishedReconstruction();
-	    return packet;
-	  }
-	  return null;
-	};
-
-	/**
-	 * Cleans up binary packet reconstruction variables.
-	 *
-	 * @api private
-	 */
-
-	BinaryReconstructor.prototype.finishedReconstruction = function() {
-	  this.reconPack = null;
-	  this.buffers = [];
-	};
-
-	function error(data){
-	  return {
-	    type: exports.ERROR,
-	    data: 'parser error'
-	  };
-	}
-
-
-/***/ },
-/* 274 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
-	;(function () {
-	  // Detect the `define` function exposed by asynchronous module loaders. The
-	  // strict `define` check is necessary for compatibility with `r.js`.
-	  var isLoader = "function" === "function" && __webpack_require__(275);
-
-	  // A set of types used to distinguish objects from primitives.
-	  var objectTypes = {
-	    "function": true,
-	    "object": true
-	  };
-
-	  // Detect the `exports` object exposed by CommonJS implementations.
-	  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
-
-	  // Use the `global` object exposed by Node (including Browserify via
-	  // `insert-module-globals`), Narwhal, and Ringo as the default context,
-	  // and the `window` object in browsers. Rhino exports a `global` function
-	  // instead.
-	  var root = objectTypes[typeof window] && window || this,
-	      freeGlobal = freeExports && objectTypes[typeof module] && module && !module.nodeType && typeof global == "object" && global;
-
-	  if (freeGlobal && (freeGlobal["global"] === freeGlobal || freeGlobal["window"] === freeGlobal || freeGlobal["self"] === freeGlobal)) {
-	    root = freeGlobal;
-	  }
-
-	  // Public: Initializes JSON 3 using the given `context` object, attaching the
-	  // `stringify` and `parse` functions to the specified `exports` object.
-	  function runInContext(context, exports) {
-	    context || (context = root["Object"]());
-	    exports || (exports = root["Object"]());
-
-	    // Native constructor aliases.
-	    var Number = context["Number"] || root["Number"],
-	        String = context["String"] || root["String"],
-	        Object = context["Object"] || root["Object"],
-	        Date = context["Date"] || root["Date"],
-	        SyntaxError = context["SyntaxError"] || root["SyntaxError"],
-	        TypeError = context["TypeError"] || root["TypeError"],
-	        Math = context["Math"] || root["Math"],
-	        nativeJSON = context["JSON"] || root["JSON"];
-
-	    // Delegate to the native `stringify` and `parse` implementations.
-	    if (typeof nativeJSON == "object" && nativeJSON) {
-	      exports.stringify = nativeJSON.stringify;
-	      exports.parse = nativeJSON.parse;
-	    }
-
-	    // Convenience aliases.
-	    var objectProto = Object.prototype,
-	        getClass = objectProto.toString,
-	        isProperty, forEach, undef;
-
-	    // Test the `Date#getUTC*` methods. Based on work by @Yaffle.
-	    var isExtended = new Date(-3509827334573292);
-	    try {
-	      // The `getUTCFullYear`, `Month`, and `Date` methods return nonsensical
-	      // results for certain dates in Opera >= 10.53.
-	      isExtended = isExtended.getUTCFullYear() == -109252 && isExtended.getUTCMonth() === 0 && isExtended.getUTCDate() === 1 &&
-	        // Safari < 2.0.2 stores the internal millisecond time value correctly,
-	        // but clips the values returned by the date methods to the range of
-	        // signed 32-bit integers ([-2 ** 31, 2 ** 31 - 1]).
-	        isExtended.getUTCHours() == 10 && isExtended.getUTCMinutes() == 37 && isExtended.getUTCSeconds() == 6 && isExtended.getUTCMilliseconds() == 708;
-	    } catch (exception) {}
-
-	    // Internal: Determines whether the native `JSON.stringify` and `parse`
-	    // implementations are spec-compliant. Based on work by Ken Snyder.
-	    function has(name) {
-	      if (has[name] !== undef) {
-	        // Return cached feature test result.
-	        return has[name];
-	      }
-	      var isSupported;
-	      if (name == "bug-string-char-index") {
-	        // IE <= 7 doesn't support accessing string characters using square
-	        // bracket notation. IE 8 only supports this for primitives.
-	        isSupported = "a"[0] != "a";
-	      } else if (name == "json") {
-	        // Indicates whether both `JSON.stringify` and `JSON.parse` are
-	        // supported.
-	        isSupported = has("json-stringify") && has("json-parse");
-	      } else {
-	        var value, serialized = '{"a":[1,true,false,null,"\\u0000\\b\\n\\f\\r\\t"]}';
-	        // Test `JSON.stringify`.
-	        if (name == "json-stringify") {
-	          var stringify = exports.stringify, stringifySupported = typeof stringify == "function" && isExtended;
-	          if (stringifySupported) {
-	            // A test function object with a custom `toJSON` method.
-	            (value = function () {
-	              return 1;
-	            }).toJSON = value;
-	            try {
-	              stringifySupported =
-	                // Firefox 3.1b1 and b2 serialize string, number, and boolean
-	                // primitives as object literals.
-	                stringify(0) === "0" &&
-	                // FF 3.1b1, b2, and JSON 2 serialize wrapped primitives as object
-	                // literals.
-	                stringify(new Number()) === "0" &&
-	                stringify(new String()) == '""' &&
-	                // FF 3.1b1, 2 throw an error if the value is `null`, `undefined`, or
-	                // does not define a canonical JSON representation (this applies to
-	                // objects with `toJSON` properties as well, *unless* they are nested
-	                // within an object or array).
-	                stringify(getClass) === undef &&
-	                // IE 8 serializes `undefined` as `"undefined"`. Safari <= 5.1.7 and
-	                // FF 3.1b3 pass this test.
-	                stringify(undef) === undef &&
-	                // Safari <= 5.1.7 and FF 3.1b3 throw `Error`s and `TypeError`s,
-	                // respectively, if the value is omitted entirely.
-	                stringify() === undef &&
-	                // FF 3.1b1, 2 throw an error if the given value is not a number,
-	                // string, array, object, Boolean, or `null` literal. This applies to
-	                // objects with custom `toJSON` methods as well, unless they are nested
-	                // inside object or array literals. YUI 3.0.0b1 ignores custom `toJSON`
-	                // methods entirely.
-	                stringify(value) === "1" &&
-	                stringify([value]) == "[1]" &&
-	                // Prototype <= 1.6.1 serializes `[undefined]` as `"[]"` instead of
-	                // `"[null]"`.
-	                stringify([undef]) == "[null]" &&
-	                // YUI 3.0.0b1 fails to serialize `null` literals.
-	                stringify(null) == "null" &&
-	                // FF 3.1b1, 2 halts serialization if an array contains a function:
-	                // `[1, true, getClass, 1]` serializes as "[1,true,],". FF 3.1b3
-	                // elides non-JSON values from objects and arrays, unless they
-	                // define custom `toJSON` methods.
-	                stringify([undef, getClass, null]) == "[null,null,null]" &&
-	                // Simple serialization test. FF 3.1b1 uses Unicode escape sequences
-	                // where character escape codes are expected (e.g., `\b` => `\u0008`).
-	                stringify({ "a": [value, true, false, null, "\x00\b\n\f\r\t"] }) == serialized &&
-	                // FF 3.1b1 and b2 ignore the `filter` and `width` arguments.
-	                stringify(null, value) === "1" &&
-	                stringify([1, 2], null, 1) == "[\n 1,\n 2\n]" &&
-	                // JSON 2, Prototype <= 1.7, and older WebKit builds incorrectly
-	                // serialize extended years.
-	                stringify(new Date(-8.64e15)) == '"-271821-04-20T00:00:00.000Z"' &&
-	                // The milliseconds are optional in ES 5, but required in 5.1.
-	                stringify(new Date(8.64e15)) == '"+275760-09-13T00:00:00.000Z"' &&
-	                // Firefox <= 11.0 incorrectly serializes years prior to 0 as negative
-	                // four-digit years instead of six-digit years. Credits: @Yaffle.
-	                stringify(new Date(-621987552e5)) == '"-000001-01-01T00:00:00.000Z"' &&
-	                // Safari <= 5.1.5 and Opera >= 10.53 incorrectly serialize millisecond
-	                // values less than 1000. Credits: @Yaffle.
-	                stringify(new Date(-1)) == '"1969-12-31T23:59:59.999Z"';
-	            } catch (exception) {
-	              stringifySupported = false;
-	            }
-	          }
-	          isSupported = stringifySupported;
-	        }
-	        // Test `JSON.parse`.
-	        if (name == "json-parse") {
-	          var parse = exports.parse;
-	          if (typeof parse == "function") {
-	            try {
-	              // FF 3.1b1, b2 will throw an exception if a bare literal is provided.
-	              // Conforming implementations should also coerce the initial argument to
-	              // a string prior to parsing.
-	              if (parse("0") === 0 && !parse(false)) {
-	                // Simple parsing test.
-	                value = parse(serialized);
-	                var parseSupported = value["a"].length == 5 && value["a"][0] === 1;
-	                if (parseSupported) {
-	                  try {
-	                    // Safari <= 5.1.2 and FF 3.1b1 allow unescaped tabs in strings.
-	                    parseSupported = !parse('"\t"');
-	                  } catch (exception) {}
-	                  if (parseSupported) {
-	                    try {
-	                      // FF 4.0 and 4.0.1 allow leading `+` signs and leading
-	                      // decimal points. FF 4.0, 4.0.1, and IE 9-10 also allow
-	                      // certain octal literals.
-	                      parseSupported = parse("01") !== 1;
-	                    } catch (exception) {}
-	                  }
-	                  if (parseSupported) {
-	                    try {
-	                      // FF 4.0, 4.0.1, and Rhino 1.7R3-R4 allow trailing decimal
-	                      // points. These environments, along with FF 3.1b1 and 2,
-	                      // also allow trailing commas in JSON objects and arrays.
-	                      parseSupported = parse("1.") !== 1;
-	                    } catch (exception) {}
-	                  }
-	                }
-	              }
-	            } catch (exception) {
-	              parseSupported = false;
-	            }
-	          }
-	          isSupported = parseSupported;
-	        }
-	      }
-	      return has[name] = !!isSupported;
-	    }
-
-	    if (!has("json")) {
-	      // Common `[[Class]]` name aliases.
-	      var functionClass = "[object Function]",
-	          dateClass = "[object Date]",
-	          numberClass = "[object Number]",
-	          stringClass = "[object String]",
-	          arrayClass = "[object Array]",
-	          booleanClass = "[object Boolean]";
-
-	      // Detect incomplete support for accessing string characters by index.
-	      var charIndexBuggy = has("bug-string-char-index");
-
-	      // Define additional utility methods if the `Date` methods are buggy.
-	      if (!isExtended) {
-	        var floor = Math.floor;
-	        // A mapping between the months of the year and the number of days between
-	        // January 1st and the first of the respective month.
-	        var Months = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-	        // Internal: Calculates the number of days between the Unix epoch and the
-	        // first day of the given month.
-	        var getDay = function (year, month) {
-	          return Months[month] + 365 * (year - 1970) + floor((year - 1969 + (month = +(month > 1))) / 4) - floor((year - 1901 + month) / 100) + floor((year - 1601 + month) / 400);
-	        };
-	      }
-
-	      // Internal: Determines if a property is a direct property of the given
-	      // object. Delegates to the native `Object#hasOwnProperty` method.
-	      if (!(isProperty = objectProto.hasOwnProperty)) {
-	        isProperty = function (property) {
-	          var members = {}, constructor;
-	          if ((members.__proto__ = null, members.__proto__ = {
-	            // The *proto* property cannot be set multiple times in recent
-	            // versions of Firefox and SeaMonkey.
-	            "toString": 1
-	          }, members).toString != getClass) {
-	            // Safari <= 2.0.3 doesn't implement `Object#hasOwnProperty`, but
-	            // supports the mutable *proto* property.
-	            isProperty = function (property) {
-	              // Capture and break the object's prototype chain (see section 8.6.2
-	              // of the ES 5.1 spec). The parenthesized expression prevents an
-	              // unsafe transformation by the Closure Compiler.
-	              var original = this.__proto__, result = property in (this.__proto__ = null, this);
-	              // Restore the original prototype chain.
-	              this.__proto__ = original;
-	              return result;
-	            };
-	          } else {
-	            // Capture a reference to the top-level `Object` constructor.
-	            constructor = members.constructor;
-	            // Use the `constructor` property to simulate `Object#hasOwnProperty` in
-	            // other environments.
-	            isProperty = function (property) {
-	              var parent = (this.constructor || constructor).prototype;
-	              return property in this && !(property in parent && this[property] === parent[property]);
-	            };
-	          }
-	          members = null;
-	          return isProperty.call(this, property);
-	        };
-	      }
-
-	      // Internal: Normalizes the `for...in` iteration algorithm across
-	      // environments. Each enumerated key is yielded to a `callback` function.
-	      forEach = function (object, callback) {
-	        var size = 0, Properties, members, property;
-
-	        // Tests for bugs in the current environment's `for...in` algorithm. The
-	        // `valueOf` property inherits the non-enumerable flag from
-	        // `Object.prototype` in older versions of IE, Netscape, and Mozilla.
-	        (Properties = function () {
-	          this.valueOf = 0;
-	        }).prototype.valueOf = 0;
-
-	        // Iterate over a new instance of the `Properties` class.
-	        members = new Properties();
-	        for (property in members) {
-	          // Ignore all properties inherited from `Object.prototype`.
-	          if (isProperty.call(members, property)) {
-	            size++;
-	          }
-	        }
-	        Properties = members = null;
-
-	        // Normalize the iteration algorithm.
-	        if (!size) {
-	          // A list of non-enumerable properties inherited from `Object.prototype`.
-	          members = ["valueOf", "toString", "toLocaleString", "propertyIsEnumerable", "isPrototypeOf", "hasOwnProperty", "constructor"];
-	          // IE <= 8, Mozilla 1.0, and Netscape 6.2 ignore shadowed non-enumerable
-	          // properties.
-	          forEach = function (object, callback) {
-	            var isFunction = getClass.call(object) == functionClass, property, length;
-	            var hasProperty = !isFunction && typeof object.constructor != "function" && objectTypes[typeof object.hasOwnProperty] && object.hasOwnProperty || isProperty;
-	            for (property in object) {
-	              // Gecko <= 1.0 enumerates the `prototype` property of functions under
-	              // certain conditions; IE does not.
-	              if (!(isFunction && property == "prototype") && hasProperty.call(object, property)) {
-	                callback(property);
-	              }
-	            }
-	            // Manually invoke the callback for each non-enumerable property.
-	            for (length = members.length; property = members[--length]; hasProperty.call(object, property) && callback(property));
-	          };
-	        } else if (size == 2) {
-	          // Safari <= 2.0.4 enumerates shadowed properties twice.
-	          forEach = function (object, callback) {
-	            // Create a set of iterated properties.
-	            var members = {}, isFunction = getClass.call(object) == functionClass, property;
-	            for (property in object) {
-	              // Store each property name to prevent double enumeration. The
-	              // `prototype` property of functions is not enumerated due to cross-
-	              // environment inconsistencies.
-	              if (!(isFunction && property == "prototype") && !isProperty.call(members, property) && (members[property] = 1) && isProperty.call(object, property)) {
-	                callback(property);
-	              }
-	            }
-	          };
-	        } else {
-	          // No bugs detected; use the standard `for...in` algorithm.
-	          forEach = function (object, callback) {
-	            var isFunction = getClass.call(object) == functionClass, property, isConstructor;
-	            for (property in object) {
-	              if (!(isFunction && property == "prototype") && isProperty.call(object, property) && !(isConstructor = property === "constructor")) {
-	                callback(property);
-	              }
-	            }
-	            // Manually invoke the callback for the `constructor` property due to
-	            // cross-environment inconsistencies.
-	            if (isConstructor || isProperty.call(object, (property = "constructor"))) {
-	              callback(property);
-	            }
-	          };
-	        }
-	        return forEach(object, callback);
-	      };
-
-	      // Public: Serializes a JavaScript `value` as a JSON string. The optional
-	      // `filter` argument may specify either a function that alters how object and
-	      // array members are serialized, or an array of strings and numbers that
-	      // indicates which properties should be serialized. The optional `width`
-	      // argument may be either a string or number that specifies the indentation
-	      // level of the output.
-	      if (!has("json-stringify")) {
-	        // Internal: A map of control characters and their escaped equivalents.
-	        var Escapes = {
-	          92: "\\\\",
-	          34: '\\"',
-	          8: "\\b",
-	          12: "\\f",
-	          10: "\\n",
-	          13: "\\r",
-	          9: "\\t"
-	        };
-
-	        // Internal: Converts `value` into a zero-padded string such that its
-	        // length is at least equal to `width`. The `width` must be <= 6.
-	        var leadingZeroes = "000000";
-	        var toPaddedString = function (width, value) {
-	          // The `|| 0` expression is necessary to work around a bug in
-	          // Opera <= 7.54u2 where `0 == -0`, but `String(-0) !== "0"`.
-	          return (leadingZeroes + (value || 0)).slice(-width);
-	        };
-
-	        // Internal: Double-quotes a string `value`, replacing all ASCII control
-	        // characters (characters with code unit values between 0 and 31) with
-	        // their escaped equivalents. This is an implementation of the
-	        // `Quote(value)` operation defined in ES 5.1 section 15.12.3.
-	        var unicodePrefix = "\\u00";
-	        var quote = function (value) {
-	          var result = '"', index = 0, length = value.length, useCharIndex = !charIndexBuggy || length > 10;
-	          var symbols = useCharIndex && (charIndexBuggy ? value.split("") : value);
-	          for (; index < length; index++) {
-	            var charCode = value.charCodeAt(index);
-	            // If the character is a control character, append its Unicode or
-	            // shorthand escape sequence; otherwise, append the character as-is.
-	            switch (charCode) {
-	              case 8: case 9: case 10: case 12: case 13: case 34: case 92:
-	                result += Escapes[charCode];
-	                break;
-	              default:
-	                if (charCode < 32) {
-	                  result += unicodePrefix + toPaddedString(2, charCode.toString(16));
-	                  break;
-	                }
-	                result += useCharIndex ? symbols[index] : value.charAt(index);
-	            }
-	          }
-	          return result + '"';
-	        };
-
-	        // Internal: Recursively serializes an object. Implements the
-	        // `Str(key, holder)`, `JO(value)`, and `JA(value)` operations.
-	        var serialize = function (property, object, callback, properties, whitespace, indentation, stack) {
-	          var value, className, year, month, date, time, hours, minutes, seconds, milliseconds, results, element, index, length, prefix, result;
-	          try {
-	            // Necessary for host object support.
-	            value = object[property];
-	          } catch (exception) {}
-	          if (typeof value == "object" && value) {
-	            className = getClass.call(value);
-	            if (className == dateClass && !isProperty.call(value, "toJSON")) {
-	              if (value > -1 / 0 && value < 1 / 0) {
-	                // Dates are serialized according to the `Date#toJSON` method
-	                // specified in ES 5.1 section 15.9.5.44. See section 15.9.1.15
-	                // for the ISO 8601 date time string format.
-	                if (getDay) {
-	                  // Manually compute the year, month, date, hours, minutes,
-	                  // seconds, and milliseconds if the `getUTC*` methods are
-	                  // buggy. Adapted from @Yaffle's `date-shim` project.
-	                  date = floor(value / 864e5);
-	                  for (year = floor(date / 365.2425) + 1970 - 1; getDay(year + 1, 0) <= date; year++);
-	                  for (month = floor((date - getDay(year, 0)) / 30.42); getDay(year, month + 1) <= date; month++);
-	                  date = 1 + date - getDay(year, month);
-	                  // The `time` value specifies the time within the day (see ES
-	                  // 5.1 section 15.9.1.2). The formula `(A % B + B) % B` is used
-	                  // to compute `A modulo B`, as the `%` operator does not
-	                  // correspond to the `modulo` operation for negative numbers.
-	                  time = (value % 864e5 + 864e5) % 864e5;
-	                  // The hours, minutes, seconds, and milliseconds are obtained by
-	                  // decomposing the time within the day. See section 15.9.1.10.
-	                  hours = floor(time / 36e5) % 24;
-	                  minutes = floor(time / 6e4) % 60;
-	                  seconds = floor(time / 1e3) % 60;
-	                  milliseconds = time % 1e3;
-	                } else {
-	                  year = value.getUTCFullYear();
-	                  month = value.getUTCMonth();
-	                  date = value.getUTCDate();
-	                  hours = value.getUTCHours();
-	                  minutes = value.getUTCMinutes();
-	                  seconds = value.getUTCSeconds();
-	                  milliseconds = value.getUTCMilliseconds();
-	                }
-	                // Serialize extended years correctly.
-	                value = (year <= 0 || year >= 1e4 ? (year < 0 ? "-" : "+") + toPaddedString(6, year < 0 ? -year : year) : toPaddedString(4, year)) +
-	                  "-" + toPaddedString(2, month + 1) + "-" + toPaddedString(2, date) +
-	                  // Months, dates, hours, minutes, and seconds should have two
-	                  // digits; milliseconds should have three.
-	                  "T" + toPaddedString(2, hours) + ":" + toPaddedString(2, minutes) + ":" + toPaddedString(2, seconds) +
-	                  // Milliseconds are optional in ES 5.0, but required in 5.1.
-	                  "." + toPaddedString(3, milliseconds) + "Z";
-	              } else {
-	                value = null;
-	              }
-	            } else if (typeof value.toJSON == "function" && ((className != numberClass && className != stringClass && className != arrayClass) || isProperty.call(value, "toJSON"))) {
-	              // Prototype <= 1.6.1 adds non-standard `toJSON` methods to the
-	              // `Number`, `String`, `Date`, and `Array` prototypes. JSON 3
-	              // ignores all `toJSON` methods on these objects unless they are
-	              // defined directly on an instance.
-	              value = value.toJSON(property);
-	            }
-	          }
-	          if (callback) {
-	            // If a replacement function was provided, call it to obtain the value
-	            // for serialization.
-	            value = callback.call(object, property, value);
-	          }
-	          if (value === null) {
-	            return "null";
-	          }
-	          className = getClass.call(value);
-	          if (className == booleanClass) {
-	            // Booleans are represented literally.
-	            return "" + value;
-	          } else if (className == numberClass) {
-	            // JSON numbers must be finite. `Infinity` and `NaN` are serialized as
-	            // `"null"`.
-	            return value > -1 / 0 && value < 1 / 0 ? "" + value : "null";
-	          } else if (className == stringClass) {
-	            // Strings are double-quoted and escaped.
-	            return quote("" + value);
-	          }
-	          // Recursively serialize objects and arrays.
-	          if (typeof value == "object") {
-	            // Check for cyclic structures. This is a linear search; performance
-	            // is inversely proportional to the number of unique nested objects.
-	            for (length = stack.length; length--;) {
-	              if (stack[length] === value) {
-	                // Cyclic structures cannot be serialized by `JSON.stringify`.
-	                throw TypeError();
-	              }
-	            }
-	            // Add the object to the stack of traversed objects.
-	            stack.push(value);
-	            results = [];
-	            // Save the current indentation level and indent one additional level.
-	            prefix = indentation;
-	            indentation += whitespace;
-	            if (className == arrayClass) {
-	              // Recursively serialize array elements.
-	              for (index = 0, length = value.length; index < length; index++) {
-	                element = serialize(index, value, callback, properties, whitespace, indentation, stack);
-	                results.push(element === undef ? "null" : element);
-	              }
-	              result = results.length ? (whitespace ? "[\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "]" : ("[" + results.join(",") + "]")) : "[]";
-	            } else {
-	              // Recursively serialize object members. Members are selected from
-	              // either a user-specified list of property names, or the object
-	              // itself.
-	              forEach(properties || value, function (property) {
-	                var element = serialize(property, value, callback, properties, whitespace, indentation, stack);
-	                if (element !== undef) {
-	                  // According to ES 5.1 section 15.12.3: "If `gap` {whitespace}
-	                  // is not the empty string, let `member` {quote(property) + ":"}
-	                  // be the concatenation of `member` and the `space` character."
-	                  // The "`space` character" refers to the literal space
-	                  // character, not the `space` {width} argument provided to
-	                  // `JSON.stringify`.
-	                  results.push(quote(property) + ":" + (whitespace ? " " : "") + element);
-	                }
-	              });
-	              result = results.length ? (whitespace ? "{\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "}" : ("{" + results.join(",") + "}")) : "{}";
-	            }
-	            // Remove the object from the traversed object stack.
-	            stack.pop();
-	            return result;
-	          }
-	        };
-
-	        // Public: `JSON.stringify`. See ES 5.1 section 15.12.3.
-	        exports.stringify = function (source, filter, width) {
-	          var whitespace, callback, properties, className;
-	          if (objectTypes[typeof filter] && filter) {
-	            if ((className = getClass.call(filter)) == functionClass) {
-	              callback = filter;
-	            } else if (className == arrayClass) {
-	              // Convert the property names array into a makeshift set.
-	              properties = {};
-	              for (var index = 0, length = filter.length, value; index < length; value = filter[index++], ((className = getClass.call(value)), className == stringClass || className == numberClass) && (properties[value] = 1));
-	            }
-	          }
-	          if (width) {
-	            if ((className = getClass.call(width)) == numberClass) {
-	              // Convert the `width` to an integer and create a string containing
-	              // `width` number of space characters.
-	              if ((width -= width % 1) > 0) {
-	                for (whitespace = "", width > 10 && (width = 10); whitespace.length < width; whitespace += " ");
-	              }
-	            } else if (className == stringClass) {
-	              whitespace = width.length <= 10 ? width : width.slice(0, 10);
-	            }
-	          }
-	          // Opera <= 7.54u2 discards the values associated with empty string keys
-	          // (`""`) only if they are used directly within an object member list
-	          // (e.g., `!("" in { "": 1})`).
-	          return serialize("", (value = {}, value[""] = source, value), callback, properties, whitespace, "", []);
-	        };
-	      }
-
-	      // Public: Parses a JSON source string.
-	      if (!has("json-parse")) {
-	        var fromCharCode = String.fromCharCode;
-
-	        // Internal: A map of escaped control characters and their unescaped
-	        // equivalents.
-	        var Unescapes = {
-	          92: "\\",
-	          34: '"',
-	          47: "/",
-	          98: "\b",
-	          116: "\t",
-	          110: "\n",
-	          102: "\f",
-	          114: "\r"
-	        };
-
-	        // Internal: Stores the parser state.
-	        var Index, Source;
-
-	        // Internal: Resets the parser state and throws a `SyntaxError`.
-	        var abort = function () {
-	          Index = Source = null;
-	          throw SyntaxError();
-	        };
-
-	        // Internal: Returns the next token, or `"$"` if the parser has reached
-	        // the end of the source string. A token may be a string, number, `null`
-	        // literal, or Boolean literal.
-	        var lex = function () {
-	          var source = Source, length = source.length, value, begin, position, isSigned, charCode;
-	          while (Index < length) {
-	            charCode = source.charCodeAt(Index);
-	            switch (charCode) {
-	              case 9: case 10: case 13: case 32:
-	                // Skip whitespace tokens, including tabs, carriage returns, line
-	                // feeds, and space characters.
-	                Index++;
-	                break;
-	              case 123: case 125: case 91: case 93: case 58: case 44:
-	                // Parse a punctuator token (`{`, `}`, `[`, `]`, `:`, or `,`) at
-	                // the current position.
-	                value = charIndexBuggy ? source.charAt(Index) : source[Index];
-	                Index++;
-	                return value;
-	              case 34:
-	                // `"` delimits a JSON string; advance to the next character and
-	                // begin parsing the string. String tokens are prefixed with the
-	                // sentinel `@` character to distinguish them from punctuators and
-	                // end-of-string tokens.
-	                for (value = "@", Index++; Index < length;) {
-	                  charCode = source.charCodeAt(Index);
-	                  if (charCode < 32) {
-	                    // Unescaped ASCII control characters (those with a code unit
-	                    // less than the space character) are not permitted.
-	                    abort();
-	                  } else if (charCode == 92) {
-	                    // A reverse solidus (`\`) marks the beginning of an escaped
-	                    // control character (including `"`, `\`, and `/`) or Unicode
-	                    // escape sequence.
-	                    charCode = source.charCodeAt(++Index);
-	                    switch (charCode) {
-	                      case 92: case 34: case 47: case 98: case 116: case 110: case 102: case 114:
-	                        // Revive escaped control characters.
-	                        value += Unescapes[charCode];
-	                        Index++;
-	                        break;
-	                      case 117:
-	                        // `\u` marks the beginning of a Unicode escape sequence.
-	                        // Advance to the first character and validate the
-	                        // four-digit code point.
-	                        begin = ++Index;
-	                        for (position = Index + 4; Index < position; Index++) {
-	                          charCode = source.charCodeAt(Index);
-	                          // A valid sequence comprises four hexdigits (case-
-	                          // insensitive) that form a single hexadecimal value.
-	                          if (!(charCode >= 48 && charCode <= 57 || charCode >= 97 && charCode <= 102 || charCode >= 65 && charCode <= 70)) {
-	                            // Invalid Unicode escape sequence.
-	                            abort();
-	                          }
-	                        }
-	                        // Revive the escaped character.
-	                        value += fromCharCode("0x" + source.slice(begin, Index));
-	                        break;
-	                      default:
-	                        // Invalid escape sequence.
-	                        abort();
-	                    }
-	                  } else {
-	                    if (charCode == 34) {
-	                      // An unescaped double-quote character marks the end of the
-	                      // string.
-	                      break;
-	                    }
-	                    charCode = source.charCodeAt(Index);
-	                    begin = Index;
-	                    // Optimize for the common case where a string is valid.
-	                    while (charCode >= 32 && charCode != 92 && charCode != 34) {
-	                      charCode = source.charCodeAt(++Index);
-	                    }
-	                    // Append the string as-is.
-	                    value += source.slice(begin, Index);
-	                  }
-	                }
-	                if (source.charCodeAt(Index) == 34) {
-	                  // Advance to the next character and return the revived string.
-	                  Index++;
-	                  return value;
-	                }
-	                // Unterminated string.
-	                abort();
-	              default:
-	                // Parse numbers and literals.
-	                begin = Index;
-	                // Advance past the negative sign, if one is specified.
-	                if (charCode == 45) {
-	                  isSigned = true;
-	                  charCode = source.charCodeAt(++Index);
-	                }
-	                // Parse an integer or floating-point value.
-	                if (charCode >= 48 && charCode <= 57) {
-	                  // Leading zeroes are interpreted as octal literals.
-	                  if (charCode == 48 && ((charCode = source.charCodeAt(Index + 1)), charCode >= 48 && charCode <= 57)) {
-	                    // Illegal octal literal.
-	                    abort();
-	                  }
-	                  isSigned = false;
-	                  // Parse the integer component.
-	                  for (; Index < length && ((charCode = source.charCodeAt(Index)), charCode >= 48 && charCode <= 57); Index++);
-	                  // Floats cannot contain a leading decimal point; however, this
-	                  // case is already accounted for by the parser.
-	                  if (source.charCodeAt(Index) == 46) {
-	                    position = ++Index;
-	                    // Parse the decimal component.
-	                    for (; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
-	                    if (position == Index) {
-	                      // Illegal trailing decimal.
-	                      abort();
-	                    }
-	                    Index = position;
-	                  }
-	                  // Parse exponents. The `e` denoting the exponent is
-	                  // case-insensitive.
-	                  charCode = source.charCodeAt(Index);
-	                  if (charCode == 101 || charCode == 69) {
-	                    charCode = source.charCodeAt(++Index);
-	                    // Skip past the sign following the exponent, if one is
-	                    // specified.
-	                    if (charCode == 43 || charCode == 45) {
-	                      Index++;
-	                    }
-	                    // Parse the exponential component.
-	                    for (position = Index; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
-	                    if (position == Index) {
-	                      // Illegal empty exponent.
-	                      abort();
-	                    }
-	                    Index = position;
-	                  }
-	                  // Coerce the parsed value to a JavaScript number.
-	                  return +source.slice(begin, Index);
-	                }
-	                // A negative sign may only precede numbers.
-	                if (isSigned) {
-	                  abort();
-	                }
-	                // `true`, `false`, and `null` literals.
-	                if (source.slice(Index, Index + 4) == "true") {
-	                  Index += 4;
-	                  return true;
-	                } else if (source.slice(Index, Index + 5) == "false") {
-	                  Index += 5;
-	                  return false;
-	                } else if (source.slice(Index, Index + 4) == "null") {
-	                  Index += 4;
-	                  return null;
-	                }
-	                // Unrecognized token.
-	                abort();
-	            }
-	          }
-	          // Return the sentinel `$` character if the parser has reached the end
-	          // of the source string.
-	          return "$";
-	        };
-
-	        // Internal: Parses a JSON `value` token.
-	        var get = function (value) {
-	          var results, hasMembers;
-	          if (value == "$") {
-	            // Unexpected end of input.
-	            abort();
-	          }
-	          if (typeof value == "string") {
-	            if ((charIndexBuggy ? value.charAt(0) : value[0]) == "@") {
-	              // Remove the sentinel `@` character.
-	              return value.slice(1);
-	            }
-	            // Parse object and array literals.
-	            if (value == "[") {
-	              // Parses a JSON array, returning a new JavaScript array.
-	              results = [];
-	              for (;; hasMembers || (hasMembers = true)) {
-	                value = lex();
-	                // A closing square bracket marks the end of the array literal.
-	                if (value == "]") {
-	                  break;
-	                }
-	                // If the array literal contains elements, the current token
-	                // should be a comma separating the previous element from the
-	                // next.
-	                if (hasMembers) {
-	                  if (value == ",") {
-	                    value = lex();
-	                    if (value == "]") {
-	                      // Unexpected trailing `,` in array literal.
-	                      abort();
-	                    }
-	                  } else {
-	                    // A `,` must separate each array element.
-	                    abort();
-	                  }
-	                }
-	                // Elisions and leading commas are not permitted.
-	                if (value == ",") {
-	                  abort();
-	                }
-	                results.push(get(value));
-	              }
-	              return results;
-	            } else if (value == "{") {
-	              // Parses a JSON object, returning a new JavaScript object.
-	              results = {};
-	              for (;; hasMembers || (hasMembers = true)) {
-	                value = lex();
-	                // A closing curly brace marks the end of the object literal.
-	                if (value == "}") {
-	                  break;
-	                }
-	                // If the object literal contains members, the current token
-	                // should be a comma separator.
-	                if (hasMembers) {
-	                  if (value == ",") {
-	                    value = lex();
-	                    if (value == "}") {
-	                      // Unexpected trailing `,` in object literal.
-	                      abort();
-	                    }
-	                  } else {
-	                    // A `,` must separate each object member.
-	                    abort();
-	                  }
-	                }
-	                // Leading commas are not permitted, object property names must be
-	                // double-quoted strings, and a `:` must separate each property
-	                // name and value.
-	                if (value == "," || typeof value != "string" || (charIndexBuggy ? value.charAt(0) : value[0]) != "@" || lex() != ":") {
-	                  abort();
-	                }
-	                results[value.slice(1)] = get(lex());
-	              }
-	              return results;
-	            }
-	            // Unexpected token encountered.
-	            abort();
-	          }
-	          return value;
-	        };
-
-	        // Internal: Updates a traversed object member.
-	        var update = function (source, property, callback) {
-	          var element = walk(source, property, callback);
-	          if (element === undef) {
-	            delete source[property];
-	          } else {
-	            source[property] = element;
-	          }
-	        };
-
-	        // Internal: Recursively traverses a parsed JSON object, invoking the
-	        // `callback` function for each value. This is an implementation of the
-	        // `Walk(holder, name)` operation defined in ES 5.1 section 15.12.2.
-	        var walk = function (source, property, callback) {
-	          var value = source[property], length;
-	          if (typeof value == "object" && value) {
-	            // `forEach` can't be used to traverse an array in Opera <= 8.54
-	            // because its `Object#hasOwnProperty` implementation returns `false`
-	            // for array indices (e.g., `![1, 2, 3].hasOwnProperty("0")`).
-	            if (getClass.call(value) == arrayClass) {
-	              for (length = value.length; length--;) {
-	                update(value, length, callback);
-	              }
-	            } else {
-	              forEach(value, function (property) {
-	                update(value, property, callback);
-	              });
-	            }
-	          }
-	          return callback.call(source, property, value);
-	        };
-
-	        // Public: `JSON.parse`. See ES 5.1 section 15.12.2.
-	        exports.parse = function (source, callback) {
-	          var result, value;
-	          Index = 0;
-	          Source = "" + source;
-	          result = get(lex());
-	          // If a JSON string contains multiple tokens, it is invalid.
-	          if (lex() != "$") {
-	            abort();
-	          }
-	          // Reset the parser state.
-	          Index = Source = null;
-	          return callback && getClass.call(callback) == functionClass ? walk((value = {}, value[""] = result, value), "", callback) : result;
-	        };
-	      }
-	    }
-
-	    exports["runInContext"] = runInContext;
-	    return exports;
-	  }
-
-	  if (freeExports && !isLoader) {
-	    // Export for CommonJS environments.
-	    runInContext(root, freeExports);
-	  } else {
-	    // Export for web browsers and JavaScript engines.
-	    var nativeJSON = root.JSON,
-	        previousJSON = root["JSON3"],
-	        isRestored = false;
-
-	    var JSON3 = runInContext(root, (root["JSON3"] = {
-	      // Public: Restores the original value of the global `JSON` object and
-	      // returns a reference to the `JSON3` object.
-	      "noConflict": function () {
-	        if (!isRestored) {
-	          isRestored = true;
-	          root.JSON = nativeJSON;
-	          root["JSON3"] = previousJSON;
-	          nativeJSON = previousJSON = null;
-	        }
-	        return JSON3;
-	      }
-	    }));
-
-	    root.JSON = {
-	      "parse": JSON3.parse,
-	      "stringify": JSON3.stringify
-	    };
-	  }
-
-	  // Export for asynchronous module loaders.
-	  if (isLoader) {
-	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
-	      return JSON3;
-	    }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-	  }
-	}).call(this);
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(164)(module), (function() { return this; }())))
-
-/***/ },
-/* 275 */
-/***/ function(module, exports) {
-
-	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
-
-	/* WEBPACK VAR INJECTION */}.call(exports, {}))
-
-/***/ },
-/* 276 */
-/***/ function(module, exports) {
-
-	module.exports = Array.isArray || function (arr) {
-	  return Object.prototype.toString.call(arr) == '[object Array]';
-	};
-
-
-/***/ },
-/* 277 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-
-	module.exports = Emitter;
-
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks[event] = this._callbacks[event] || [])
-	    .push(fn);
-	  return this;
-	};
-
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.once = function(event, fn){
-	  var self = this;
-	  this._callbacks = this._callbacks || {};
-
-	  function on() {
-	    self.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-
-	  // specific event
-	  var callbacks = this._callbacks[event];
-	  if (!callbacks) return this;
-
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks[event];
-	    return this;
-	  }
-
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks[event];
-
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks[event] || [];
-	};
-
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 278 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/*global Blob,File*/
-
-	/**
-	 * Module requirements
-	 */
-
-	var isArray = __webpack_require__(276);
-	var isBuf = __webpack_require__(279);
-
-	/**
-	 * Replaces every Buffer | ArrayBuffer in packet with a numbered placeholder.
-	 * Anything with blobs or files should be fed through removeBlobs before coming
-	 * here.
-	 *
-	 * @param {Object} packet - socket.io event packet
-	 * @return {Object} with deconstructed packet and list of buffers
-	 * @api public
-	 */
-
-	exports.deconstructPacket = function(packet){
-	  var buffers = [];
-	  var packetData = packet.data;
-
-	  function _deconstructPacket(data) {
-	    if (!data) return data;
-
-	    if (isBuf(data)) {
-	      var placeholder = { _placeholder: true, num: buffers.length };
-	      buffers.push(data);
-	      return placeholder;
-	    } else if (isArray(data)) {
-	      var newData = new Array(data.length);
-	      for (var i = 0; i < data.length; i++) {
-	        newData[i] = _deconstructPacket(data[i]);
-	      }
-	      return newData;
-	    } else if ('object' == typeof data && !(data instanceof Date)) {
-	      var newData = {};
-	      for (var key in data) {
-	        newData[key] = _deconstructPacket(data[key]);
-	      }
-	      return newData;
-	    }
-	    return data;
-	  }
-
-	  var pack = packet;
-	  pack.data = _deconstructPacket(packetData);
-	  pack.attachments = buffers.length; // number of binary 'attachments'
-	  return {packet: pack, buffers: buffers};
-	};
-
-	/**
-	 * Reconstructs a binary packet from its placeholder packet and buffers
-	 *
-	 * @param {Object} packet - event packet with placeholders
-	 * @param {Array} buffers - binary buffers to put in placeholder positions
-	 * @return {Object} reconstructed packet
-	 * @api public
-	 */
-
-	exports.reconstructPacket = function(packet, buffers) {
-	  var curPlaceHolder = 0;
-
-	  function _reconstructPacket(data) {
-	    if (data && data._placeholder) {
-	      var buf = buffers[data.num]; // appropriate buffer (should be natural order anyway)
-	      return buf;
-	    } else if (isArray(data)) {
-	      for (var i = 0; i < data.length; i++) {
-	        data[i] = _reconstructPacket(data[i]);
-	      }
-	      return data;
-	    } else if (data && 'object' == typeof data) {
-	      for (var key in data) {
-	        data[key] = _reconstructPacket(data[key]);
-	      }
-	      return data;
-	    }
-	    return data;
-	  }
-
-	  packet.data = _reconstructPacket(packet.data);
-	  packet.attachments = undefined; // no longer useful
-	  return packet;
-	};
-
-	/**
-	 * Asynchronously removes Blobs or Files from data via
-	 * FileReader's readAsArrayBuffer method. Used before encoding
-	 * data as msgpack. Calls callback with the blobless data.
-	 *
-	 * @param {Object} data
-	 * @param {Function} callback
-	 * @api private
-	 */
-
-	exports.removeBlobs = function(data, callback) {
-	  function _removeBlobs(obj, curKey, containingObject) {
-	    if (!obj) return obj;
-
-	    // convert any blob
-	    if ((global.Blob && obj instanceof Blob) ||
-	        (global.File && obj instanceof File)) {
-	      pendingBlobs++;
-
-	      // async filereader
-	      var fileReader = new FileReader();
-	      fileReader.onload = function() { // this.result == arraybuffer
-	        if (containingObject) {
-	          containingObject[curKey] = this.result;
-	        }
-	        else {
-	          bloblessData = this.result;
-	        }
-
-	        // if nothing pending its callback time
-	        if(! --pendingBlobs) {
-	          callback(bloblessData);
-	        }
-	      };
-
-	      fileReader.readAsArrayBuffer(obj); // blob -> arraybuffer
-	    } else if (isArray(obj)) { // handle array
-	      for (var i = 0; i < obj.length; i++) {
-	        _removeBlobs(obj[i], i, obj);
-	      }
-	    } else if (obj && 'object' == typeof obj && !isBuf(obj)) { // and object
-	      for (var key in obj) {
-	        _removeBlobs(obj[key], key, obj);
-	      }
-	    }
-	  }
-
-	  var pendingBlobs = 0;
-	  var bloblessData = data;
-	  _removeBlobs(bloblessData);
-	  if (!pendingBlobs) {
-	    callback(bloblessData);
-	  }
-	};
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 279 */
-/***/ function(module, exports) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {
-	module.exports = isBuf;
-
-	/**
-	 * Returns true if obj is a buffer or an arraybuffer.
-	 *
-	 * @api private
-	 */
-
-	function isBuf(obj) {
-	  return (global.Buffer && global.Buffer.isBuffer(obj)) ||
-	         (global.ArrayBuffer && obj instanceof ArrayBuffer);
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 280 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * Module dependencies.
-	 */
-
-	var eio = __webpack_require__(281);
-	var Socket = __webpack_require__(308);
-	var Emitter = __webpack_require__(309);
-	var parser = __webpack_require__(273);
-	var on = __webpack_require__(311);
-	var bind = __webpack_require__(312);
-	var debug = __webpack_require__(270)('socket.io-client:manager');
-	var indexOf = __webpack_require__(306);
-	var Backoff = __webpack_require__(315);
-
-	/**
-	 * IE6+ hasOwnProperty
-	 */
-
-	var has = Object.prototype.hasOwnProperty;
-
-	/**
-	 * Module exports
-	 */
-
-	module.exports = Manager;
-
-	/**
-	 * `Manager` constructor.
-	 *
-	 * @param {String} engine instance or engine uri/opts
-	 * @param {Object} options
-	 * @api public
-	 */
-
-	function Manager(uri, opts){
-	  if (!(this instanceof Manager)) return new Manager(uri, opts);
-	  if (uri && ('object' == typeof uri)) {
-	    opts = uri;
-	    uri = undefined;
-	  }
-	  opts = opts || {};
-
-	  opts.path = opts.path || '/socket.io';
-	  this.nsps = {};
-	  this.subs = [];
-	  this.opts = opts;
-	  this.reconnection(opts.reconnection !== false);
-	  this.reconnectionAttempts(opts.reconnectionAttempts || Infinity);
-	  this.reconnectionDelay(opts.reconnectionDelay || 1000);
-	  this.reconnectionDelayMax(opts.reconnectionDelayMax || 5000);
-	  this.randomizationFactor(opts.randomizationFactor || 0.5);
-	  this.backoff = new Backoff({
-	    min: this.reconnectionDelay(),
-	    max: this.reconnectionDelayMax(),
-	    jitter: this.randomizationFactor()
-	  });
-	  this.timeout(null == opts.timeout ? 20000 : opts.timeout);
-	  this.readyState = 'closed';
-	  this.uri = uri;
-	  this.connecting = [];
-	  this.lastPing = null;
-	  this.encoding = false;
-	  this.packetBuffer = [];
-	  this.encoder = new parser.Encoder();
-	  this.decoder = new parser.Decoder();
-	  this.autoConnect = opts.autoConnect !== false;
-	  if (this.autoConnect) this.open();
-	}
-
-	/**
-	 * Propagate given event to sockets and emit on `this`
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.emitAll = function() {
-	  this.emit.apply(this, arguments);
-	  for (var nsp in this.nsps) {
-	    if (has.call(this.nsps, nsp)) {
-	      this.nsps[nsp].emit.apply(this.nsps[nsp], arguments);
-	    }
-	  }
-	};
-
-	/**
-	 * Update `socket.id` of all sockets
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.updateSocketIds = function(){
-	  for (var nsp in this.nsps) {
-	    if (has.call(this.nsps, nsp)) {
-	      this.nsps[nsp].id = this.engine.id;
-	    }
-	  }
-	};
-
-	/**
-	 * Mix in `Emitter`.
-	 */
-
-	Emitter(Manager.prototype);
-
-	/**
-	 * Sets the `reconnection` config.
-	 *
-	 * @param {Boolean} true/false if it should automatically reconnect
-	 * @return {Manager} self or value
-	 * @api public
-	 */
-
-	Manager.prototype.reconnection = function(v){
-	  if (!arguments.length) return this._reconnection;
-	  this._reconnection = !!v;
-	  return this;
-	};
-
-	/**
-	 * Sets the reconnection attempts config.
-	 *
-	 * @param {Number} max reconnection attempts before giving up
-	 * @return {Manager} self or value
-	 * @api public
-	 */
-
-	Manager.prototype.reconnectionAttempts = function(v){
-	  if (!arguments.length) return this._reconnectionAttempts;
-	  this._reconnectionAttempts = v;
-	  return this;
-	};
-
-	/**
-	 * Sets the delay between reconnections.
-	 *
-	 * @param {Number} delay
-	 * @return {Manager} self or value
-	 * @api public
-	 */
-
-	Manager.prototype.reconnectionDelay = function(v){
-	  if (!arguments.length) return this._reconnectionDelay;
-	  this._reconnectionDelay = v;
-	  this.backoff && this.backoff.setMin(v);
-	  return this;
-	};
-
-	Manager.prototype.randomizationFactor = function(v){
-	  if (!arguments.length) return this._randomizationFactor;
-	  this._randomizationFactor = v;
-	  this.backoff && this.backoff.setJitter(v);
-	  return this;
-	};
-
-	/**
-	 * Sets the maximum delay between reconnections.
-	 *
-	 * @param {Number} delay
-	 * @return {Manager} self or value
-	 * @api public
-	 */
-
-	Manager.prototype.reconnectionDelayMax = function(v){
-	  if (!arguments.length) return this._reconnectionDelayMax;
-	  this._reconnectionDelayMax = v;
-	  this.backoff && this.backoff.setMax(v);
-	  return this;
-	};
-
-	/**
-	 * Sets the connection timeout. `false` to disable
-	 *
-	 * @return {Manager} self or value
-	 * @api public
-	 */
-
-	Manager.prototype.timeout = function(v){
-	  if (!arguments.length) return this._timeout;
-	  this._timeout = v;
-	  return this;
-	};
-
-	/**
-	 * Starts trying to reconnect if reconnection is enabled and we have not
-	 * started reconnecting yet
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.maybeReconnectOnOpen = function() {
-	  // Only try to reconnect if it's the first time we're connecting
-	  if (!this.reconnecting && this._reconnection && this.backoff.attempts === 0) {
-	    // keeps reconnection from firing twice for the same reconnection loop
-	    this.reconnect();
-	  }
-	};
-
-
-	/**
-	 * Sets the current transport `socket`.
-	 *
-	 * @param {Function} optional, callback
-	 * @return {Manager} self
-	 * @api public
-	 */
-
-	Manager.prototype.open =
-	Manager.prototype.connect = function(fn){
-	  debug('readyState %s', this.readyState);
-	  if (~this.readyState.indexOf('open')) return this;
-
-	  debug('opening %s', this.uri);
-	  this.engine = eio(this.uri, this.opts);
-	  var socket = this.engine;
-	  var self = this;
-	  this.readyState = 'opening';
-	  this.skipReconnect = false;
-
-	  // emit `open`
-	  var openSub = on(socket, 'open', function() {
-	    self.onopen();
-	    fn && fn();
-	  });
-
-	  // emit `connect_error`
-	  var errorSub = on(socket, 'error', function(data){
-	    debug('connect_error');
-	    self.cleanup();
-	    self.readyState = 'closed';
-	    self.emitAll('connect_error', data);
-	    if (fn) {
-	      var err = new Error('Connection error');
-	      err.data = data;
-	      fn(err);
-	    } else {
-	      // Only do this if there is no fn to handle the error
-	      self.maybeReconnectOnOpen();
-	    }
-	  });
-
-	  // emit `connect_timeout`
-	  if (false !== this._timeout) {
-	    var timeout = this._timeout;
-	    debug('connect attempt will timeout after %d', timeout);
-
-	    // set timer
-	    var timer = setTimeout(function(){
-	      debug('connect attempt timed out after %d', timeout);
-	      openSub.destroy();
-	      socket.close();
-	      socket.emit('error', 'timeout');
-	      self.emitAll('connect_timeout', timeout);
-	    }, timeout);
-
-	    this.subs.push({
-	      destroy: function(){
-	        clearTimeout(timer);
-	      }
-	    });
-	  }
-
-	  this.subs.push(openSub);
-	  this.subs.push(errorSub);
-
-	  return this;
-	};
-
-	/**
-	 * Called upon transport open.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onopen = function(){
-	  debug('open');
-
-	  // clear old subs
-	  this.cleanup();
-
-	  // mark as open
-	  this.readyState = 'open';
-	  this.emit('open');
-
-	  // add new subs
-	  var socket = this.engine;
-	  this.subs.push(on(socket, 'data', bind(this, 'ondata')));
-	  this.subs.push(on(socket, 'ping', bind(this, 'onping')));
-	  this.subs.push(on(socket, 'pong', bind(this, 'onpong')));
-	  this.subs.push(on(socket, 'error', bind(this, 'onerror')));
-	  this.subs.push(on(socket, 'close', bind(this, 'onclose')));
-	  this.subs.push(on(this.decoder, 'decoded', bind(this, 'ondecoded')));
-	};
-
-	/**
-	 * Called upon a ping.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onping = function(){
-	  this.lastPing = new Date;
-	  this.emitAll('ping');
-	};
-
-	/**
-	 * Called upon a packet.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onpong = function(){
-	  this.emitAll('pong', new Date - this.lastPing);
-	};
-
-	/**
-	 * Called with data.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.ondata = function(data){
-	  this.decoder.add(data);
-	};
-
-	/**
-	 * Called when parser fully decodes a packet.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.ondecoded = function(packet) {
-	  this.emit('packet', packet);
-	};
-
-	/**
-	 * Called upon socket error.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onerror = function(err){
-	  debug('error', err);
-	  this.emitAll('error', err);
-	};
-
-	/**
-	 * Creates a new socket for the given `nsp`.
-	 *
-	 * @return {Socket}
-	 * @api public
-	 */
-
-	Manager.prototype.socket = function(nsp){
-	  var socket = this.nsps[nsp];
-	  if (!socket) {
-	    socket = new Socket(this, nsp);
-	    this.nsps[nsp] = socket;
-	    var self = this;
-	    socket.on('connecting', onConnecting);
-	    socket.on('connect', function(){
-	      socket.id = self.engine.id;
-	    });
-
-	    if (this.autoConnect) {
-	      // manually call here since connecting evnet is fired before listening
-	      onConnecting();
-	    }
-	  }
-
-	  function onConnecting() {
-	    if (!~indexOf(self.connecting, socket)) {
-	      self.connecting.push(socket);
-	    }
-	  }
-
-	  return socket;
-	};
-
-	/**
-	 * Called upon a socket close.
-	 *
-	 * @param {Socket} socket
-	 */
-
-	Manager.prototype.destroy = function(socket){
-	  var index = indexOf(this.connecting, socket);
-	  if (~index) this.connecting.splice(index, 1);
-	  if (this.connecting.length) return;
-
-	  this.close();
-	};
-
-	/**
-	 * Writes a packet.
-	 *
-	 * @param {Object} packet
-	 * @api private
-	 */
-
-	Manager.prototype.packet = function(packet){
-	  debug('writing packet %j', packet);
-	  var self = this;
-
-	  if (!self.encoding) {
-	    // encode, then write to engine with result
-	    self.encoding = true;
-	    this.encoder.encode(packet, function(encodedPackets) {
-	      for (var i = 0; i < encodedPackets.length; i++) {
-	        self.engine.write(encodedPackets[i], packet.options);
-	      }
-	      self.encoding = false;
-	      self.processPacketQueue();
-	    });
-	  } else { // add packet to the queue
-	    self.packetBuffer.push(packet);
-	  }
-	};
-
-	/**
-	 * If packet buffer is non-empty, begins encoding the
-	 * next packet in line.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.processPacketQueue = function() {
-	  if (this.packetBuffer.length > 0 && !this.encoding) {
-	    var pack = this.packetBuffer.shift();
-	    this.packet(pack);
-	  }
-	};
-
-	/**
-	 * Clean up transport subscriptions and packet buffer.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.cleanup = function(){
-	  debug('cleanup');
-
-	  var sub;
-	  while (sub = this.subs.shift()) sub.destroy();
-
-	  this.packetBuffer = [];
-	  this.encoding = false;
-	  this.lastPing = null;
-
-	  this.decoder.destroy();
-	};
-
-	/**
-	 * Close the current socket.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.close =
-	Manager.prototype.disconnect = function(){
-	  debug('disconnect');
-	  this.skipReconnect = true;
-	  this.reconnecting = false;
-	  if ('opening' == this.readyState) {
-	    // `onclose` will not fire because
-	    // an open event never happened
-	    this.cleanup();
-	  }
-	  this.backoff.reset();
-	  this.readyState = 'closed';
-	  if (this.engine) this.engine.close();
-	};
-
-	/**
-	 * Called upon engine close.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onclose = function(reason){
-	  debug('onclose');
-
-	  this.cleanup();
-	  this.backoff.reset();
-	  this.readyState = 'closed';
-	  this.emit('close', reason);
-
-	  if (this._reconnection && !this.skipReconnect) {
-	    this.reconnect();
-	  }
-	};
-
-	/**
-	 * Attempt a reconnection.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.reconnect = function(){
-	  if (this.reconnecting || this.skipReconnect) return this;
-
-	  var self = this;
-
-	  if (this.backoff.attempts >= this._reconnectionAttempts) {
-	    debug('reconnect failed');
-	    this.backoff.reset();
-	    this.emitAll('reconnect_failed');
-	    this.reconnecting = false;
-	  } else {
-	    var delay = this.backoff.duration();
-	    debug('will wait %dms before reconnect attempt', delay);
-
-	    this.reconnecting = true;
-	    var timer = setTimeout(function(){
-	      if (self.skipReconnect) return;
-
-	      debug('attempting reconnect');
-	      self.emitAll('reconnect_attempt', self.backoff.attempts);
-	      self.emitAll('reconnecting', self.backoff.attempts);
-
-	      // check again for the case socket closed in above events
-	      if (self.skipReconnect) return;
-
-	      self.open(function(err){
-	        if (err) {
-	          debug('reconnect attempt error');
-	          self.reconnecting = false;
-	          self.reconnect();
-	          self.emitAll('reconnect_error', err.data);
-	        } else {
-	          debug('reconnect success');
-	          self.onreconnect();
-	        }
-	      });
-	    }, delay);
-
-	    this.subs.push({
-	      destroy: function(){
-	        clearTimeout(timer);
-	      }
-	    });
-	  }
-	};
-
-	/**
-	 * Called upon successful reconnect.
-	 *
-	 * @api private
-	 */
-
-	Manager.prototype.onreconnect = function(){
-	  var attempt = this.backoff.attempts;
-	  this.reconnecting = false;
-	  this.backoff.reset();
-	  this.updateSocketIds();
-	  this.emitAll('reconnect', attempt);
-	};
-
-
-/***/ },
-/* 281 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	module.exports =  __webpack_require__(282);
-
-
-/***/ },
-/* 282 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	module.exports = __webpack_require__(283);
-
-	/**
-	 * Exports parser
-	 *
-	 * @api public
-	 *
-	 */
-	module.exports.parser = __webpack_require__(290);
-
-
-/***/ },
-/* 283 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Module dependencies.
-	 */
-
-	var transports = __webpack_require__(284);
-	var Emitter = __webpack_require__(299);
-	var debug = __webpack_require__(270)('engine.io-client:socket');
-	var index = __webpack_require__(306);
-	var parser = __webpack_require__(290);
-	var parseuri = __webpack_require__(269);
-	var parsejson = __webpack_require__(307);
-	var parseqs = __webpack_require__(300);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = Socket;
-
-	/**
-	 * Noop function.
-	 *
-	 * @api private
-	 */
-
-	function noop(){}
-
-	/**
-	 * Socket constructor.
-	 *
-	 * @param {String|Object} uri or options
-	 * @param {Object} options
-	 * @api public
-	 */
-
-	function Socket(uri, opts){
-	  if (!(this instanceof Socket)) return new Socket(uri, opts);
-
-	  opts = opts || {};
-
-	  if (uri && 'object' == typeof uri) {
-	    opts = uri;
-	    uri = null;
-	  }
-
-	  if (uri) {
-	    uri = parseuri(uri);
-	    opts.hostname = uri.host;
-	    opts.secure = uri.protocol == 'https' || uri.protocol == 'wss';
-	    opts.port = uri.port;
-	    if (uri.query) opts.query = uri.query;
-	  } else if (opts.host) {
-	    opts.hostname = parseuri(opts.host).host;
-	  }
-
-	  this.secure = null != opts.secure ? opts.secure :
-	    (global.location && 'https:' == location.protocol);
-
-	  if (opts.hostname && !opts.port) {
-	    // if no port is specified manually, use the protocol default
-	    opts.port = this.secure ? '443' : '80';
-	  }
-
-	  this.agent = opts.agent || false;
-	  this.hostname = opts.hostname ||
-	    (global.location ? location.hostname : 'localhost');
-	  this.port = opts.port || (global.location && location.port ?
-	       location.port :
-	       (this.secure ? 443 : 80));
-	  this.query = opts.query || {};
-	  if ('string' == typeof this.query) this.query = parseqs.decode(this.query);
-	  this.upgrade = false !== opts.upgrade;
-	  this.path = (opts.path || '/engine.io').replace(/\/$/, '') + '/';
-	  this.forceJSONP = !!opts.forceJSONP;
-	  this.jsonp = false !== opts.jsonp;
-	  this.forceBase64 = !!opts.forceBase64;
-	  this.enablesXDR = !!opts.enablesXDR;
-	  this.timestampParam = opts.timestampParam || 't';
-	  this.timestampRequests = opts.timestampRequests;
-	  this.transports = opts.transports || ['polling', 'websocket'];
-	  this.readyState = '';
-	  this.writeBuffer = [];
-	  this.policyPort = opts.policyPort || 843;
-	  this.rememberUpgrade = opts.rememberUpgrade || false;
-	  this.binaryType = null;
-	  this.onlyBinaryUpgrades = opts.onlyBinaryUpgrades;
-	  this.perMessageDeflate = false !== opts.perMessageDeflate ? (opts.perMessageDeflate || {}) : false;
-
-	  if (true === this.perMessageDeflate) this.perMessageDeflate = {};
-	  if (this.perMessageDeflate && null == this.perMessageDeflate.threshold) {
-	    this.perMessageDeflate.threshold = 1024;
-	  }
-
-	  // SSL options for Node.js client
-	  this.pfx = opts.pfx || null;
-	  this.key = opts.key || null;
-	  this.passphrase = opts.passphrase || null;
-	  this.cert = opts.cert || null;
-	  this.ca = opts.ca || null;
-	  this.ciphers = opts.ciphers || null;
-	  this.rejectUnauthorized = opts.rejectUnauthorized === undefined ? null : opts.rejectUnauthorized;
-
-	  // other options for Node.js client
-	  var freeGlobal = typeof global == 'object' && global;
-	  if (freeGlobal.global === freeGlobal) {
-	    if (opts.extraHeaders && Object.keys(opts.extraHeaders).length > 0) {
-	      this.extraHeaders = opts.extraHeaders;
-	    }
-	  }
-
-	  this.open();
-	}
-
-	Socket.priorWebsocketSuccess = false;
-
-	/**
-	 * Mix in `Emitter`.
-	 */
-
-	Emitter(Socket.prototype);
-
-	/**
-	 * Protocol version.
-	 *
-	 * @api public
-	 */
-
-	Socket.protocol = parser.protocol; // this is an int
-
-	/**
-	 * Expose deps for legacy compatibility
-	 * and standalone browser access.
-	 */
-
-	Socket.Socket = Socket;
-	Socket.Transport = __webpack_require__(289);
-	Socket.transports = __webpack_require__(284);
-	Socket.parser = __webpack_require__(290);
-
-	/**
-	 * Creates transport of the given type.
-	 *
-	 * @param {String} transport name
-	 * @return {Transport}
-	 * @api private
-	 */
-
-	Socket.prototype.createTransport = function (name) {
-	  debug('creating transport "%s"', name);
-	  var query = clone(this.query);
-
-	  // append engine.io protocol identifier
-	  query.EIO = parser.protocol;
-
-	  // transport name
-	  query.transport = name;
-
-	  // session id if we already have one
-	  if (this.id) query.sid = this.id;
-
-	  var transport = new transports[name]({
-	    agent: this.agent,
-	    hostname: this.hostname,
-	    port: this.port,
-	    secure: this.secure,
-	    path: this.path,
-	    query: query,
-	    forceJSONP: this.forceJSONP,
-	    jsonp: this.jsonp,
-	    forceBase64: this.forceBase64,
-	    enablesXDR: this.enablesXDR,
-	    timestampRequests: this.timestampRequests,
-	    timestampParam: this.timestampParam,
-	    policyPort: this.policyPort,
-	    socket: this,
-	    pfx: this.pfx,
-	    key: this.key,
-	    passphrase: this.passphrase,
-	    cert: this.cert,
-	    ca: this.ca,
-	    ciphers: this.ciphers,
-	    rejectUnauthorized: this.rejectUnauthorized,
-	    perMessageDeflate: this.perMessageDeflate,
-	    extraHeaders: this.extraHeaders
-	  });
-
-	  return transport;
-	};
-
-	function clone (obj) {
-	  var o = {};
-	  for (var i in obj) {
-	    if (obj.hasOwnProperty(i)) {
-	      o[i] = obj[i];
-	    }
-	  }
-	  return o;
-	}
-
-	/**
-	 * Initializes transport to use and starts probe.
-	 *
-	 * @api private
-	 */
-	Socket.prototype.open = function () {
-	  var transport;
-	  if (this.rememberUpgrade && Socket.priorWebsocketSuccess && this.transports.indexOf('websocket') != -1) {
-	    transport = 'websocket';
-	  } else if (0 === this.transports.length) {
-	    // Emit error on next tick so it can be listened to
-	    var self = this;
-	    setTimeout(function() {
-	      self.emit('error', 'No transports available');
-	    }, 0);
-	    return;
-	  } else {
-	    transport = this.transports[0];
-	  }
-	  this.readyState = 'opening';
-
-	  // Retry with the next transport if the transport is disabled (jsonp: false)
-	  try {
-	    transport = this.createTransport(transport);
-	  } catch (e) {
-	    this.transports.shift();
-	    this.open();
-	    return;
-	  }
-
-	  transport.open();
-	  this.setTransport(transport);
-	};
-
-	/**
-	 * Sets the current transport. Disables the existing one (if any).
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.setTransport = function(transport){
-	  debug('setting transport %s', transport.name);
-	  var self = this;
-
-	  if (this.transport) {
-	    debug('clearing existing transport %s', this.transport.name);
-	    this.transport.removeAllListeners();
-	  }
-
-	  // set up transport
-	  this.transport = transport;
-
-	  // set up transport listeners
-	  transport
-	  .on('drain', function(){
-	    self.onDrain();
-	  })
-	  .on('packet', function(packet){
-	    self.onPacket(packet);
-	  })
-	  .on('error', function(e){
-	    self.onError(e);
-	  })
-	  .on('close', function(){
-	    self.onClose('transport close');
-	  });
-	};
-
-	/**
-	 * Probes a transport.
-	 *
-	 * @param {String} transport name
-	 * @api private
-	 */
-
-	Socket.prototype.probe = function (name) {
-	  debug('probing transport "%s"', name);
-	  var transport = this.createTransport(name, { probe: 1 })
-	    , failed = false
-	    , self = this;
-
-	  Socket.priorWebsocketSuccess = false;
-
-	  function onTransportOpen(){
-	    if (self.onlyBinaryUpgrades) {
-	      var upgradeLosesBinary = !this.supportsBinary && self.transport.supportsBinary;
-	      failed = failed || upgradeLosesBinary;
-	    }
-	    if (failed) return;
-
-	    debug('probe transport "%s" opened', name);
-	    transport.send([{ type: 'ping', data: 'probe' }]);
-	    transport.once('packet', function (msg) {
-	      if (failed) return;
-	      if ('pong' == msg.type && 'probe' == msg.data) {
-	        debug('probe transport "%s" pong', name);
-	        self.upgrading = true;
-	        self.emit('upgrading', transport);
-	        if (!transport) return;
-	        Socket.priorWebsocketSuccess = 'websocket' == transport.name;
-
-	        debug('pausing current transport "%s"', self.transport.name);
-	        self.transport.pause(function () {
-	          if (failed) return;
-	          if ('closed' == self.readyState) return;
-	          debug('changing transport and sending upgrade packet');
-
-	          cleanup();
-
-	          self.setTransport(transport);
-	          transport.send([{ type: 'upgrade' }]);
-	          self.emit('upgrade', transport);
-	          transport = null;
-	          self.upgrading = false;
-	          self.flush();
-	        });
-	      } else {
-	        debug('probe transport "%s" failed', name);
-	        var err = new Error('probe error');
-	        err.transport = transport.name;
-	        self.emit('upgradeError', err);
-	      }
-	    });
-	  }
-
-	  function freezeTransport() {
-	    if (failed) return;
-
-	    // Any callback called by transport should be ignored since now
-	    failed = true;
-
-	    cleanup();
-
-	    transport.close();
-	    transport = null;
-	  }
-
-	  //Handle any error that happens while probing
-	  function onerror(err) {
-	    var error = new Error('probe error: ' + err);
-	    error.transport = transport.name;
-
-	    freezeTransport();
-
-	    debug('probe transport "%s" failed because of error: %s', name, err);
-
-	    self.emit('upgradeError', error);
-	  }
-
-	  function onTransportClose(){
-	    onerror("transport closed");
-	  }
-
-	  //When the socket is closed while we're probing
-	  function onclose(){
-	    onerror("socket closed");
-	  }
-
-	  //When the socket is upgraded while we're probing
-	  function onupgrade(to){
-	    if (transport && to.name != transport.name) {
-	      debug('"%s" works - aborting "%s"', to.name, transport.name);
-	      freezeTransport();
-	    }
-	  }
-
-	  //Remove all listeners on the transport and on self
-	  function cleanup(){
-	    transport.removeListener('open', onTransportOpen);
-	    transport.removeListener('error', onerror);
-	    transport.removeListener('close', onTransportClose);
-	    self.removeListener('close', onclose);
-	    self.removeListener('upgrading', onupgrade);
-	  }
-
-	  transport.once('open', onTransportOpen);
-	  transport.once('error', onerror);
-	  transport.once('close', onTransportClose);
-
-	  this.once('close', onclose);
-	  this.once('upgrading', onupgrade);
-
-	  transport.open();
-
-	};
-
-	/**
-	 * Called when connection is deemed open.
-	 *
-	 * @api public
-	 */
-
-	Socket.prototype.onOpen = function () {
-	  debug('socket open');
-	  this.readyState = 'open';
-	  Socket.priorWebsocketSuccess = 'websocket' == this.transport.name;
-	  this.emit('open');
-	  this.flush();
-
-	  // we check for `readyState` in case an `open`
-	  // listener already closed the socket
-	  if ('open' == this.readyState && this.upgrade && this.transport.pause) {
-	    debug('starting upgrade probes');
-	    for (var i = 0, l = this.upgrades.length; i < l; i++) {
-	      this.probe(this.upgrades[i]);
-	    }
-	  }
-	};
-
-	/**
-	 * Handles a packet.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onPacket = function (packet) {
-	  if ('opening' == this.readyState || 'open' == this.readyState) {
-	    debug('socket receive: type "%s", data "%s"', packet.type, packet.data);
-
-	    this.emit('packet', packet);
-
-	    // Socket is live - any packet counts
-	    this.emit('heartbeat');
-
-	    switch (packet.type) {
-	      case 'open':
-	        this.onHandshake(parsejson(packet.data));
-	        break;
-
-	      case 'pong':
-	        this.setPing();
-	        this.emit('pong');
-	        break;
-
-	      case 'error':
-	        var err = new Error('server error');
-	        err.code = packet.data;
-	        this.onError(err);
-	        break;
-
-	      case 'message':
-	        this.emit('data', packet.data);
-	        this.emit('message', packet.data);
-	        break;
-	    }
-	  } else {
-	    debug('packet received with socket readyState "%s"', this.readyState);
-	  }
-	};
-
-	/**
-	 * Called upon handshake completion.
-	 *
-	 * @param {Object} handshake obj
-	 * @api private
-	 */
-
-	Socket.prototype.onHandshake = function (data) {
-	  this.emit('handshake', data);
-	  this.id = data.sid;
-	  this.transport.query.sid = data.sid;
-	  this.upgrades = this.filterUpgrades(data.upgrades);
-	  this.pingInterval = data.pingInterval;
-	  this.pingTimeout = data.pingTimeout;
-	  this.onOpen();
-	  // In case open handler closes socket
-	  if  ('closed' == this.readyState) return;
-	  this.setPing();
-
-	  // Prolong liveness of socket on heartbeat
-	  this.removeListener('heartbeat', this.onHeartbeat);
-	  this.on('heartbeat', this.onHeartbeat);
-	};
-
-	/**
-	 * Resets ping timeout.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onHeartbeat = function (timeout) {
-	  clearTimeout(this.pingTimeoutTimer);
-	  var self = this;
-	  self.pingTimeoutTimer = setTimeout(function () {
-	    if ('closed' == self.readyState) return;
-	    self.onClose('ping timeout');
-	  }, timeout || (self.pingInterval + self.pingTimeout));
-	};
-
-	/**
-	 * Pings server every `this.pingInterval` and expects response
-	 * within `this.pingTimeout` or closes connection.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.setPing = function () {
-	  var self = this;
-	  clearTimeout(self.pingIntervalTimer);
-	  self.pingIntervalTimer = setTimeout(function () {
-	    debug('writing ping packet - expecting pong within %sms', self.pingTimeout);
-	    self.ping();
-	    self.onHeartbeat(self.pingTimeout);
-	  }, self.pingInterval);
-	};
-
-	/**
-	* Sends a ping packet.
-	*
-	* @api private
-	*/
-
-	Socket.prototype.ping = function () {
-	  var self = this;
-	  this.sendPacket('ping', function(){
-	    self.emit('ping');
-	  });
-	};
-
-	/**
-	 * Called on `drain` event
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onDrain = function() {
-	  this.writeBuffer.splice(0, this.prevBufferLen);
-
-	  // setting prevBufferLen = 0 is very important
-	  // for example, when upgrading, upgrade packet is sent over,
-	  // and a nonzero prevBufferLen could cause problems on `drain`
-	  this.prevBufferLen = 0;
-
-	  if (0 === this.writeBuffer.length) {
-	    this.emit('drain');
-	  } else {
-	    this.flush();
-	  }
-	};
-
-	/**
-	 * Flush write buffers.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.flush = function () {
-	  if ('closed' != this.readyState && this.transport.writable &&
-	    !this.upgrading && this.writeBuffer.length) {
-	    debug('flushing %d packets in socket', this.writeBuffer.length);
-	    this.transport.send(this.writeBuffer);
-	    // keep track of current length of writeBuffer
-	    // splice writeBuffer and callbackBuffer on `drain`
-	    this.prevBufferLen = this.writeBuffer.length;
-	    this.emit('flush');
-	  }
-	};
-
-	/**
-	 * Sends a message.
-	 *
-	 * @param {String} message.
-	 * @param {Function} callback function.
-	 * @param {Object} options.
-	 * @return {Socket} for chaining.
-	 * @api public
-	 */
-
-	Socket.prototype.write =
-	Socket.prototype.send = function (msg, options, fn) {
-	  this.sendPacket('message', msg, options, fn);
-	  return this;
-	};
-
-	/**
-	 * Sends a packet.
-	 *
-	 * @param {String} packet type.
-	 * @param {String} data.
-	 * @param {Object} options.
-	 * @param {Function} callback function.
-	 * @api private
-	 */
-
-	Socket.prototype.sendPacket = function (type, data, options, fn) {
-	  if('function' == typeof data) {
-	    fn = data;
-	    data = undefined;
-	  }
-
-	  if ('function' == typeof options) {
-	    fn = options;
-	    options = null;
-	  }
-
-	  if ('closing' == this.readyState || 'closed' == this.readyState) {
-	    return;
-	  }
-
-	  options = options || {};
-	  options.compress = false !== options.compress;
-
-	  var packet = {
-	    type: type,
-	    data: data,
-	    options: options
-	  };
-	  this.emit('packetCreate', packet);
-	  this.writeBuffer.push(packet);
-	  if (fn) this.once('flush', fn);
-	  this.flush();
-	};
-
-	/**
-	 * Closes the connection.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.close = function () {
-	  if ('opening' == this.readyState || 'open' == this.readyState) {
-	    this.readyState = 'closing';
-
-	    var self = this;
-
-	    if (this.writeBuffer.length) {
-	      this.once('drain', function() {
-	        if (this.upgrading) {
-	          waitForUpgrade();
-	        } else {
-	          close();
-	        }
-	      });
-	    } else if (this.upgrading) {
-	      waitForUpgrade();
-	    } else {
-	      close();
-	    }
-	  }
-
-	  function close() {
-	    self.onClose('forced close');
-	    debug('socket closing - telling transport to close');
-	    self.transport.close();
-	  }
-
-	  function cleanupAndClose() {
-	    self.removeListener('upgrade', cleanupAndClose);
-	    self.removeListener('upgradeError', cleanupAndClose);
-	    close();
-	  }
-
-	  function waitForUpgrade() {
-	    // wait for upgrade to finish since we can't send packets while pausing a transport
-	    self.once('upgrade', cleanupAndClose);
-	    self.once('upgradeError', cleanupAndClose);
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Called upon transport error
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onError = function (err) {
-	  debug('socket error %j', err);
-	  Socket.priorWebsocketSuccess = false;
-	  this.emit('error', err);
-	  this.onClose('transport error', err);
-	};
-
-	/**
-	 * Called upon transport close.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onClose = function (reason, desc) {
-	  if ('opening' == this.readyState || 'open' == this.readyState || 'closing' == this.readyState) {
-	    debug('socket close with reason: "%s"', reason);
-	    var self = this;
-
-	    // clear timers
-	    clearTimeout(this.pingIntervalTimer);
-	    clearTimeout(this.pingTimeoutTimer);
-
-	    // stop event from firing again for transport
-	    this.transport.removeAllListeners('close');
-
-	    // ensure transport won't stay open
-	    this.transport.close();
-
-	    // ignore further transport communication
-	    this.transport.removeAllListeners();
-
-	    // set ready state
-	    this.readyState = 'closed';
-
-	    // clear session id
-	    this.id = null;
-
-	    // emit close event
-	    this.emit('close', reason, desc);
-
-	    // clean buffers after, so users can still
-	    // grab the buffers on `close` event
-	    self.writeBuffer = [];
-	    self.prevBufferLen = 0;
-	  }
-	};
-
-	/**
-	 * Filters upgrades, returning only those matching client transports.
-	 *
-	 * @param {Array} server upgrades
-	 * @api private
-	 *
-	 */
-
-	Socket.prototype.filterUpgrades = function (upgrades) {
-	  var filteredUpgrades = [];
-	  for (var i = 0, j = upgrades.length; i<j; i++) {
-	    if (~index(this.transports, upgrades[i])) filteredUpgrades.push(upgrades[i]);
-	  }
-	  return filteredUpgrades;
-	};
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 284 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Module dependencies
-	 */
-
-	var XMLHttpRequest = __webpack_require__(285);
-	var XHR = __webpack_require__(287);
-	var JSONP = __webpack_require__(303);
-	var websocket = __webpack_require__(304);
-
-	/**
-	 * Export transports.
-	 */
-
-	exports.polling = polling;
-	exports.websocket = websocket;
-
-	/**
-	 * Polling transport polymorphic constructor.
-	 * Decides on xhr vs jsonp based on feature detection.
-	 *
-	 * @api private
-	 */
-
-	function polling(opts){
-	  var xhr;
-	  var xd = false;
-	  var xs = false;
-	  var jsonp = false !== opts.jsonp;
-
-	  if (global.location) {
-	    var isSSL = 'https:' == location.protocol;
-	    var port = location.port;
-
-	    // some user agents have empty `location.port`
-	    if (!port) {
-	      port = isSSL ? 443 : 80;
-	    }
-
-	    xd = opts.hostname != location.hostname || port != opts.port;
-	    xs = opts.secure != isSSL;
-	  }
-
-	  opts.xdomain = xd;
-	  opts.xscheme = xs;
-	  xhr = new XMLHttpRequest(opts);
-
-	  if ('open' in xhr && !opts.forceJSONP) {
-	    return new XHR(opts);
-	  } else {
-	    if (!jsonp) throw new Error('JSONP disabled');
-	    return new JSONP(opts);
-	  }
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 285 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// browser shim for xmlhttprequest module
-	var hasCORS = __webpack_require__(286);
-
-	module.exports = function(opts) {
-	  var xdomain = opts.xdomain;
-
-	  // scheme must be same when usign XDomainRequest
-	  // http://blogs.msdn.com/b/ieinternals/archive/2010/05/13/xdomainrequest-restrictions-limitations-and-workarounds.aspx
-	  var xscheme = opts.xscheme;
-
-	  // XDomainRequest has a flow of not sending cookie, therefore it should be disabled as a default.
-	  // https://github.com/Automattic/engine.io-client/pull/217
-	  var enablesXDR = opts.enablesXDR;
-
-	  // XMLHttpRequest can be disabled on IE
-	  try {
-	    if ('undefined' != typeof XMLHttpRequest && (!xdomain || hasCORS)) {
-	      return new XMLHttpRequest();
-	    }
-	  } catch (e) { }
-
-	  // Use XDomainRequest for IE8 if enablesXDR is true
-	  // because loading bar keeps flashing when using jsonp-polling
-	  // https://github.com/yujiosaka/socke.io-ie8-loading-example
-	  try {
-	    if ('undefined' != typeof XDomainRequest && !xscheme && enablesXDR) {
-	      return new XDomainRequest();
-	    }
-	  } catch (e) { }
-
-	  if (!xdomain) {
-	    try {
-	      return new ActiveXObject('Microsoft.XMLHTTP');
-	    } catch(e) { }
-	  }
-	}
-
-
-/***/ },
-/* 286 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Module exports.
-	 *
-	 * Logic borrowed from Modernizr:
-	 *
-	 *   - https://github.com/Modernizr/Modernizr/blob/master/feature-detects/cors.js
-	 */
-
-	try {
-	  module.exports = typeof XMLHttpRequest !== 'undefined' &&
-	    'withCredentials' in new XMLHttpRequest();
-	} catch (err) {
-	  // if XMLHttp support is disabled in IE then it will throw
-	  // when trying to create
-	  module.exports = false;
-	}
-
-
-/***/ },
-/* 287 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Module requirements.
-	 */
-
-	var XMLHttpRequest = __webpack_require__(285);
-	var Polling = __webpack_require__(288);
-	var Emitter = __webpack_require__(299);
-	var inherit = __webpack_require__(301);
-	var debug = __webpack_require__(270)('engine.io-client:polling-xhr');
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = XHR;
-	module.exports.Request = Request;
-
-	/**
-	 * Empty function
-	 */
-
-	function empty(){}
-
-	/**
-	 * XHR Polling constructor.
-	 *
-	 * @param {Object} opts
-	 * @api public
-	 */
-
-	function XHR(opts){
-	  Polling.call(this, opts);
-
-	  if (global.location) {
-	    var isSSL = 'https:' == location.protocol;
-	    var port = location.port;
-
-	    // some user agents have empty `location.port`
-	    if (!port) {
-	      port = isSSL ? 443 : 80;
-	    }
-
-	    this.xd = opts.hostname != global.location.hostname ||
-	      port != opts.port;
-	    this.xs = opts.secure != isSSL;
-	  } else {
-	    this.extraHeaders = opts.extraHeaders;
-	  }
-	}
-
-	/**
-	 * Inherits from Polling.
-	 */
-
-	inherit(XHR, Polling);
-
-	/**
-	 * XHR supports binary
-	 */
-
-	XHR.prototype.supportsBinary = true;
-
-	/**
-	 * Creates a request.
-	 *
-	 * @param {String} method
-	 * @api private
-	 */
-
-	XHR.prototype.request = function(opts){
-	  opts = opts || {};
-	  opts.uri = this.uri();
-	  opts.xd = this.xd;
-	  opts.xs = this.xs;
-	  opts.agent = this.agent || false;
-	  opts.supportsBinary = this.supportsBinary;
-	  opts.enablesXDR = this.enablesXDR;
-
-	  // SSL options for Node.js client
-	  opts.pfx = this.pfx;
-	  opts.key = this.key;
-	  opts.passphrase = this.passphrase;
-	  opts.cert = this.cert;
-	  opts.ca = this.ca;
-	  opts.ciphers = this.ciphers;
-	  opts.rejectUnauthorized = this.rejectUnauthorized;
-
-	  // other options for Node.js client
-	  opts.extraHeaders = this.extraHeaders;
-
-	  return new Request(opts);
-	};
-
-	/**
-	 * Sends data.
-	 *
-	 * @param {String} data to send.
-	 * @param {Function} called upon flush.
-	 * @api private
-	 */
-
-	XHR.prototype.doWrite = function(data, fn){
-	  var isBinary = typeof data !== 'string' && data !== undefined;
-	  var req = this.request({ method: 'POST', data: data, isBinary: isBinary });
-	  var self = this;
-	  req.on('success', fn);
-	  req.on('error', function(err){
-	    self.onError('xhr post error', err);
-	  });
-	  this.sendXhr = req;
-	};
-
-	/**
-	 * Starts a poll cycle.
-	 *
-	 * @api private
-	 */
-
-	XHR.prototype.doPoll = function(){
-	  debug('xhr poll');
-	  var req = this.request();
-	  var self = this;
-	  req.on('data', function(data){
-	    self.onData(data);
-	  });
-	  req.on('error', function(err){
-	    self.onError('xhr poll error', err);
-	  });
-	  this.pollXhr = req;
-	};
-
-	/**
-	 * Request constructor
-	 *
-	 * @param {Object} options
-	 * @api public
-	 */
-
-	function Request(opts){
-	  this.method = opts.method || 'GET';
-	  this.uri = opts.uri;
-	  this.xd = !!opts.xd;
-	  this.xs = !!opts.xs;
-	  this.async = false !== opts.async;
-	  this.data = undefined != opts.data ? opts.data : null;
-	  this.agent = opts.agent;
-	  this.isBinary = opts.isBinary;
-	  this.supportsBinary = opts.supportsBinary;
-	  this.enablesXDR = opts.enablesXDR;
-
-	  // SSL options for Node.js client
-	  this.pfx = opts.pfx;
-	  this.key = opts.key;
-	  this.passphrase = opts.passphrase;
-	  this.cert = opts.cert;
-	  this.ca = opts.ca;
-	  this.ciphers = opts.ciphers;
-	  this.rejectUnauthorized = opts.rejectUnauthorized;
-
-	  // other options for Node.js client
-	  this.extraHeaders = opts.extraHeaders;
-
-	  this.create();
-	}
-
-	/**
-	 * Mix in `Emitter`.
-	 */
-
-	Emitter(Request.prototype);
-
-	/**
-	 * Creates the XHR object and sends the request.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.create = function(){
-	  var opts = { agent: this.agent, xdomain: this.xd, xscheme: this.xs, enablesXDR: this.enablesXDR };
-
-	  // SSL options for Node.js client
-	  opts.pfx = this.pfx;
-	  opts.key = this.key;
-	  opts.passphrase = this.passphrase;
-	  opts.cert = this.cert;
-	  opts.ca = this.ca;
-	  opts.ciphers = this.ciphers;
-	  opts.rejectUnauthorized = this.rejectUnauthorized;
-
-	  var xhr = this.xhr = new XMLHttpRequest(opts);
-	  var self = this;
-
-	  try {
-	    debug('xhr open %s: %s', this.method, this.uri);
-	    xhr.open(this.method, this.uri, this.async);
-	    try {
-	      if (this.extraHeaders) {
-	        xhr.setDisableHeaderCheck(true);
-	        for (var i in this.extraHeaders) {
-	          if (this.extraHeaders.hasOwnProperty(i)) {
-	            xhr.setRequestHeader(i, this.extraHeaders[i]);
-	          }
-	        }
-	      }
-	    } catch (e) {}
-	    if (this.supportsBinary) {
-	      // This has to be done after open because Firefox is stupid
-	      // http://stackoverflow.com/questions/13216903/get-binary-data-with-xmlhttprequest-in-a-firefox-extension
-	      xhr.responseType = 'arraybuffer';
-	    }
-
-	    if ('POST' == this.method) {
-	      try {
-	        if (this.isBinary) {
-	          xhr.setRequestHeader('Content-type', 'application/octet-stream');
-	        } else {
-	          xhr.setRequestHeader('Content-type', 'text/plain;charset=UTF-8');
-	        }
-	      } catch (e) {}
-	    }
-
-	    // ie6 check
-	    if ('withCredentials' in xhr) {
-	      xhr.withCredentials = true;
-	    }
-
-	    if (this.hasXDR()) {
-	      xhr.onload = function(){
-	        self.onLoad();
-	      };
-	      xhr.onerror = function(){
-	        self.onError(xhr.responseText);
-	      };
-	    } else {
-	      xhr.onreadystatechange = function(){
-	        if (4 != xhr.readyState) return;
-	        if (200 == xhr.status || 1223 == xhr.status) {
-	          self.onLoad();
-	        } else {
-	          // make sure the `error` event handler that's user-set
-	          // does not throw in the same tick and gets caught here
-	          setTimeout(function(){
-	            self.onError(xhr.status);
-	          }, 0);
-	        }
-	      };
-	    }
-
-	    debug('xhr data %s', this.data);
-	    xhr.send(this.data);
-	  } catch (e) {
-	    // Need to defer since .create() is called directly fhrom the constructor
-	    // and thus the 'error' event can only be only bound *after* this exception
-	    // occurs.  Therefore, also, we cannot throw here at all.
-	    setTimeout(function() {
-	      self.onError(e);
-	    }, 0);
-	    return;
-	  }
-
-	  if (global.document) {
-	    this.index = Request.requestsCount++;
-	    Request.requests[this.index] = this;
-	  }
-	};
-
-	/**
-	 * Called upon successful response.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.onSuccess = function(){
-	  this.emit('success');
-	  this.cleanup();
-	};
-
-	/**
-	 * Called if we have data.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.onData = function(data){
-	  this.emit('data', data);
-	  this.onSuccess();
-	};
-
-	/**
-	 * Called upon error.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.onError = function(err){
-	  this.emit('error', err);
-	  this.cleanup(true);
-	};
-
-	/**
-	 * Cleans up house.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.cleanup = function(fromError){
-	  if ('undefined' == typeof this.xhr || null === this.xhr) {
-	    return;
-	  }
-	  // xmlhttprequest
-	  if (this.hasXDR()) {
-	    this.xhr.onload = this.xhr.onerror = empty;
-	  } else {
-	    this.xhr.onreadystatechange = empty;
-	  }
-
-	  if (fromError) {
-	    try {
-	      this.xhr.abort();
-	    } catch(e) {}
-	  }
-
-	  if (global.document) {
-	    delete Request.requests[this.index];
-	  }
-
-	  this.xhr = null;
-	};
-
-	/**
-	 * Called upon load.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.onLoad = function(){
-	  var data;
-	  try {
-	    var contentType;
-	    try {
-	      contentType = this.xhr.getResponseHeader('Content-Type').split(';')[0];
-	    } catch (e) {}
-	    if (contentType === 'application/octet-stream') {
-	      data = this.xhr.response;
-	    } else {
-	      if (!this.supportsBinary) {
-	        data = this.xhr.responseText;
-	      } else {
-	        try {
-	          data = String.fromCharCode.apply(null, new Uint8Array(this.xhr.response));
-	        } catch (e) {
-	          var ui8Arr = new Uint8Array(this.xhr.response);
-	          var dataArray = [];
-	          for (var idx = 0, length = ui8Arr.length; idx < length; idx++) {
-	            dataArray.push(ui8Arr[idx]);
-	          }
-
-	          data = String.fromCharCode.apply(null, dataArray);
-	        }
-	      }
-	    }
-	  } catch (e) {
-	    this.onError(e);
-	  }
-	  if (null != data) {
-	    this.onData(data);
-	  }
-	};
-
-	/**
-	 * Check if it has XDomainRequest.
-	 *
-	 * @api private
-	 */
-
-	Request.prototype.hasXDR = function(){
-	  return 'undefined' !== typeof global.XDomainRequest && !this.xs && this.enablesXDR;
-	};
-
-	/**
-	 * Aborts the request.
-	 *
-	 * @api public
-	 */
-
-	Request.prototype.abort = function(){
-	  this.cleanup();
-	};
-
-	/**
-	 * Aborts pending requests when unloading the window. This is needed to prevent
-	 * memory leaks (e.g. when using IE) and to ensure that no spurious error is
-	 * emitted.
-	 */
-
-	if (global.document) {
-	  Request.requestsCount = 0;
-	  Request.requests = {};
-	  if (global.attachEvent) {
-	    global.attachEvent('onunload', unloadHandler);
-	  } else if (global.addEventListener) {
-	    global.addEventListener('beforeunload', unloadHandler, false);
-	  }
-	}
-
-	function unloadHandler() {
-	  for (var i in Request.requests) {
-	    if (Request.requests.hasOwnProperty(i)) {
-	      Request.requests[i].abort();
-	    }
-	  }
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 288 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Module dependencies.
-	 */
-
-	var Transport = __webpack_require__(289);
-	var parseqs = __webpack_require__(300);
-	var parser = __webpack_require__(290);
-	var inherit = __webpack_require__(301);
-	var yeast = __webpack_require__(302);
-	var debug = __webpack_require__(270)('engine.io-client:polling');
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = Polling;
-
-	/**
-	 * Is XHR2 supported?
-	 */
-
-	var hasXHR2 = (function() {
-	  var XMLHttpRequest = __webpack_require__(285);
-	  var xhr = new XMLHttpRequest({ xdomain: false });
-	  return null != xhr.responseType;
-	})();
-
-	/**
-	 * Polling interface.
-	 *
-	 * @param {Object} opts
-	 * @api private
-	 */
-
-	function Polling(opts){
-	  var forceBase64 = (opts && opts.forceBase64);
-	  if (!hasXHR2 || forceBase64) {
-	    this.supportsBinary = false;
-	  }
-	  Transport.call(this, opts);
-	}
-
-	/**
-	 * Inherits from Transport.
-	 */
-
-	inherit(Polling, Transport);
-
-	/**
-	 * Transport name.
-	 */
-
-	Polling.prototype.name = 'polling';
-
-	/**
-	 * Opens the socket (triggers polling). We write a PING message to determine
-	 * when the transport is open.
-	 *
-	 * @api private
-	 */
-
-	Polling.prototype.doOpen = function(){
-	  this.poll();
-	};
-
-	/**
-	 * Pauses polling.
-	 *
-	 * @param {Function} callback upon buffers are flushed and transport is paused
-	 * @api private
-	 */
-
-	Polling.prototype.pause = function(onPause){
-	  var pending = 0;
-	  var self = this;
-
-	  this.readyState = 'pausing';
-
-	  function pause(){
-	    debug('paused');
-	    self.readyState = 'paused';
-	    onPause();
-	  }
-
-	  if (this.polling || !this.writable) {
-	    var total = 0;
-
-	    if (this.polling) {
-	      debug('we are currently polling - waiting to pause');
-	      total++;
-	      this.once('pollComplete', function(){
-	        debug('pre-pause polling complete');
-	        --total || pause();
-	      });
-	    }
-
-	    if (!this.writable) {
-	      debug('we are currently writing - waiting to pause');
-	      total++;
-	      this.once('drain', function(){
-	        debug('pre-pause writing complete');
-	        --total || pause();
-	      });
-	    }
-	  } else {
-	    pause();
-	  }
-	};
-
-	/**
-	 * Starts polling cycle.
-	 *
-	 * @api public
-	 */
-
-	Polling.prototype.poll = function(){
-	  debug('polling');
-	  this.polling = true;
-	  this.doPoll();
-	  this.emit('poll');
-	};
-
-	/**
-	 * Overloads onData to detect payloads.
-	 *
-	 * @api private
-	 */
-
-	Polling.prototype.onData = function(data){
-	  var self = this;
-	  debug('polling got data %s', data);
-	  var callback = function(packet, index, total) {
-	    // if its the first message we consider the transport open
-	    if ('opening' == self.readyState) {
-	      self.onOpen();
-	    }
-
-	    // if its a close packet, we close the ongoing requests
-	    if ('close' == packet.type) {
-	      self.onClose();
-	      return false;
-	    }
-
-	    // otherwise bypass onData and handle the message
-	    self.onPacket(packet);
-	  };
-
-	  // decode payload
-	  parser.decodePayload(data, this.socket.binaryType, callback);
-
-	  // if an event did not trigger closing
-	  if ('closed' != this.readyState) {
-	    // if we got data we're not polling
-	    this.polling = false;
-	    this.emit('pollComplete');
-
-	    if ('open' == this.readyState) {
-	      this.poll();
-	    } else {
-	      debug('ignoring poll - transport state "%s"', this.readyState);
-	    }
-	  }
-	};
-
-	/**
-	 * For polling, send a close packet.
-	 *
-	 * @api private
-	 */
-
-	Polling.prototype.doClose = function(){
-	  var self = this;
-
-	  function close(){
-	    debug('writing close packet');
-	    self.write([{ type: 'close' }]);
-	  }
-
-	  if ('open' == this.readyState) {
-	    debug('transport open - closing');
-	    close();
-	  } else {
-	    // in case we're trying to close while
-	    // handshaking is in progress (GH-164)
-	    debug('transport not open - deferring close');
-	    this.once('open', close);
-	  }
-	};
-
-	/**
-	 * Writes a packets payload.
-	 *
-	 * @param {Array} data packets
-	 * @param {Function} drain callback
-	 * @api private
-	 */
-
-	Polling.prototype.write = function(packets){
-	  var self = this;
-	  this.writable = false;
-	  var callbackfn = function() {
-	    self.writable = true;
-	    self.emit('drain');
-	  };
-
-	  var self = this;
-	  parser.encodePayload(packets, this.supportsBinary, function(data) {
-	    self.doWrite(data, callbackfn);
-	  });
-	};
-
-	/**
-	 * Generates uri for connection.
-	 *
-	 * @api private
-	 */
-
-	Polling.prototype.uri = function(){
-	  var query = this.query || {};
-	  var schema = this.secure ? 'https' : 'http';
-	  var port = '';
-
-	  // cache busting is forced
-	  if (false !== this.timestampRequests) {
-	    query[this.timestampParam] = yeast();
-	  }
-
-	  if (!this.supportsBinary && !query.sid) {
-	    query.b64 = 1;
-	  }
-
-	  query = parseqs.encode(query);
-
-	  // avoid port if default for schema
-	  if (this.port && (('https' == schema && this.port != 443) ||
-	     ('http' == schema && this.port != 80))) {
-	    port = ':' + this.port;
-	  }
-
-	  // prepend ? to query
-	  if (query.length) {
-	    query = '?' + query;
-	  }
-
-	  var ipv6 = this.hostname.indexOf(':') !== -1;
-	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
-	};
-
-
-/***/ },
-/* 289 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Module dependencies.
-	 */
-
-	var parser = __webpack_require__(290);
-	var Emitter = __webpack_require__(299);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = Transport;
-
-	/**
-	 * Transport abstract constructor.
-	 *
-	 * @param {Object} options.
-	 * @api private
-	 */
-
-	function Transport (opts) {
-	  this.path = opts.path;
-	  this.hostname = opts.hostname;
-	  this.port = opts.port;
-	  this.secure = opts.secure;
-	  this.query = opts.query;
-	  this.timestampParam = opts.timestampParam;
-	  this.timestampRequests = opts.timestampRequests;
-	  this.readyState = '';
-	  this.agent = opts.agent || false;
-	  this.socket = opts.socket;
-	  this.enablesXDR = opts.enablesXDR;
-
-	  // SSL options for Node.js client
-	  this.pfx = opts.pfx;
-	  this.key = opts.key;
-	  this.passphrase = opts.passphrase;
-	  this.cert = opts.cert;
-	  this.ca = opts.ca;
-	  this.ciphers = opts.ciphers;
-	  this.rejectUnauthorized = opts.rejectUnauthorized;
-
-	  // other options for Node.js client
-	  this.extraHeaders = opts.extraHeaders;
-	}
-
-	/**
-	 * Mix in `Emitter`.
-	 */
-
-	Emitter(Transport.prototype);
-
-	/**
-	 * Emits an error.
-	 *
-	 * @param {String} str
-	 * @return {Transport} for chaining
-	 * @api public
-	 */
-
-	Transport.prototype.onError = function (msg, desc) {
-	  var err = new Error(msg);
-	  err.type = 'TransportError';
-	  err.description = desc;
-	  this.emit('error', err);
-	  return this;
-	};
-
-	/**
-	 * Opens the transport.
-	 *
-	 * @api public
-	 */
-
-	Transport.prototype.open = function () {
-	  if ('closed' == this.readyState || '' == this.readyState) {
-	    this.readyState = 'opening';
-	    this.doOpen();
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Closes the transport.
-	 *
-	 * @api private
-	 */
-
-	Transport.prototype.close = function () {
-	  if ('opening' == this.readyState || 'open' == this.readyState) {
-	    this.doClose();
-	    this.onClose();
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Sends multiple packets.
-	 *
-	 * @param {Array} packets
-	 * @api private
-	 */
-
-	Transport.prototype.send = function(packets){
-	  if ('open' == this.readyState) {
-	    this.write(packets);
-	  } else {
-	    throw new Error('Transport not open');
-	  }
-	};
-
-	/**
-	 * Called upon open
-	 *
-	 * @api private
-	 */
-
-	Transport.prototype.onOpen = function () {
-	  this.readyState = 'open';
-	  this.writable = true;
-	  this.emit('open');
-	};
-
-	/**
-	 * Called with data.
-	 *
-	 * @param {String} data
-	 * @api private
-	 */
-
-	Transport.prototype.onData = function(data){
-	  var packet = parser.decodePacket(data, this.socket.binaryType);
-	  this.onPacket(packet);
-	};
-
-	/**
-	 * Called with a decoded packet.
-	 */
-
-	Transport.prototype.onPacket = function (packet) {
-	  this.emit('packet', packet);
-	};
-
-	/**
-	 * Called upon close.
-	 *
-	 * @api private
-	 */
-
-	Transport.prototype.onClose = function () {
-	  this.readyState = 'closed';
-	  this.emit('close');
-	};
-
-
-/***/ },
-/* 290 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Module dependencies.
-	 */
-
-	var keys = __webpack_require__(291);
-	var hasBinary = __webpack_require__(292);
-	var sliceBuffer = __webpack_require__(294);
-	var base64encoder = __webpack_require__(295);
-	var after = __webpack_require__(296);
-	var utf8 = __webpack_require__(297);
-
-	/**
-	 * Check if we are running an android browser. That requires us to use
-	 * ArrayBuffer with polling transports...
-	 *
-	 * http://ghinda.net/jpeg-blob-ajax-android/
-	 */
-
-	var isAndroid = navigator.userAgent.match(/Android/i);
-
-	/**
-	 * Check if we are running in PhantomJS.
-	 * Uploading a Blob with PhantomJS does not work correctly, as reported here:
-	 * https://github.com/ariya/phantomjs/issues/11395
-	 * @type boolean
-	 */
-	var isPhantomJS = /PhantomJS/i.test(navigator.userAgent);
-
-	/**
-	 * When true, avoids using Blobs to encode payloads.
-	 * @type boolean
-	 */
-	var dontSendBlobs = isAndroid || isPhantomJS;
-
-	/**
-	 * Current protocol version.
-	 */
-
-	exports.protocol = 3;
-
-	/**
-	 * Packet types.
-	 */
-
-	var packets = exports.packets = {
-	    open:     0    // non-ws
-	  , close:    1    // non-ws
-	  , ping:     2
-	  , pong:     3
-	  , message:  4
-	  , upgrade:  5
-	  , noop:     6
-	};
-
-	var packetslist = keys(packets);
-
-	/**
-	 * Premade error packet.
-	 */
-
-	var err = { type: 'error', data: 'parser error' };
-
-	/**
-	 * Create a blob api even for blob builder when vendor prefixes exist
-	 */
-
-	var Blob = __webpack_require__(298);
-
-	/**
-	 * Encodes a packet.
-	 *
-	 *     <packet type id> [ <data> ]
-	 *
-	 * Example:
-	 *
-	 *     5hello world
-	 *     3
-	 *     4
-	 *
-	 * Binary is encoded in an identical principle
-	 *
-	 * @api private
-	 */
-
-	exports.encodePacket = function (packet, supportsBinary, utf8encode, callback) {
-	  if ('function' == typeof supportsBinary) {
-	    callback = supportsBinary;
-	    supportsBinary = false;
-	  }
-
-	  if ('function' == typeof utf8encode) {
-	    callback = utf8encode;
-	    utf8encode = null;
-	  }
-
-	  var data = (packet.data === undefined)
-	    ? undefined
-	    : packet.data.buffer || packet.data;
-
-	  if (global.ArrayBuffer && data instanceof ArrayBuffer) {
-	    return encodeArrayBuffer(packet, supportsBinary, callback);
-	  } else if (Blob && data instanceof global.Blob) {
-	    return encodeBlob(packet, supportsBinary, callback);
-	  }
-
-	  // might be an object with { base64: true, data: dataAsBase64String }
-	  if (data && data.base64) {
-	    return encodeBase64Object(packet, callback);
-	  }
-
-	  // Sending data as a utf-8 string
-	  var encoded = packets[packet.type];
-
-	  // data fragment is optional
-	  if (undefined !== packet.data) {
-	    encoded += utf8encode ? utf8.encode(String(packet.data)) : String(packet.data);
-	  }
-
-	  return callback('' + encoded);
-
-	};
-
-	function encodeBase64Object(packet, callback) {
-	  // packet data is an object { base64: true, data: dataAsBase64String }
-	  var message = 'b' + exports.packets[packet.type] + packet.data.data;
-	  return callback(message);
-	}
-
-	/**
-	 * Encode packet helpers for binary types
-	 */
-
-	function encodeArrayBuffer(packet, supportsBinary, callback) {
-	  if (!supportsBinary) {
-	    return exports.encodeBase64Packet(packet, callback);
-	  }
-
-	  var data = packet.data;
-	  var contentArray = new Uint8Array(data);
-	  var resultBuffer = new Uint8Array(1 + data.byteLength);
-
-	  resultBuffer[0] = packets[packet.type];
-	  for (var i = 0; i < contentArray.length; i++) {
-	    resultBuffer[i+1] = contentArray[i];
-	  }
-
-	  return callback(resultBuffer.buffer);
-	}
-
-	function encodeBlobAsArrayBuffer(packet, supportsBinary, callback) {
-	  if (!supportsBinary) {
-	    return exports.encodeBase64Packet(packet, callback);
-	  }
-
-	  var fr = new FileReader();
-	  fr.onload = function() {
-	    packet.data = fr.result;
-	    exports.encodePacket(packet, supportsBinary, true, callback);
-	  };
-	  return fr.readAsArrayBuffer(packet.data);
-	}
-
-	function encodeBlob(packet, supportsBinary, callback) {
-	  if (!supportsBinary) {
-	    return exports.encodeBase64Packet(packet, callback);
-	  }
-
-	  if (dontSendBlobs) {
-	    return encodeBlobAsArrayBuffer(packet, supportsBinary, callback);
-	  }
-
-	  var length = new Uint8Array(1);
-	  length[0] = packets[packet.type];
-	  var blob = new Blob([length.buffer, packet.data]);
-
-	  return callback(blob);
-	}
-
-	/**
-	 * Encodes a packet with binary data in a base64 string
-	 *
-	 * @param {Object} packet, has `type` and `data`
-	 * @return {String} base64 encoded message
-	 */
-
-	exports.encodeBase64Packet = function(packet, callback) {
-	  var message = 'b' + exports.packets[packet.type];
-	  if (Blob && packet.data instanceof global.Blob) {
-	    var fr = new FileReader();
-	    fr.onload = function() {
-	      var b64 = fr.result.split(',')[1];
-	      callback(message + b64);
-	    };
-	    return fr.readAsDataURL(packet.data);
-	  }
-
-	  var b64data;
-	  try {
-	    b64data = String.fromCharCode.apply(null, new Uint8Array(packet.data));
-	  } catch (e) {
-	    // iPhone Safari doesn't let you apply with typed arrays
-	    var typed = new Uint8Array(packet.data);
-	    var basic = new Array(typed.length);
-	    for (var i = 0; i < typed.length; i++) {
-	      basic[i] = typed[i];
-	    }
-	    b64data = String.fromCharCode.apply(null, basic);
-	  }
-	  message += global.btoa(b64data);
-	  return callback(message);
-	};
-
-	/**
-	 * Decodes a packet. Changes format to Blob if requested.
-	 *
-	 * @return {Object} with `type` and `data` (if any)
-	 * @api private
-	 */
-
-	exports.decodePacket = function (data, binaryType, utf8decode) {
-	  // String data
-	  if (typeof data == 'string' || data === undefined) {
-	    if (data.charAt(0) == 'b') {
-	      return exports.decodeBase64Packet(data.substr(1), binaryType);
-	    }
-
-	    if (utf8decode) {
-	      try {
-	        data = utf8.decode(data);
-	      } catch (e) {
-	        return err;
-	      }
-	    }
-	    var type = data.charAt(0);
-
-	    if (Number(type) != type || !packetslist[type]) {
-	      return err;
-	    }
-
-	    if (data.length > 1) {
-	      return { type: packetslist[type], data: data.substring(1) };
-	    } else {
-	      return { type: packetslist[type] };
-	    }
-	  }
-
-	  var asArray = new Uint8Array(data);
-	  var type = asArray[0];
-	  var rest = sliceBuffer(data, 1);
-	  if (Blob && binaryType === 'blob') {
-	    rest = new Blob([rest]);
-	  }
-	  return { type: packetslist[type], data: rest };
-	};
-
-	/**
-	 * Decodes a packet encoded in a base64 string
-	 *
-	 * @param {String} base64 encoded message
-	 * @return {Object} with `type` and `data` (if any)
-	 */
-
-	exports.decodeBase64Packet = function(msg, binaryType) {
-	  var type = packetslist[msg.charAt(0)];
-	  if (!global.ArrayBuffer) {
-	    return { type: type, data: { base64: true, data: msg.substr(1) } };
-	  }
-
-	  var data = base64encoder.decode(msg.substr(1));
-
-	  if (binaryType === 'blob' && Blob) {
-	    data = new Blob([data]);
-	  }
-
-	  return { type: type, data: data };
-	};
-
-	/**
-	 * Encodes multiple messages (payload).
-	 *
-	 *     <length>:data
-	 *
-	 * Example:
-	 *
-	 *     11:hello world2:hi
-	 *
-	 * If any contents are binary, they will be encoded as base64 strings. Base64
-	 * encoded strings are marked with a b before the length specifier
-	 *
-	 * @param {Array} packets
-	 * @api private
-	 */
-
-	exports.encodePayload = function (packets, supportsBinary, callback) {
-	  if (typeof supportsBinary == 'function') {
-	    callback = supportsBinary;
-	    supportsBinary = null;
-	  }
-
-	  var isBinary = hasBinary(packets);
-
-	  if (supportsBinary && isBinary) {
-	    if (Blob && !dontSendBlobs) {
-	      return exports.encodePayloadAsBlob(packets, callback);
-	    }
-
-	    return exports.encodePayloadAsArrayBuffer(packets, callback);
-	  }
-
-	  if (!packets.length) {
-	    return callback('0:');
-	  }
-
-	  function setLengthHeader(message) {
-	    return message.length + ':' + message;
-	  }
-
-	  function encodeOne(packet, doneCallback) {
-	    exports.encodePacket(packet, !isBinary ? false : supportsBinary, true, function(message) {
-	      doneCallback(null, setLengthHeader(message));
-	    });
-	  }
-
-	  map(packets, encodeOne, function(err, results) {
-	    return callback(results.join(''));
-	  });
-	};
-
-	/**
-	 * Async array map using after
-	 */
-
-	function map(ary, each, done) {
-	  var result = new Array(ary.length);
-	  var next = after(ary.length, done);
-
-	  var eachWithIndex = function(i, el, cb) {
-	    each(el, function(error, msg) {
-	      result[i] = msg;
-	      cb(error, result);
-	    });
-	  };
-
-	  for (var i = 0; i < ary.length; i++) {
-	    eachWithIndex(i, ary[i], next);
-	  }
-	}
-
-	/*
-	 * Decodes data when a payload is maybe expected. Possible binary contents are
-	 * decoded from their base64 representation
-	 *
-	 * @param {String} data, callback method
-	 * @api public
-	 */
-
-	exports.decodePayload = function (data, binaryType, callback) {
-	  if (typeof data != 'string') {
-	    return exports.decodePayloadAsBinary(data, binaryType, callback);
-	  }
-
-	  if (typeof binaryType === 'function') {
-	    callback = binaryType;
-	    binaryType = null;
-	  }
-
-	  var packet;
-	  if (data == '') {
-	    // parser error - ignoring payload
-	    return callback(err, 0, 1);
-	  }
-
-	  var length = ''
-	    , n, msg;
-
-	  for (var i = 0, l = data.length; i < l; i++) {
-	    var chr = data.charAt(i);
-
-	    if (':' != chr) {
-	      length += chr;
-	    } else {
-	      if ('' == length || (length != (n = Number(length)))) {
-	        // parser error - ignoring payload
-	        return callback(err, 0, 1);
-	      }
-
-	      msg = data.substr(i + 1, n);
-
-	      if (length != msg.length) {
-	        // parser error - ignoring payload
-	        return callback(err, 0, 1);
-	      }
-
-	      if (msg.length) {
-	        packet = exports.decodePacket(msg, binaryType, true);
-
-	        if (err.type == packet.type && err.data == packet.data) {
-	          // parser error in individual packet - ignoring payload
-	          return callback(err, 0, 1);
-	        }
-
-	        var ret = callback(packet, i + n, l);
-	        if (false === ret) return;
-	      }
-
-	      // advance cursor
-	      i += n;
-	      length = '';
-	    }
-	  }
-
-	  if (length != '') {
-	    // parser error - ignoring payload
-	    return callback(err, 0, 1);
-	  }
-
-	};
-
-	/**
-	 * Encodes multiple messages (payload) as binary.
-	 *
-	 * <1 = binary, 0 = string><number from 0-9><number from 0-9>[...]<number
-	 * 255><data>
-	 *
-	 * Example:
-	 * 1 3 255 1 2 3, if the binary contents are interpreted as 8 bit integers
-	 *
-	 * @param {Array} packets
-	 * @return {ArrayBuffer} encoded payload
-	 * @api private
-	 */
-
-	exports.encodePayloadAsArrayBuffer = function(packets, callback) {
-	  if (!packets.length) {
-	    return callback(new ArrayBuffer(0));
-	  }
-
-	  function encodeOne(packet, doneCallback) {
-	    exports.encodePacket(packet, true, true, function(data) {
-	      return doneCallback(null, data);
-	    });
-	  }
-
-	  map(packets, encodeOne, function(err, encodedPackets) {
-	    var totalLength = encodedPackets.reduce(function(acc, p) {
-	      var len;
-	      if (typeof p === 'string'){
-	        len = p.length;
-	      } else {
-	        len = p.byteLength;
-	      }
-	      return acc + len.toString().length + len + 2; // string/binary identifier + separator = 2
-	    }, 0);
-
-	    var resultArray = new Uint8Array(totalLength);
-
-	    var bufferIndex = 0;
-	    encodedPackets.forEach(function(p) {
-	      var isString = typeof p === 'string';
-	      var ab = p;
-	      if (isString) {
-	        var view = new Uint8Array(p.length);
-	        for (var i = 0; i < p.length; i++) {
-	          view[i] = p.charCodeAt(i);
-	        }
-	        ab = view.buffer;
-	      }
-
-	      if (isString) { // not true binary
-	        resultArray[bufferIndex++] = 0;
-	      } else { // true binary
-	        resultArray[bufferIndex++] = 1;
-	      }
-
-	      var lenStr = ab.byteLength.toString();
-	      for (var i = 0; i < lenStr.length; i++) {
-	        resultArray[bufferIndex++] = parseInt(lenStr[i]);
-	      }
-	      resultArray[bufferIndex++] = 255;
-
-	      var view = new Uint8Array(ab);
-	      for (var i = 0; i < view.length; i++) {
-	        resultArray[bufferIndex++] = view[i];
-	      }
-	    });
-
-	    return callback(resultArray.buffer);
-	  });
-	};
-
-	/**
-	 * Encode as Blob
-	 */
-
-	exports.encodePayloadAsBlob = function(packets, callback) {
-	  function encodeOne(packet, doneCallback) {
-	    exports.encodePacket(packet, true, true, function(encoded) {
-	      var binaryIdentifier = new Uint8Array(1);
-	      binaryIdentifier[0] = 1;
-	      if (typeof encoded === 'string') {
-	        var view = new Uint8Array(encoded.length);
-	        for (var i = 0; i < encoded.length; i++) {
-	          view[i] = encoded.charCodeAt(i);
-	        }
-	        encoded = view.buffer;
-	        binaryIdentifier[0] = 0;
-	      }
-
-	      var len = (encoded instanceof ArrayBuffer)
-	        ? encoded.byteLength
-	        : encoded.size;
-
-	      var lenStr = len.toString();
-	      var lengthAry = new Uint8Array(lenStr.length + 1);
-	      for (var i = 0; i < lenStr.length; i++) {
-	        lengthAry[i] = parseInt(lenStr[i]);
-	      }
-	      lengthAry[lenStr.length] = 255;
-
-	      if (Blob) {
-	        var blob = new Blob([binaryIdentifier.buffer, lengthAry.buffer, encoded]);
-	        doneCallback(null, blob);
-	      }
-	    });
-	  }
-
-	  map(packets, encodeOne, function(err, results) {
-	    return callback(new Blob(results));
-	  });
-	};
-
-	/*
-	 * Decodes data when a payload is maybe expected. Strings are decoded by
-	 * interpreting each byte as a key code for entries marked to start with 0. See
-	 * description of encodePayloadAsBinary
-	 *
-	 * @param {ArrayBuffer} data, callback method
-	 * @api public
-	 */
-
-	exports.decodePayloadAsBinary = function (data, binaryType, callback) {
-	  if (typeof binaryType === 'function') {
-	    callback = binaryType;
-	    binaryType = null;
-	  }
-
-	  var bufferTail = data;
-	  var buffers = [];
-
-	  var numberTooLong = false;
-	  while (bufferTail.byteLength > 0) {
-	    var tailArray = new Uint8Array(bufferTail);
-	    var isString = tailArray[0] === 0;
-	    var msgLength = '';
-
-	    for (var i = 1; ; i++) {
-	      if (tailArray[i] == 255) break;
-
-	      if (msgLength.length > 310) {
-	        numberTooLong = true;
-	        break;
-	      }
-
-	      msgLength += tailArray[i];
-	    }
-
-	    if(numberTooLong) return callback(err, 0, 1);
-
-	    bufferTail = sliceBuffer(bufferTail, 2 + msgLength.length);
-	    msgLength = parseInt(msgLength);
-
-	    var msg = sliceBuffer(bufferTail, 0, msgLength);
-	    if (isString) {
-	      try {
-	        msg = String.fromCharCode.apply(null, new Uint8Array(msg));
-	      } catch (e) {
-	        // iPhone Safari doesn't let you apply to typed arrays
-	        var typed = new Uint8Array(msg);
-	        msg = '';
-	        for (var i = 0; i < typed.length; i++) {
-	          msg += String.fromCharCode(typed[i]);
-	        }
-	      }
-	    }
-
-	    buffers.push(msg);
-	    bufferTail = sliceBuffer(bufferTail, msgLength);
-	  }
-
-	  var total = buffers.length;
-	  buffers.forEach(function(buffer, i) {
-	    callback(exports.decodePacket(buffer, binaryType, true), i, total);
-	  });
-	};
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 291 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Gets the keys for an object.
-	 *
-	 * @return {Array} keys
-	 * @api private
-	 */
-
-	module.exports = Object.keys || function keys (obj){
-	  var arr = [];
-	  var has = Object.prototype.hasOwnProperty;
-
-	  for (var i in obj) {
-	    if (has.call(obj, i)) {
-	      arr.push(i);
-	    }
-	  }
-	  return arr;
-	};
-
-
-/***/ },
-/* 292 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {
-	/*
-	 * Module requirements.
-	 */
-
-	var isArray = __webpack_require__(293);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = hasBinary;
-
-	/**
-	 * Checks for binary data.
-	 *
-	 * Right now only Buffer and ArrayBuffer are supported..
-	 *
-	 * @param {Object} anything
-	 * @api public
-	 */
-
-	function hasBinary(data) {
-
-	  function _hasBinary(obj) {
-	    if (!obj) return false;
-
-	    if ( (global.Buffer && global.Buffer.isBuffer(obj)) ||
-	         (global.ArrayBuffer && obj instanceof ArrayBuffer) ||
-	         (global.Blob && obj instanceof Blob) ||
-	         (global.File && obj instanceof File)
-	        ) {
-	      return true;
-	    }
-
-	    if (isArray(obj)) {
-	      for (var i = 0; i < obj.length; i++) {
-	          if (_hasBinary(obj[i])) {
-	              return true;
-	          }
-	      }
-	    } else if (obj && 'object' == typeof obj) {
-	      if (obj.toJSON) {
-	        obj = obj.toJSON();
-	      }
-
-	      for (var key in obj) {
-	        if (Object.prototype.hasOwnProperty.call(obj, key) && _hasBinary(obj[key])) {
-	          return true;
-	        }
-	      }
-	    }
-
-	    return false;
-	  }
-
-	  return _hasBinary(data);
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 293 */
-/***/ function(module, exports) {
-
-	module.exports = Array.isArray || function (arr) {
-	  return Object.prototype.toString.call(arr) == '[object Array]';
-	};
-
-
-/***/ },
-/* 294 */
-/***/ function(module, exports) {
-
-	/**
-	 * An abstraction for slicing an arraybuffer even when
-	 * ArrayBuffer.prototype.slice is not supported
-	 *
-	 * @api public
-	 */
-
-	module.exports = function(arraybuffer, start, end) {
-	  var bytes = arraybuffer.byteLength;
-	  start = start || 0;
-	  end = end || bytes;
-
-	  if (arraybuffer.slice) { return arraybuffer.slice(start, end); }
-
-	  if (start < 0) { start += bytes; }
-	  if (end < 0) { end += bytes; }
-	  if (end > bytes) { end = bytes; }
-
-	  if (start >= bytes || start >= end || bytes === 0) {
-	    return new ArrayBuffer(0);
-	  }
-
-	  var abv = new Uint8Array(arraybuffer);
-	  var result = new Uint8Array(end - start);
-	  for (var i = start, ii = 0; i < end; i++, ii++) {
-	    result[ii] = abv[i];
-	  }
-	  return result.buffer;
-	};
-
-
-/***/ },
-/* 295 */
-/***/ function(module, exports) {
-
-	/*
-	 * base64-arraybuffer
-	 * https://github.com/niklasvh/base64-arraybuffer
-	 *
-	 * Copyright (c) 2012 Niklas von Hertzen
-	 * Licensed under the MIT license.
-	 */
-	(function(chars){
-	  "use strict";
-
-	  exports.encode = function(arraybuffer) {
-	    var bytes = new Uint8Array(arraybuffer),
-	    i, len = bytes.length, base64 = "";
-
-	    for (i = 0; i < len; i+=3) {
-	      base64 += chars[bytes[i] >> 2];
-	      base64 += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
-	      base64 += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
-	      base64 += chars[bytes[i + 2] & 63];
-	    }
-
-	    if ((len % 3) === 2) {
-	      base64 = base64.substring(0, base64.length - 1) + "=";
-	    } else if (len % 3 === 1) {
-	      base64 = base64.substring(0, base64.length - 2) + "==";
-	    }
-
-	    return base64;
-	  };
-
-	  exports.decode =  function(base64) {
-	    var bufferLength = base64.length * 0.75,
-	    len = base64.length, i, p = 0,
-	    encoded1, encoded2, encoded3, encoded4;
-
-	    if (base64[base64.length - 1] === "=") {
-	      bufferLength--;
-	      if (base64[base64.length - 2] === "=") {
-	        bufferLength--;
-	      }
-	    }
-
-	    var arraybuffer = new ArrayBuffer(bufferLength),
-	    bytes = new Uint8Array(arraybuffer);
-
-	    for (i = 0; i < len; i+=4) {
-	      encoded1 = chars.indexOf(base64[i]);
-	      encoded2 = chars.indexOf(base64[i+1]);
-	      encoded3 = chars.indexOf(base64[i+2]);
-	      encoded4 = chars.indexOf(base64[i+3]);
-
-	      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-	      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-	      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-	    }
-
-	    return arraybuffer;
-	  };
-	})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-
-
-/***/ },
-/* 296 */
-/***/ function(module, exports) {
-
-	module.exports = after
-
-	function after(count, callback, err_cb) {
-	    var bail = false
-	    err_cb = err_cb || noop
-	    proxy.count = count
-
-	    return (count === 0) ? callback() : proxy
-
-	    function proxy(err, result) {
-	        if (proxy.count <= 0) {
-	            throw new Error('after called too many times')
-	        }
-	        --proxy.count
-
-	        // after first error, rest are passed to err_cb
-	        if (err) {
-	            bail = true
-	            callback(err)
-	            // future error callbacks will go to error handler
-	            callback = err_cb
-	        } else if (proxy.count === 0 && !bail) {
-	            callback(null, result)
-	        }
-	    }
-	}
-
-	function noop() {}
-
-
-/***/ },
-/* 297 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! https://mths.be/utf8js v2.0.0 by @mathias */
-	;(function(root) {
-
-		// Detect free variables `exports`
-		var freeExports = typeof exports == 'object' && exports;
-
-		// Detect free variable `module`
-		var freeModule = typeof module == 'object' && module &&
-			module.exports == freeExports && module;
-
-		// Detect free variable `global`, from Node.js or Browserified code,
-		// and use it as `root`
-		var freeGlobal = typeof global == 'object' && global;
-		if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
-			root = freeGlobal;
-		}
-
-		/*--------------------------------------------------------------------------*/
-
-		var stringFromCharCode = String.fromCharCode;
-
-		// Taken from https://mths.be/punycode
-		function ucs2decode(string) {
-			var output = [];
-			var counter = 0;
-			var length = string.length;
-			var value;
-			var extra;
-			while (counter < length) {
-				value = string.charCodeAt(counter++);
-				if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-					// high surrogate, and there is a next character
-					extra = string.charCodeAt(counter++);
-					if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-						output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-					} else {
-						// unmatched surrogate; only append this code unit, in case the next
-						// code unit is the high surrogate of a surrogate pair
-						output.push(value);
-						counter--;
-					}
-				} else {
-					output.push(value);
-				}
-			}
-			return output;
-		}
-
-		// Taken from https://mths.be/punycode
-		function ucs2encode(array) {
-			var length = array.length;
-			var index = -1;
-			var value;
-			var output = '';
-			while (++index < length) {
-				value = array[index];
-				if (value > 0xFFFF) {
-					value -= 0x10000;
-					output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-					value = 0xDC00 | value & 0x3FF;
-				}
-				output += stringFromCharCode(value);
-			}
-			return output;
-		}
-
-		function checkScalarValue(codePoint) {
-			if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
-				throw Error(
-					'Lone surrogate U+' + codePoint.toString(16).toUpperCase() +
-					' is not a scalar value'
-				);
-			}
-		}
-		/*--------------------------------------------------------------------------*/
-
-		function createByte(codePoint, shift) {
-			return stringFromCharCode(((codePoint >> shift) & 0x3F) | 0x80);
-		}
-
-		function encodeCodePoint(codePoint) {
-			if ((codePoint & 0xFFFFFF80) == 0) { // 1-byte sequence
-				return stringFromCharCode(codePoint);
-			}
-			var symbol = '';
-			if ((codePoint & 0xFFFFF800) == 0) { // 2-byte sequence
-				symbol = stringFromCharCode(((codePoint >> 6) & 0x1F) | 0xC0);
-			}
-			else if ((codePoint & 0xFFFF0000) == 0) { // 3-byte sequence
-				checkScalarValue(codePoint);
-				symbol = stringFromCharCode(((codePoint >> 12) & 0x0F) | 0xE0);
-				symbol += createByte(codePoint, 6);
-			}
-			else if ((codePoint & 0xFFE00000) == 0) { // 4-byte sequence
-				symbol = stringFromCharCode(((codePoint >> 18) & 0x07) | 0xF0);
-				symbol += createByte(codePoint, 12);
-				symbol += createByte(codePoint, 6);
-			}
-			symbol += stringFromCharCode((codePoint & 0x3F) | 0x80);
-			return symbol;
-		}
-
-		function utf8encode(string) {
-			var codePoints = ucs2decode(string);
-			var length = codePoints.length;
-			var index = -1;
-			var codePoint;
-			var byteString = '';
-			while (++index < length) {
-				codePoint = codePoints[index];
-				byteString += encodeCodePoint(codePoint);
-			}
-			return byteString;
-		}
-
-		/*--------------------------------------------------------------------------*/
-
-		function readContinuationByte() {
-			if (byteIndex >= byteCount) {
-				throw Error('Invalid byte index');
-			}
-
-			var continuationByte = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-
-			if ((continuationByte & 0xC0) == 0x80) {
-				return continuationByte & 0x3F;
-			}
-
-			// If we end up here, it’s not a continuation byte
-			throw Error('Invalid continuation byte');
-		}
-
-		function decodeSymbol() {
-			var byte1;
-			var byte2;
-			var byte3;
-			var byte4;
-			var codePoint;
-
-			if (byteIndex > byteCount) {
-				throw Error('Invalid byte index');
-			}
-
-			if (byteIndex == byteCount) {
-				return false;
-			}
-
-			// Read first byte
-			byte1 = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-
-			// 1-byte sequence (no continuation bytes)
-			if ((byte1 & 0x80) == 0) {
-				return byte1;
-			}
-
-			// 2-byte sequence
-			if ((byte1 & 0xE0) == 0xC0) {
-				var byte2 = readContinuationByte();
-				codePoint = ((byte1 & 0x1F) << 6) | byte2;
-				if (codePoint >= 0x80) {
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-
-			// 3-byte sequence (may include unpaired surrogates)
-			if ((byte1 & 0xF0) == 0xE0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 12) | (byte2 << 6) | byte3;
-				if (codePoint >= 0x0800) {
-					checkScalarValue(codePoint);
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-
-			// 4-byte sequence
-			if ((byte1 & 0xF8) == 0xF0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				byte4 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 0x12) | (byte2 << 0x0C) |
-					(byte3 << 0x06) | byte4;
-				if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
-					return codePoint;
-				}
-			}
-
-			throw Error('Invalid UTF-8 detected');
-		}
-
-		var byteArray;
-		var byteCount;
-		var byteIndex;
-		function utf8decode(byteString) {
-			byteArray = ucs2decode(byteString);
-			byteCount = byteArray.length;
-			byteIndex = 0;
-			var codePoints = [];
-			var tmp;
-			while ((tmp = decodeSymbol()) !== false) {
-				codePoints.push(tmp);
-			}
-			return ucs2encode(codePoints);
-		}
-
-		/*--------------------------------------------------------------------------*/
-
-		var utf8 = {
-			'version': '2.0.0',
-			'encode': utf8encode,
-			'decode': utf8decode
-		};
-
-		// Some AMD build optimizers, like r.js, check for specific condition patterns
-		// like the following:
-		if (
-			true
-		) {
-			!(__WEBPACK_AMD_DEFINE_RESULT__ = function() {
-				return utf8;
-			}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		}	else if (freeExports && !freeExports.nodeType) {
-			if (freeModule) { // in Node.js or RingoJS v0.8.0+
-				freeModule.exports = utf8;
-			} else { // in Narwhal or RingoJS v0.7.0-
-				var object = {};
-				var hasOwnProperty = object.hasOwnProperty;
-				for (var key in utf8) {
-					hasOwnProperty.call(utf8, key) && (freeExports[key] = utf8[key]);
-				}
-			}
-		} else { // in Rhino or a web browser
-			root.utf8 = utf8;
-		}
-
-	}(this));
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(164)(module), (function() { return this; }())))
-
-/***/ },
-/* 298 */
-/***/ function(module, exports) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Create a blob builder even when vendor prefixes exist
-	 */
-
-	var BlobBuilder = global.BlobBuilder
-	  || global.WebKitBlobBuilder
-	  || global.MSBlobBuilder
-	  || global.MozBlobBuilder;
-
-	/**
-	 * Check if Blob constructor is supported
-	 */
-
-	var blobSupported = (function() {
-	  try {
-	    var a = new Blob(['hi']);
-	    return a.size === 2;
-	  } catch(e) {
-	    return false;
-	  }
-	})();
-
-	/**
-	 * Check if Blob constructor supports ArrayBufferViews
-	 * Fails in Safari 6, so we need to map to ArrayBuffers there.
-	 */
-
-	var blobSupportsArrayBufferView = blobSupported && (function() {
-	  try {
-	    var b = new Blob([new Uint8Array([1,2])]);
-	    return b.size === 2;
-	  } catch(e) {
-	    return false;
-	  }
-	})();
-
-	/**
-	 * Check if BlobBuilder is supported
-	 */
-
-	var blobBuilderSupported = BlobBuilder
-	  && BlobBuilder.prototype.append
-	  && BlobBuilder.prototype.getBlob;
-
-	/**
-	 * Helper function that maps ArrayBufferViews to ArrayBuffers
-	 * Used by BlobBuilder constructor and old browsers that didn't
-	 * support it in the Blob constructor.
-	 */
-
-	function mapArrayBufferViews(ary) {
-	  for (var i = 0; i < ary.length; i++) {
-	    var chunk = ary[i];
-	    if (chunk.buffer instanceof ArrayBuffer) {
-	      var buf = chunk.buffer;
-
-	      // if this is a subarray, make a copy so we only
-	      // include the subarray region from the underlying buffer
-	      if (chunk.byteLength !== buf.byteLength) {
-	        var copy = new Uint8Array(chunk.byteLength);
-	        copy.set(new Uint8Array(buf, chunk.byteOffset, chunk.byteLength));
-	        buf = copy.buffer;
-	      }
-
-	      ary[i] = buf;
-	    }
-	  }
-	}
-
-	function BlobBuilderConstructor(ary, options) {
-	  options = options || {};
-
-	  var bb = new BlobBuilder();
-	  mapArrayBufferViews(ary);
-
-	  for (var i = 0; i < ary.length; i++) {
-	    bb.append(ary[i]);
-	  }
-
-	  return (options.type) ? bb.getBlob(options.type) : bb.getBlob();
-	};
-
-	function BlobConstructor(ary, options) {
-	  mapArrayBufferViews(ary);
-	  return new Blob(ary, options || {});
-	};
-
-	module.exports = (function() {
-	  if (blobSupported) {
-	    return blobSupportsArrayBufferView ? global.Blob : BlobConstructor;
-	  } else if (blobBuilderSupported) {
-	    return BlobBuilderConstructor;
-	  } else {
-	    return undefined;
-	  }
-	})();
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 299 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-
-	module.exports = Emitter;
-
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks[event] = this._callbacks[event] || [])
-	    .push(fn);
-	  return this;
-	};
-
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.once = function(event, fn){
-	  var self = this;
-	  this._callbacks = this._callbacks || {};
-
-	  function on() {
-	    self.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-
-	  // specific event
-	  var callbacks = this._callbacks[event];
-	  if (!callbacks) return this;
-
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks[event];
-	    return this;
-	  }
-
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks[event];
-
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks[event] || [];
-	};
-
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 300 */
-/***/ function(module, exports) {
-
-	/**
-	 * Compiles a querystring
-	 * Returns string representation of the object
-	 *
-	 * @param {Object}
-	 * @api private
-	 */
-
-	exports.encode = function (obj) {
-	  var str = '';
-
-	  for (var i in obj) {
-	    if (obj.hasOwnProperty(i)) {
-	      if (str.length) str += '&';
-	      str += encodeURIComponent(i) + '=' + encodeURIComponent(obj[i]);
-	    }
-	  }
-
-	  return str;
-	};
-
-	/**
-	 * Parses a simple querystring into an object
-	 *
-	 * @param {String} qs
-	 * @api private
-	 */
-
-	exports.decode = function(qs){
-	  var qry = {};
-	  var pairs = qs.split('&');
-	  for (var i = 0, l = pairs.length; i < l; i++) {
-	    var pair = pairs[i].split('=');
-	    qry[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
-	  }
-	  return qry;
-	};
-
-
-/***/ },
-/* 301 */
-/***/ function(module, exports) {
-
-	
-	module.exports = function(a, b){
-	  var fn = function(){};
-	  fn.prototype = b.prototype;
-	  a.prototype = new fn;
-	  a.prototype.constructor = a;
-	};
-
-/***/ },
-/* 302 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
-	  , length = 64
-	  , map = {}
-	  , seed = 0
-	  , i = 0
-	  , prev;
-
-	/**
-	 * Return a string representing the specified number.
-	 *
-	 * @param {Number} num The number to convert.
-	 * @returns {String} The string representation of the number.
-	 * @api public
-	 */
-	function encode(num) {
-	  var encoded = '';
-
-	  do {
-	    encoded = alphabet[num % length] + encoded;
-	    num = Math.floor(num / length);
-	  } while (num > 0);
-
-	  return encoded;
-	}
-
-	/**
-	 * Return the integer value specified by the given string.
-	 *
-	 * @param {String} str The string to convert.
-	 * @returns {Number} The integer value represented by the string.
-	 * @api public
-	 */
-	function decode(str) {
-	  var decoded = 0;
-
-	  for (i = 0; i < str.length; i++) {
-	    decoded = decoded * length + map[str.charAt(i)];
-	  }
-
-	  return decoded;
-	}
-
-	/**
-	 * Yeast: A tiny growing id generator.
-	 *
-	 * @returns {String} A unique id.
-	 * @api public
-	 */
-	function yeast() {
-	  var now = encode(+new Date());
-
-	  if (now !== prev) return seed = 0, prev = now;
-	  return now +'.'+ encode(seed++);
-	}
-
-	//
-	// Map each character to its index.
-	//
-	for (; i < length; i++) map[alphabet[i]] = i;
-
-	//
-	// Expose the `yeast`, `encode` and `decode` functions.
-	//
-	yeast.encode = encode;
-	yeast.decode = decode;
-	module.exports = yeast;
-
-
-/***/ },
-/* 303 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {
-	/**
-	 * Module requirements.
-	 */
-
-	var Polling = __webpack_require__(288);
-	var inherit = __webpack_require__(301);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = JSONPPolling;
-
-	/**
-	 * Cached regular expressions.
-	 */
-
-	var rNewline = /\n/g;
-	var rEscapedNewline = /\\n/g;
-
-	/**
-	 * Global JSONP callbacks.
-	 */
-
-	var callbacks;
-
-	/**
-	 * Callbacks count.
-	 */
-
-	var index = 0;
-
-	/**
-	 * Noop.
-	 */
-
-	function empty () { }
-
-	/**
-	 * JSONP Polling constructor.
-	 *
-	 * @param {Object} opts.
-	 * @api public
-	 */
-
-	function JSONPPolling (opts) {
-	  Polling.call(this, opts);
-
-	  this.query = this.query || {};
-
-	  // define global callbacks array if not present
-	  // we do this here (lazily) to avoid unneeded global pollution
-	  if (!callbacks) {
-	    // we need to consider multiple engines in the same page
-	    if (!global.___eio) global.___eio = [];
-	    callbacks = global.___eio;
-	  }
-
-	  // callback identifier
-	  this.index = callbacks.length;
-
-	  // add callback to jsonp global
-	  var self = this;
-	  callbacks.push(function (msg) {
-	    self.onData(msg);
-	  });
-
-	  // append to query string
-	  this.query.j = this.index;
-
-	  // prevent spurious errors from being emitted when the window is unloaded
-	  if (global.document && global.addEventListener) {
-	    global.addEventListener('beforeunload', function () {
-	      if (self.script) self.script.onerror = empty;
-	    }, false);
-	  }
-	}
-
-	/**
-	 * Inherits from Polling.
-	 */
-
-	inherit(JSONPPolling, Polling);
-
-	/*
-	 * JSONP only supports binary as base64 encoded strings
-	 */
-
-	JSONPPolling.prototype.supportsBinary = false;
-
-	/**
-	 * Closes the socket.
-	 *
-	 * @api private
-	 */
-
-	JSONPPolling.prototype.doClose = function () {
-	  if (this.script) {
-	    this.script.parentNode.removeChild(this.script);
-	    this.script = null;
-	  }
-
-	  if (this.form) {
-	    this.form.parentNode.removeChild(this.form);
-	    this.form = null;
-	    this.iframe = null;
-	  }
-
-	  Polling.prototype.doClose.call(this);
-	};
-
-	/**
-	 * Starts a poll cycle.
-	 *
-	 * @api private
-	 */
-
-	JSONPPolling.prototype.doPoll = function () {
-	  var self = this;
-	  var script = document.createElement('script');
-
-	  if (this.script) {
-	    this.script.parentNode.removeChild(this.script);
-	    this.script = null;
-	  }
-
-	  script.async = true;
-	  script.src = this.uri();
-	  script.onerror = function(e){
-	    self.onError('jsonp poll error',e);
-	  };
-
-	  var insertAt = document.getElementsByTagName('script')[0];
-	  if (insertAt) {
-	    insertAt.parentNode.insertBefore(script, insertAt);
-	  }
-	  else {
-	    (document.head || document.body).appendChild(script);
-	  }
-	  this.script = script;
-
-	  var isUAgecko = 'undefined' != typeof navigator && /gecko/i.test(navigator.userAgent);
-	  
-	  if (isUAgecko) {
-	    setTimeout(function () {
-	      var iframe = document.createElement('iframe');
-	      document.body.appendChild(iframe);
-	      document.body.removeChild(iframe);
-	    }, 100);
-	  }
-	};
-
-	/**
-	 * Writes with a hidden iframe.
-	 *
-	 * @param {String} data to send
-	 * @param {Function} called upon flush.
-	 * @api private
-	 */
-
-	JSONPPolling.prototype.doWrite = function (data, fn) {
-	  var self = this;
-
-	  if (!this.form) {
-	    var form = document.createElement('form');
-	    var area = document.createElement('textarea');
-	    var id = this.iframeId = 'eio_iframe_' + this.index;
-	    var iframe;
-
-	    form.className = 'socketio';
-	    form.style.position = 'absolute';
-	    form.style.top = '-1000px';
-	    form.style.left = '-1000px';
-	    form.target = id;
-	    form.method = 'POST';
-	    form.setAttribute('accept-charset', 'utf-8');
-	    area.name = 'd';
-	    form.appendChild(area);
-	    document.body.appendChild(form);
-
-	    this.form = form;
-	    this.area = area;
-	  }
-
-	  this.form.action = this.uri();
-
-	  function complete () {
-	    initIframe();
-	    fn();
-	  }
-
-	  function initIframe () {
-	    if (self.iframe) {
-	      try {
-	        self.form.removeChild(self.iframe);
-	      } catch (e) {
-	        self.onError('jsonp polling iframe removal error', e);
-	      }
-	    }
-
-	    try {
-	      // ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
-	      var html = '<iframe src="javascript:0" name="'+ self.iframeId +'">';
-	      iframe = document.createElement(html);
-	    } catch (e) {
-	      iframe = document.createElement('iframe');
-	      iframe.name = self.iframeId;
-	      iframe.src = 'javascript:0';
-	    }
-
-	    iframe.id = self.iframeId;
-
-	    self.form.appendChild(iframe);
-	    self.iframe = iframe;
-	  }
-
-	  initIframe();
-
-	  // escape \n to prevent it from being converted into \r\n by some UAs
-	  // double escaping is required for escaped new lines because unescaping of new lines can be done safely on server-side
-	  data = data.replace(rEscapedNewline, '\\\n');
-	  this.area.value = data.replace(rNewline, '\\n');
-
-	  try {
-	    this.form.submit();
-	  } catch(e) {}
-
-	  if (this.iframe.attachEvent) {
-	    this.iframe.onreadystatechange = function(){
-	      if (self.iframe.readyState == 'complete') {
-	        complete();
-	      }
-	    };
-	  } else {
-	    this.iframe.onload = complete;
-	  }
-	};
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 304 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * Module dependencies.
-	 */
-
-	var Transport = __webpack_require__(289);
-	var parser = __webpack_require__(290);
-	var parseqs = __webpack_require__(300);
-	var inherit = __webpack_require__(301);
-	var yeast = __webpack_require__(302);
-	var debug = __webpack_require__(270)('engine.io-client:websocket');
-	var BrowserWebSocket = global.WebSocket || global.MozWebSocket;
-
-	/**
-	 * Get either the `WebSocket` or `MozWebSocket` globals
-	 * in the browser or try to resolve WebSocket-compatible
-	 * interface exposed by `ws` for Node-like environment.
-	 */
-
-	var WebSocket = BrowserWebSocket;
-	if (!WebSocket && typeof window === 'undefined') {
-	  try {
-	    WebSocket = __webpack_require__(305);
-	  } catch (e) { }
-	}
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = WS;
-
-	/**
-	 * WebSocket transport constructor.
-	 *
-	 * @api {Object} connection options
-	 * @api public
-	 */
-
-	function WS(opts){
-	  var forceBase64 = (opts && opts.forceBase64);
-	  if (forceBase64) {
-	    this.supportsBinary = false;
-	  }
-	  this.perMessageDeflate = opts.perMessageDeflate;
-	  Transport.call(this, opts);
-	}
-
-	/**
-	 * Inherits from Transport.
-	 */
-
-	inherit(WS, Transport);
-
-	/**
-	 * Transport name.
-	 *
-	 * @api public
-	 */
-
-	WS.prototype.name = 'websocket';
-
-	/*
-	 * WebSockets support binary
-	 */
-
-	WS.prototype.supportsBinary = true;
-
-	/**
-	 * Opens socket.
-	 *
-	 * @api private
-	 */
-
-	WS.prototype.doOpen = function(){
-	  if (!this.check()) {
-	    // let probe timeout
-	    return;
-	  }
-
-	  var self = this;
-	  var uri = this.uri();
-	  var protocols = void(0);
-	  var opts = {
-	    agent: this.agent,
-	    perMessageDeflate: this.perMessageDeflate
-	  };
-
-	  // SSL options for Node.js client
-	  opts.pfx = this.pfx;
-	  opts.key = this.key;
-	  opts.passphrase = this.passphrase;
-	  opts.cert = this.cert;
-	  opts.ca = this.ca;
-	  opts.ciphers = this.ciphers;
-	  opts.rejectUnauthorized = this.rejectUnauthorized;
-	  if (this.extraHeaders) {
-	    opts.headers = this.extraHeaders;
-	  }
-
-	  this.ws = BrowserWebSocket ? new WebSocket(uri) : new WebSocket(uri, protocols, opts);
-
-	  if (this.ws.binaryType === undefined) {
-	    this.supportsBinary = false;
-	  }
-
-	  if (this.ws.supports && this.ws.supports.binary) {
-	    this.supportsBinary = true;
-	    this.ws.binaryType = 'buffer';
-	  } else {
-	    this.ws.binaryType = 'arraybuffer';
-	  }
-
-	  this.addEventListeners();
-	};
-
-	/**
-	 * Adds event listeners to the socket
-	 *
-	 * @api private
-	 */
-
-	WS.prototype.addEventListeners = function(){
-	  var self = this;
-
-	  this.ws.onopen = function(){
-	    self.onOpen();
-	  };
-	  this.ws.onclose = function(){
-	    self.onClose();
-	  };
-	  this.ws.onmessage = function(ev){
-	    self.onData(ev.data);
-	  };
-	  this.ws.onerror = function(e){
-	    self.onError('websocket error', e);
-	  };
-	};
-
-	/**
-	 * Override `onData` to use a timer on iOS.
-	 * See: https://gist.github.com/mloughran/2052006
-	 *
-	 * @api private
-	 */
-
-	if ('undefined' != typeof navigator
-	  && /iPad|iPhone|iPod/i.test(navigator.userAgent)) {
-	  WS.prototype.onData = function(data){
-	    var self = this;
-	    setTimeout(function(){
-	      Transport.prototype.onData.call(self, data);
-	    }, 0);
-	  };
-	}
-
-	/**
-	 * Writes data to socket.
-	 *
-	 * @param {Array} array of packets.
-	 * @api private
-	 */
-
-	WS.prototype.write = function(packets){
-	  var self = this;
-	  this.writable = false;
-
-	  // encodePacket efficient as it uses WS framing
-	  // no need for encodePayload
-	  var total = packets.length;
-	  for (var i = 0, l = total; i < l; i++) {
-	    (function(packet) {
-	      parser.encodePacket(packet, self.supportsBinary, function(data) {
-	        if (!BrowserWebSocket) {
-	          // always create a new object (GH-437)
-	          var opts = {};
-	          if (packet.options) {
-	            opts.compress = packet.options.compress;
-	          }
-
-	          if (self.perMessageDeflate) {
-	            var len = 'string' == typeof data ? global.Buffer.byteLength(data) : data.length;
-	            if (len < self.perMessageDeflate.threshold) {
-	              opts.compress = false;
-	            }
-	          }
-	        }
-
-	        //Sometimes the websocket has already been closed but the browser didn't
-	        //have a chance of informing us about it yet, in that case send will
-	        //throw an error
-	        try {
-	          if (BrowserWebSocket) {
-	            // TypeError is thrown when passing the second argument on Safari
-	            self.ws.send(data);
-	          } else {
-	            self.ws.send(data, opts);
-	          }
-	        } catch (e){
-	          debug('websocket closed before onclose event');
-	        }
-
-	        --total || done();
-	      });
-	    })(packets[i]);
-	  }
-
-	  function done(){
-	    self.emit('flush');
-
-	    // fake drain
-	    // defer to next tick to allow Socket to clear writeBuffer
-	    setTimeout(function(){
-	      self.writable = true;
-	      self.emit('drain');
-	    }, 0);
-	  }
-	};
-
-	/**
-	 * Called upon close
-	 *
-	 * @api private
-	 */
-
-	WS.prototype.onClose = function(){
-	  Transport.prototype.onClose.call(this);
-	};
-
-	/**
-	 * Closes socket.
-	 *
-	 * @api private
-	 */
-
-	WS.prototype.doClose = function(){
-	  if (typeof this.ws !== 'undefined') {
-	    this.ws.close();
-	  }
-	};
-
-	/**
-	 * Generates uri for connection.
-	 *
-	 * @api private
-	 */
-
-	WS.prototype.uri = function(){
-	  var query = this.query || {};
-	  var schema = this.secure ? 'wss' : 'ws';
-	  var port = '';
-
-	  // avoid port if default for schema
-	  if (this.port && (('wss' == schema && this.port != 443)
-	    || ('ws' == schema && this.port != 80))) {
-	    port = ':' + this.port;
-	  }
-
-	  // append timestamp to URI
-	  if (this.timestampRequests) {
-	    query[this.timestampParam] = yeast();
-	  }
-
-	  // communicate binary support capabilities
-	  if (!this.supportsBinary) {
-	    query.b64 = 1;
-	  }
-
-	  query = parseqs.encode(query);
-
-	  // prepend ? to query
-	  if (query.length) {
-	    query = '?' + query;
-	  }
-
-	  var ipv6 = this.hostname.indexOf(':') !== -1;
-	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
-	};
-
-	/**
-	 * Feature detection for WebSocket.
-	 *
-	 * @return {Boolean} whether this transport is available.
-	 * @api public
-	 */
-
-	WS.prototype.check = function(){
-	  return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
-	};
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 305 */
-/***/ function(module, exports) {
-
-	/* (ignored) */
-
-/***/ },
-/* 306 */
-/***/ function(module, exports) {
-
-	
-	var indexOf = [].indexOf;
-
-	module.exports = function(arr, obj){
-	  if (indexOf) return arr.indexOf(obj);
-	  for (var i = 0; i < arr.length; ++i) {
-	    if (arr[i] === obj) return i;
-	  }
-	  return -1;
-	};
-
-/***/ },
-/* 307 */
-/***/ function(module, exports) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {/**
-	 * JSON parse.
-	 *
-	 * @see Based on jQuery#parseJSON (MIT) and JSON2
-	 * @api private
-	 */
-
-	var rvalidchars = /^[\],:{}\s]*$/;
-	var rvalidescape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g;
-	var rvalidtokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
-	var rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g;
-	var rtrimLeft = /^\s+/;
-	var rtrimRight = /\s+$/;
-
-	module.exports = function parsejson(data) {
-	  if ('string' != typeof data || !data) {
-	    return null;
-	  }
-
-	  data = data.replace(rtrimLeft, '').replace(rtrimRight, '');
-
-	  // Attempt to parse using the native JSON parser first
-	  if (global.JSON && JSON.parse) {
-	    return JSON.parse(data);
-	  }
-
-	  if (rvalidchars.test(data.replace(rvalidescape, '@')
-	      .replace(rvalidtokens, ']')
-	      .replace(rvalidbraces, ''))) {
-	    return (new Function('return ' + data))();
-	  }
-	};
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 308 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * Module dependencies.
-	 */
-
-	var parser = __webpack_require__(273);
-	var Emitter = __webpack_require__(309);
-	var toArray = __webpack_require__(310);
-	var on = __webpack_require__(311);
-	var bind = __webpack_require__(312);
-	var debug = __webpack_require__(270)('socket.io-client:socket');
-	var hasBin = __webpack_require__(313);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = exports = Socket;
-
-	/**
-	 * Internal events (blacklisted).
-	 * These events can't be emitted by the user.
-	 *
-	 * @api private
-	 */
-
-	var events = {
-	  connect: 1,
-	  connect_error: 1,
-	  connect_timeout: 1,
-	  connecting: 1,
-	  disconnect: 1,
-	  error: 1,
-	  reconnect: 1,
-	  reconnect_attempt: 1,
-	  reconnect_failed: 1,
-	  reconnect_error: 1,
-	  reconnecting: 1,
-	  ping: 1,
-	  pong: 1
-	};
-
-	/**
-	 * Shortcut to `Emitter#emit`.
-	 */
-
-	var emit = Emitter.prototype.emit;
-
-	/**
-	 * `Socket` constructor.
-	 *
-	 * @api public
-	 */
-
-	function Socket(io, nsp){
-	  this.io = io;
-	  this.nsp = nsp;
-	  this.json = this; // compat
-	  this.ids = 0;
-	  this.acks = {};
-	  this.receiveBuffer = [];
-	  this.sendBuffer = [];
-	  this.connected = false;
-	  this.disconnected = true;
-	  if (this.io.autoConnect) this.open();
-	}
-
-	/**
-	 * Mix in `Emitter`.
-	 */
-
-	Emitter(Socket.prototype);
-
-	/**
-	 * Subscribe to open, close and packet events
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.subEvents = function() {
-	  if (this.subs) return;
-
-	  var io = this.io;
-	  this.subs = [
-	    on(io, 'open', bind(this, 'onopen')),
-	    on(io, 'packet', bind(this, 'onpacket')),
-	    on(io, 'close', bind(this, 'onclose'))
-	  ];
-	};
-
-	/**
-	 * "Opens" the socket.
-	 *
-	 * @api public
-	 */
-
-	Socket.prototype.open =
-	Socket.prototype.connect = function(){
-	  if (this.connected) return this;
-
-	  this.subEvents();
-	  this.io.open(); // ensure open
-	  if ('open' == this.io.readyState) this.onopen();
-	  this.emit('connecting');
-	  return this;
-	};
-
-	/**
-	 * Sends a `message` event.
-	 *
-	 * @return {Socket} self
-	 * @api public
-	 */
-
-	Socket.prototype.send = function(){
-	  var args = toArray(arguments);
-	  args.unshift('message');
-	  this.emit.apply(this, args);
-	  return this;
-	};
-
-	/**
-	 * Override `emit`.
-	 * If the event is in `events`, it's emitted normally.
-	 *
-	 * @param {String} event name
-	 * @return {Socket} self
-	 * @api public
-	 */
-
-	Socket.prototype.emit = function(ev){
-	  if (events.hasOwnProperty(ev)) {
-	    emit.apply(this, arguments);
-	    return this;
-	  }
-
-	  var args = toArray(arguments);
-	  var parserType = parser.EVENT; // default
-	  if (hasBin(args)) { parserType = parser.BINARY_EVENT; } // binary
-	  var packet = { type: parserType, data: args };
-
-	  packet.options = {};
-	  packet.options.compress = !this.flags || false !== this.flags.compress;
-
-	  // event ack callback
-	  if ('function' == typeof args[args.length - 1]) {
-	    debug('emitting packet with ack id %d', this.ids);
-	    this.acks[this.ids] = args.pop();
-	    packet.id = this.ids++;
-	  }
-
-	  if (this.connected) {
-	    this.packet(packet);
-	  } else {
-	    this.sendBuffer.push(packet);
-	  }
-
-	  delete this.flags;
-
-	  return this;
-	};
-
-	/**
-	 * Sends a packet.
-	 *
-	 * @param {Object} packet
-	 * @api private
-	 */
-
-	Socket.prototype.packet = function(packet){
-	  packet.nsp = this.nsp;
-	  this.io.packet(packet);
-	};
-
-	/**
-	 * Called upon engine `open`.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onopen = function(){
-	  debug('transport is open - connecting');
-
-	  // write connect packet if necessary
-	  if ('/' != this.nsp) {
-	    this.packet({ type: parser.CONNECT });
-	  }
-	};
-
-	/**
-	 * Called upon engine `close`.
-	 *
-	 * @param {String} reason
-	 * @api private
-	 */
-
-	Socket.prototype.onclose = function(reason){
-	  debug('close (%s)', reason);
-	  this.connected = false;
-	  this.disconnected = true;
-	  delete this.id;
-	  this.emit('disconnect', reason);
-	};
-
-	/**
-	 * Called with socket packet.
-	 *
-	 * @param {Object} packet
-	 * @api private
-	 */
-
-	Socket.prototype.onpacket = function(packet){
-	  if (packet.nsp != this.nsp) return;
-
-	  switch (packet.type) {
-	    case parser.CONNECT:
-	      this.onconnect();
-	      break;
-
-	    case parser.EVENT:
-	      this.onevent(packet);
-	      break;
-
-	    case parser.BINARY_EVENT:
-	      this.onevent(packet);
-	      break;
-
-	    case parser.ACK:
-	      this.onack(packet);
-	      break;
-
-	    case parser.BINARY_ACK:
-	      this.onack(packet);
-	      break;
-
-	    case parser.DISCONNECT:
-	      this.ondisconnect();
-	      break;
-
-	    case parser.ERROR:
-	      this.emit('error', packet.data);
-	      break;
-	  }
-	};
-
-	/**
-	 * Called upon a server event.
-	 *
-	 * @param {Object} packet
-	 * @api private
-	 */
-
-	Socket.prototype.onevent = function(packet){
-	  var args = packet.data || [];
-	  debug('emitting event %j', args);
-
-	  if (null != packet.id) {
-	    debug('attaching ack callback to event');
-	    args.push(this.ack(packet.id));
-	  }
-
-	  if (this.connected) {
-	    emit.apply(this, args);
-	  } else {
-	    this.receiveBuffer.push(args);
-	  }
-	};
-
-	/**
-	 * Produces an ack callback to emit with an event.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.ack = function(id){
-	  var self = this;
-	  var sent = false;
-	  return function(){
-	    // prevent double callbacks
-	    if (sent) return;
-	    sent = true;
-	    var args = toArray(arguments);
-	    debug('sending ack %j', args);
-
-	    var type = hasBin(args) ? parser.BINARY_ACK : parser.ACK;
-	    self.packet({
-	      type: type,
-	      id: id,
-	      data: args
-	    });
-	  };
-	};
-
-	/**
-	 * Called upon a server acknowlegement.
-	 *
-	 * @param {Object} packet
-	 * @api private
-	 */
-
-	Socket.prototype.onack = function(packet){
-	  var ack = this.acks[packet.id];
-	  if ('function' == typeof ack) {
-	    debug('calling ack %s with %j', packet.id, packet.data);
-	    ack.apply(this, packet.data);
-	    delete this.acks[packet.id];
-	  } else {
-	    debug('bad ack %s', packet.id);
-	  }
-	};
-
-	/**
-	 * Called upon server connect.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.onconnect = function(){
-	  this.connected = true;
-	  this.disconnected = false;
-	  this.emit('connect');
-	  this.emitBuffered();
-	};
-
-	/**
-	 * Emit buffered events (received and emitted).
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.emitBuffered = function(){
-	  var i;
-	  for (i = 0; i < this.receiveBuffer.length; i++) {
-	    emit.apply(this, this.receiveBuffer[i]);
-	  }
-	  this.receiveBuffer = [];
-
-	  for (i = 0; i < this.sendBuffer.length; i++) {
-	    this.packet(this.sendBuffer[i]);
-	  }
-	  this.sendBuffer = [];
-	};
-
-	/**
-	 * Called upon server disconnect.
-	 *
-	 * @api private
-	 */
-
-	Socket.prototype.ondisconnect = function(){
-	  debug('server disconnect (%s)', this.nsp);
-	  this.destroy();
-	  this.onclose('io server disconnect');
-	};
-
-	/**
-	 * Called upon forced client/server side disconnections,
-	 * this method ensures the manager stops tracking us and
-	 * that reconnections don't get triggered for this.
-	 *
-	 * @api private.
-	 */
-
-	Socket.prototype.destroy = function(){
-	  if (this.subs) {
-	    // clean subscriptions to avoid reconnections
-	    for (var i = 0; i < this.subs.length; i++) {
-	      this.subs[i].destroy();
-	    }
-	    this.subs = null;
-	  }
-
-	  this.io.destroy(this);
-	};
-
-	/**
-	 * Disconnects the socket manually.
-	 *
-	 * @return {Socket} self
-	 * @api public
-	 */
-
-	Socket.prototype.close =
-	Socket.prototype.disconnect = function(){
-	  if (this.connected) {
-	    debug('performing disconnect (%s)', this.nsp);
-	    this.packet({ type: parser.DISCONNECT });
-	  }
-
-	  // remove socket from pool
-	  this.destroy();
-
-	  if (this.connected) {
-	    // fire events
-	    this.onclose('io client disconnect');
-	  }
-	  return this;
-	};
-
-	/**
-	 * Sets the compress flag.
-	 *
-	 * @param {Boolean} if `true`, compresses the sending data
-	 * @return {Socket} self
-	 * @api public
-	 */
-
-	Socket.prototype.compress = function(compress){
-	  this.flags = this.flags || {};
-	  this.flags.compress = compress;
-	  return this;
-	};
-
-
-/***/ },
-/* 309 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-
-	module.exports = Emitter;
-
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-	    .push(fn);
-	  return this;
-	};
-
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.once = function(event, fn){
-	  function on() {
-	    this.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-
-	  // specific event
-	  var callbacks = this._callbacks['$' + event];
-	  if (!callbacks) return this;
-
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks['$' + event];
-	    return this;
-	  }
-
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks['$' + event];
-
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-
-	  return this;
-	};
-
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks['$' + event] || [];
-	};
-
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 310 */
-/***/ function(module, exports) {
-
-	module.exports = toArray
-
-	function toArray(list, index) {
-	    var array = []
-
-	    index = index || 0
-
-	    for (var i = index || 0; i < list.length; i++) {
-	        array[i - index] = list[i]
-	    }
-
-	    return array
-	}
-
-
-/***/ },
-/* 311 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = on;
-
-	/**
-	 * Helper for subscriptions.
-	 *
-	 * @param {Object|EventEmitter} obj with `Emitter` mixin or `EventEmitter`
-	 * @param {String} event name
-	 * @param {Function} callback
-	 * @api public
-	 */
-
-	function on(obj, ev, fn) {
-	  obj.on(ev, fn);
-	  return {
-	    destroy: function(){
-	      obj.removeListener(ev, fn);
-	    }
-	  };
-	}
-
-
-/***/ },
-/* 312 */
-/***/ function(module, exports) {
-
-	/**
-	 * Slice reference.
-	 */
-
-	var slice = [].slice;
-
-	/**
-	 * Bind `obj` to `fn`.
-	 *
-	 * @param {Object} obj
-	 * @param {Function|String} fn or string
-	 * @return {Function}
-	 * @api public
-	 */
-
-	module.exports = function(obj, fn){
-	  if ('string' == typeof fn) fn = obj[fn];
-	  if ('function' != typeof fn) throw new Error('bind() requires a function');
-	  var args = slice.call(arguments, 2);
-	  return function(){
-	    return fn.apply(obj, args.concat(slice.call(arguments)));
-	  }
-	};
-
-
-/***/ },
-/* 313 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {
-	/*
-	 * Module requirements.
-	 */
-
-	var isArray = __webpack_require__(314);
-
-	/**
-	 * Module exports.
-	 */
-
-	module.exports = hasBinary;
-
-	/**
-	 * Checks for binary data.
-	 *
-	 * Right now only Buffer and ArrayBuffer are supported..
-	 *
-	 * @param {Object} anything
-	 * @api public
-	 */
-
-	function hasBinary(data) {
-
-	  function _hasBinary(obj) {
-	    if (!obj) return false;
-
-	    if ( (global.Buffer && global.Buffer.isBuffer && global.Buffer.isBuffer(obj)) ||
-	         (global.ArrayBuffer && obj instanceof ArrayBuffer) ||
-	         (global.Blob && obj instanceof Blob) ||
-	         (global.File && obj instanceof File)
-	        ) {
-	      return true;
-	    }
-
-	    if (isArray(obj)) {
-	      for (var i = 0; i < obj.length; i++) {
-	          if (_hasBinary(obj[i])) {
-	              return true;
-	          }
-	      }
-	    } else if (obj && 'object' == typeof obj) {
-	      // see: https://github.com/Automattic/has-binary/pull/4
-	      if (obj.toJSON && 'function' == typeof obj.toJSON) {
-	        obj = obj.toJSON();
-	      }
-
-	      for (var key in obj) {
-	        if (Object.prototype.hasOwnProperty.call(obj, key) && _hasBinary(obj[key])) {
-	          return true;
-	        }
-	      }
-	    }
-
-	    return false;
-	  }
-
-	  return _hasBinary(data);
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 314 */
-/***/ function(module, exports) {
-
-	module.exports = Array.isArray || function (arr) {
-	  return Object.prototype.toString.call(arr) == '[object Array]';
-	};
-
-
-/***/ },
-/* 315 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Backoff`.
-	 */
-
-	module.exports = Backoff;
-
-	/**
-	 * Initialize backoff timer with `opts`.
-	 *
-	 * - `min` initial timeout in milliseconds [100]
-	 * - `max` max timeout [10000]
-	 * - `jitter` [0]
-	 * - `factor` [2]
-	 *
-	 * @param {Object} opts
-	 * @api public
-	 */
-
-	function Backoff(opts) {
-	  opts = opts || {};
-	  this.ms = opts.min || 100;
-	  this.max = opts.max || 10000;
-	  this.factor = opts.factor || 2;
-	  this.jitter = opts.jitter > 0 && opts.jitter <= 1 ? opts.jitter : 0;
-	  this.attempts = 0;
-	}
-
-	/**
-	 * Return the backoff duration.
-	 *
-	 * @return {Number}
-	 * @api public
-	 */
-
-	Backoff.prototype.duration = function(){
-	  var ms = this.ms * Math.pow(this.factor, this.attempts++);
-	  if (this.jitter) {
-	    var rand =  Math.random();
-	    var deviation = Math.floor(rand * this.jitter * ms);
-	    ms = (Math.floor(rand * 10) & 1) == 0  ? ms - deviation : ms + deviation;
-	  }
-	  return Math.min(ms, this.max) | 0;
-	};
-
-	/**
-	 * Reset the number of attempts.
-	 *
-	 * @api public
-	 */
-
-	Backoff.prototype.reset = function(){
-	  this.attempts = 0;
-	};
-
-	/**
-	 * Set the minimum duration
-	 *
-	 * @api public
-	 */
-
-	Backoff.prototype.setMin = function(min){
-	  this.ms = min;
-	};
-
-	/**
-	 * Set the maximum duration
-	 *
-	 * @api public
-	 */
-
-	Backoff.prototype.setMax = function(max){
-	  this.max = max;
-	};
-
-	/**
-	 * Set the jitter
-	 *
-	 * @api public
-	 */
-
-	Backoff.prototype.setJitter = function(jitter){
-	  this.jitter = jitter;
-	};
-
-
-
-/***/ },
-/* 316 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(317);
+	var content = __webpack_require__(270);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(319)(content, {});
+	var update = __webpack_require__(272)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -42532,10 +45025,10 @@
 	}
 
 /***/ },
-/* 317 */
+/* 270 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(318)();
+	exports = module.exports = __webpack_require__(271)();
 	// imports
 
 
@@ -42546,7 +45039,7 @@
 
 
 /***/ },
-/* 318 */
+/* 271 */
 /***/ function(module, exports) {
 
 	/*
@@ -42602,7 +45095,7 @@
 
 
 /***/ },
-/* 319 */
+/* 272 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
