@@ -1,41 +1,32 @@
 import React from 'react'
 import moment from 'moment-timezone';
-// import '../styles/app'
-// import Logo from '../assets/logo.png'
-const formatFilter = (filter) => {
-  return filter.replace(/_/g, ' ').toUpperCase();
-}
+import Fuse from 'fuse.js';
+var list = require('../../data/cities_array.json');
+// import io from 'socket.io-client';
+//
+// const socket = io();
 
+var searchOptions = {
+  caseSensitive: false,
+  // includeScore: true,
+  shouldSort: true,
+  tokenize: false,
+  threshold: 0.4,
+  location: 0,
+  distance: 10,
+  maxPatternLength: 32,
+  keys: [{name: "city", weight: 0.7},{name: "country", weight: 0.3}]
+};
+var fuse = new Fuse(list, searchOptions);
 
-
-const filterZones = (searchTerm) => {
-  const moments = moment.tz.names(searchTerm);
-  return moments.map((zone, i) => {
-    const names = formatFilter(zone).split('/');
-    const moment = moments[i];
-    const searchTerms = names.join(' ');
-
-    return {
-        names,
-        moment,
-        searchTerms,
-    }
-  });
-}
-
-
-
-const startingZone = moment.tz.guess();
+var startingZone = fuse.search('birmingham')[0];
 
 export default class Zoned extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      zone: {
-        moment: startingZone,
-        names: ['EUROPE', 'BIRMINGHAM'],
-      }
+      zone: startingZone
     };
 
     this.onInputChange = this.onInputChange.bind(this);
@@ -45,7 +36,7 @@ export default class Zoned extends React.Component {
     setInterval(this.tickClock.bind(this), 1000);
   }
   getClockStyle(type) {
-    const time = moment().tz(this.state.zone.moment).format('h:mm:ss').split(':');
+    const time = moment().tz(this.state.zone.tz).format('h:mm:ss').split(':');
     let deg = null;
 
     if (type === 's') deg = time[2] * 6;
@@ -58,7 +49,7 @@ export default class Zoned extends React.Component {
   }
 
   tickClock() {
-    const [date, time] = moment().tz(this.state.zone.moment).format('MMMM Do YYYY, h:mm:ss a').split(',');
+    const [date, time] = moment().tz(this.state.zone.tz).format('MMMM Do YYYY, h:mm:ss a').split(',');
     this.setState({ time, date });
   }
 
@@ -66,31 +57,15 @@ export default class Zoned extends React.Component {
     const searchTerm = e.target.value.toUpperCase();
     if (!searchTerm) {
       return this.setState({
-        zone: {
-          moment: startingZone,
-          names: ['MY ZONE', 'EUROPE', 'LONDON'],
-        }
+        zone: fuse.search('birmingham')[0]
       });
-
     }
-    this.props.zones.some((zone, i) => {
-      if (zone.searchTerms.indexOf(searchTerm) !== -1) {
-          this.setState({zone});
-          return true
-      }
-    });
+    var zone = fuse.search(searchTerm);
+    if (zone.length && zone[0].tz) {
+      return this.setState({ zone: zone[0] });
+    }
   }
 
-  renderNames() {
-    return this.state.zone.names.map((zone, i) => {
-      if (i > 1) return null;
-      return (
-          <div className='zone__name' key={`name_${i}`}>
-            { zone }
-          </div>
-      );
-    });
-  }
 
   render() {
     return (
@@ -112,7 +87,12 @@ export default class Zoned extends React.Component {
             <div className='zoned__clock__hand zoned__clock__hand--second' style={ this.getClockStyle('s') }/>
           </div>
           <section className='zone'>
-            <div>{ this.renderNames() }</div>
+            <div className='zone__name'>
+              { this.state.zone.country }
+            </div>
+            <div className='zone__name'>
+              { this.state.zone.city }
+            </div>
             <div className='zone__time'>
               { this.state.time }
             </div>
@@ -125,7 +105,7 @@ export default class Zoned extends React.Component {
     );
   }
 }
-
-Zoned.defaultProps = {
-  zones: filterZones(),
-}
+//
+// Zoned.defaultProps = {
+//   zones: filterZones(),
+// }

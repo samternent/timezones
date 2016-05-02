@@ -11,10 +11,16 @@
   "author": "sam",
   "license": "MIT",
   "dependencies": {
+    "csv": "^0.4.6",
     "ejs": "^2.4.1",
     "express": "^4.13.4",
+    "fuse.js": "^2.2.0",
     "moment-timezone": "^0.5.2",
-    "react": "^0.14.7"
+    "object-assign": "^4.0.1",
+    "react": "^0.14.7",
+    "request": "^2.72.0",
+    "socket.io-client": "^1.4.5",
+    "tzwhere": "^1.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.5.2",

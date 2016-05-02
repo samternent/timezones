@@ -1,7 +1,12 @@
-var express = require('express');
-var app = express();
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
-app.use('/dist', express.static(__dirname + '/public'));
+
+io.on('connection', function(socket){
+  console.log('a user connected');
+});
+
 
 app.get('/app.js', function (req, res) {
      res.sendfile("./dist/app.js");
@@ -18,6 +23,8 @@ app.get('/',
 
 var port = process.env.PORT || 7000;
 
-app.listen(port, function() {
-  console.log('Node app is running on port', port);
+
+
+http.listen(port, function(){
+  console.log('listening on *:', port);
 });
