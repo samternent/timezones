@@ -19,6 +19,7 @@
     "object-assign": "^4.0.1",
     "react": "^0.14.7",
     "request": "^2.72.0",
+    "socket.io": "^1.4.5",
     "socket.io-client": "^1.4.5",
     "tzwhere": "^1.0.0"
   },
