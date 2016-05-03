@@ -12,15 +12,18 @@ export default class Zone extends Component {
   }
 
   getCurrentTime() {
-    return moment(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss a')
+    return moment(this.props.timestamp).tz(this.props.zone.tz).format('H:mm:ss a')
   }
 
-  getCurrentDate() {
+  getOffset() {
     return moment(this.props.timestamp).tz(this.props.zone.tz).format('Z z');
+  }
+  getCurrentDate() {
+    return moment(this.props.timestamp).tz(this.props.zone.tz).format('LL');
   }
 
   getClockStyle(type) {
-    const time = moment(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss').split(':');
+    const time = moment(this.props.timestamp).tz(this.props.zone.tz).format('HH:mm:ss').split(':');
     let deg = null;
 
     if (type === 's') deg = time[2] * 6;
@@ -51,6 +54,7 @@ export default class Zone extends Component {
           <div className='zone__time'>
             { this.getCurrentTime() }
           </div>
+          <div className='zone__offset'>{ this.getOffset() }</div>
           <div className='zone__date'>
             { this.getCurrentDate() }
           </div>

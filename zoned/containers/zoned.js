@@ -1,4 +1,5 @@
 import React from 'react'
+import { findDOMNode } from 'react-dom';
 import Fuse from 'fuse.js';
 import { Zone } from '../components';
 
@@ -62,14 +63,27 @@ export default class Zoned extends React.Component {
     return this.setState({ zones: fuse.search(searchTerm) });
   }
 
+  clearInput() {
+    const search = findDOMNode(this.refs.search);
+    search.value = '';
+  }
+
   setZone(zone) {
-    this.setState({ zones: [zone] });
+    const search = findDOMNode(this.refs.search);
+    search.value = zone.city;
+    search.scrollIntoView();
+    return this.setState({ zones: fuse.search(zone.city) });
   }
 
   renderZones() {
+    let cnt = 0;
     return this.state.zones.map((zone, i) => {
-      if (!zone.tz) return;
-      if (i === 0) return <Zone zone={ zone } key={ `zone_${i}`} />
+
+      if (!zone.tz) {
+        cnt++;
+        return;
+      };
+      if (i === cnt) return <Zone zone={ zone } key={ `zone_${i}`} />
 
       return (
         <div
@@ -89,9 +103,12 @@ export default class Zoned extends React.Component {
         <header className='header'>
           <div className='search'>
             <input
+              ref='search'
               type='text'
               className='search__input'
               placeholder='Search'
+              defaultValue='Birmingham'
+              onFocus={this.clearInput.bind(this)}
               onChange={this.onInputChange}
             />
           </div>

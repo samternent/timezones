@@ -19712,6 +19712,8 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
+	var _reactDom = __webpack_require__(158);
+
 	var _fuse = __webpack_require__(161);
 
 	var _fuse2 = _interopRequireDefault(_fuse);
@@ -19791,18 +19793,32 @@
 	      return this.setState({ zones: fuse.search(searchTerm) });
 	    }
 	  }, {
+	    key: 'clearInput',
+	    value: function clearInput() {
+	      var search = (0, _reactDom.findDOMNode)(this.refs.search);
+	      search.value = '';
+	    }
+	  }, {
 	    key: 'setZone',
 	    value: function setZone(zone) {
-	      this.setState({ zones: [zone] });
+	      var search = (0, _reactDom.findDOMNode)(this.refs.search);
+	      search.value = zone.city;
+	      search.scrollIntoView();
+	      return this.setState({ zones: fuse.search(zone.city) });
 	    }
 	  }, {
 	    key: 'renderZones',
 	    value: function renderZones() {
 	      var _this2 = this;
 
+	      var cnt = 0;
 	      return this.state.zones.map(function (zone, i) {
-	        if (!zone.tz) return;
-	        if (i === 0) return _react2.default.createElement(_components.Zone, { zone: zone, key: 'zone_' + i });
+
+	        if (!zone.tz) {
+	          cnt++;
+	          return;
+	        };
+	        if (i === cnt) return _react2.default.createElement(_components.Zone, { zone: zone, key: 'zone_' + i });
 
 	        return _react2.default.createElement(
 	          'div',
@@ -19828,9 +19844,12 @@
 	            'div',
 	            { className: 'search' },
 	            _react2.default.createElement('input', {
+	              ref: 'search',
 	              type: 'text',
 	              className: 'search__input',
 	              placeholder: 'Search',
+	              defaultValue: 'Birmingham',
+	              onFocus: this.clearInput.bind(this),
 	              onChange: this.onInputChange
 	            })
 	          )
@@ -20708,17 +20727,22 @@
 	  _createClass(Zone, [{
 	    key: 'getCurrentTime',
 	    value: function getCurrentTime() {
-	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss a');
+	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('H:mm:ss a');
+	    }
+	  }, {
+	    key: 'getOffset',
+	    value: function getOffset() {
+	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('Z z');
 	    }
 	  }, {
 	    key: 'getCurrentDate',
 	    value: function getCurrentDate() {
-	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('Z z');
+	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('LL');
 	    }
 	  }, {
 	    key: 'getClockStyle',
 	    value: function getClockStyle(type) {
-	      var time = (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss').split(':');
+	      var time = (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('HH:mm:ss').split(':');
 	      var deg = null;
 
 	      if (type === 's') deg = time[2] * 6;
@@ -20759,6 +20783,11 @@
 	            'div',
 	            { className: 'zone__time' },
 	            this.getCurrentTime()
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'zone__offset' },
+	            this.getOffset()
 	          ),
 	          _react2.default.createElement(
 	            'div',
@@ -45142,7 +45171,7 @@
 
 
 	// module
-	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  border: 1px solid #c3c3c3;\n  margin: 0 auto;\n  width: 300px;\n  height: 300px;\n  position: relative;\n  overflow: hidden;\n  font-size: 12px; }\n\n.header {\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center;\n  color: white;\n  padding-top: 5px; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  font-size: 3em;\n  font-weight: 100;\n  text-align: center;\n  padding: 15px;\n  font-weight: bold;\n  text-transform: uppercase;\n  position: absolute;\n  bottom: 1.5em;\n  color: #cfcfcf;\n  left: 0;\n  right: 0; }\n\n.zone__date {\n  padding: 5px;\n  background-color: white;\n  font-size: 2em;\n  font-weight: 100;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0; }\n\n.other-zone {\n  margin: 0 auto;\n  padding: 10px;\n  text-align: center;\n  cursor: pointer;\n  font-size: 1.5em;\n  color: #ccc; }\n\n.zoned__clock {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  right: 0;\n  background-color: #b0b0f0;\n  background-color: #2a2a33;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -55%;\n  height: 100%;\n  transform-origin: bottom center;\n  transition: 200ms transform;\n  border-right: 1px solid #666;\n  border-left: 1px solid #666;\n  width: 3px;\n  left: 50%; }\n", ""]);
+	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  border: 1px solid #c3c3c3;\n  margin: 1em auto;\n  width: 300px;\n  height: 300px;\n  position: relative;\n  overflow: hidden;\n  font-size: 12px;\n  box-shadow: 0 1px 3px 1px #ccc; }\n\n.header {\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center;\n  color: white;\n  padding-top: 5px; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  font-size: 3em;\n  font-weight: 100;\n  text-align: center;\n  padding: 15px;\n  font-weight: bold;\n  text-transform: uppercase;\n  position: absolute;\n  bottom: 1.5em;\n  color: #cfcfcf;\n  left: 0;\n  right: 0; }\n\n.zone__offset {\n  font-size: 1em;\n  font-weight: 100;\n  text-align: center;\n  font-weight: 100;\n  text-transform: uppercase;\n  position: absolute;\n  bottom: 4em;\n  color: #cfcfcf;\n  left: 0;\n  right: 0; }\n\n.zone__date {\n  padding: 5px;\n  background-color: white;\n  font-size: 2em;\n  font-weight: 400;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0; }\n\n.other-zone {\n  margin: 0 auto;\n  padding: 10px;\n  text-align: center;\n  cursor: pointer;\n  font-size: 1.5em;\n  color: #ccc;\n  transition: 0.1s color; }\n  .other-zone:hover {\n    color: #333; }\n\n.zoned__clock {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  right: 0;\n  background-color: #b0b0f0;\n  background-color: #2a2a33;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -55%;\n  height: 100%;\n  transform-origin: bottom center;\n  transition: 200ms transform;\n  border-right: 1px solid #666;\n  border-left: 1px solid #666;\n  width: 3px;\n  left: 50%; }\n", ""]);
 
 	// exports
 
