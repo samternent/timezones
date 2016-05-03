@@ -58,7 +58,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	__webpack_require__(269);
+	__webpack_require__(271);
 
 	var rootElement = document.getElementById('app');
 
@@ -19706,21 +19706,17 @@
 	  value: true
 	});
 
-	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _react = __webpack_require__(1);
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _momentTimezone = __webpack_require__(161);
-
-	var _momentTimezone2 = _interopRequireDefault(_momentTimezone);
-
-	var _fuse = __webpack_require__(267);
+	var _fuse = __webpack_require__(161);
 
 	var _fuse2 = _interopRequireDefault(_fuse);
+
+	var _components = __webpack_require__(162);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19730,25 +19726,30 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var list = __webpack_require__(268);
+	// get this from sockets search
+	var list = __webpack_require__(270);
 	// import io from 'socket.io-client';
-	//
 	// const socket = io();
 
 	var searchOptions = {
 	  caseSensitive: false,
-	  // includeScore: true,
+	  includeScore: true,
 	  shouldSort: true,
 	  tokenize: false,
 	  threshold: 0.4,
 	  location: 0,
 	  distance: 10,
 	  maxPatternLength: 32,
-	  keys: [{ name: "city", weight: 0.7 }, { name: "country", weight: 0.3 }]
+	  keys: [{
+	    name: "city",
+	    weight: 0.6
+	  }, {
+	    name: "country",
+	    weight: 0.4
+	  }]
 	};
-	var fuse = new _fuse2.default(list, searchOptions);
 
-	var startingZone = fuse.search('birmingham')[0];
+	var fuse = new _fuse2.default(list, searchOptions);
 
 	var Zoned = function (_React$Component) {
 	  _inherits(Zoned, _React$Component);
@@ -19759,7 +19760,8 @@
 	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Zoned).call(this, props));
 
 	    _this.state = {
-	      zone: startingZone
+	      zones: fuse.search('birmingham'),
+	      timestamp: new Date().getTime()
 	    };
 
 	    _this.onInputChange = _this.onInputChange.bind(_this);
@@ -19772,30 +19774,10 @@
 	      setInterval(this.tickClock.bind(this), 1000);
 	    }
 	  }, {
-	    key: 'getClockStyle',
-	    value: function getClockStyle(type) {
-	      var time = (0, _momentTimezone2.default)().tz(this.state.zone.tz).format('h:mm:ss').split(':');
-	      var deg = null;
-
-	      if (type === 's') deg = time[2] * 6;
-	      if (type === 'm') deg = time[1] * 6;
-	      if (type === 'h') deg = time[0] * 30;
-
-	      return {
-	        'transform': 'rotateZ(' + deg + 'deg)'
-	      };
-	    }
-	  }, {
 	    key: 'tickClock',
 	    value: function tickClock() {
-	      var _moment$tz$format$spl = (0, _momentTimezone2.default)().tz(this.state.zone.tz).format('MMMM Do YYYY, h:mm:ss a').split(',');
-
-	      var _moment$tz$format$spl2 = _slicedToArray(_moment$tz$format$spl, 2);
-
-	      var date = _moment$tz$format$spl2[0];
-	      var time = _moment$tz$format$spl2[1];
-
-	      this.setState({ time: time, date: date });
+	      var timestamp = new Date().getTime();
+	      this.setState({ timestamp: timestamp });
 	    }
 	  }, {
 	    key: 'onInputChange',
@@ -19803,13 +19785,35 @@
 	      var searchTerm = e.target.value.toUpperCase();
 	      if (!searchTerm) {
 	        return this.setState({
-	          zone: fuse.search('birmingham')[0]
+	          zones: fuse.search('birmingham')
 	        });
 	      }
-	      var zone = fuse.search(searchTerm);
-	      if (zone.length && zone[0].tz) {
-	        return this.setState({ zone: zone[0] });
-	      }
+	      return this.setState({ zones: fuse.search(searchTerm) });
+	    }
+	  }, {
+	    key: 'setZone',
+	    value: function setZone(zone) {
+	      this.setState({ zones: [zone] });
+	    }
+	  }, {
+	    key: 'renderZones',
+	    value: function renderZones() {
+	      var _this2 = this;
+
+	      return this.state.zones.map(function (zone, i) {
+	        if (!zone.tz) return;
+	        if (i === 0) return _react2.default.createElement(_components.Zone, { zone: zone, key: 'zone_' + i });
+
+	        return _react2.default.createElement(
+	          'div',
+	          {
+	            key: 'otherzone_' + i,
+	            className: 'other-zone',
+	            onClick: _this2.setZone.bind(_this2, zone)
+	          },
+	          ' ' + zone.city + ', ' + zone.country
+	        );
+	      });
 	    }
 	  }, {
 	    key: 'render',
@@ -19833,38 +19837,8 @@
 	        ),
 	        _react2.default.createElement(
 	          'div',
-	          { className: 'zoned' },
-	          _react2.default.createElement(
-	            'div',
-	            { className: 'zoned__clock', dataTime: this.state.time },
-	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--hour', style: this.getClockStyle('h') }),
-	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--minute', style: this.getClockStyle('m') }),
-	            _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--second', style: this.getClockStyle('s') })
-	          ),
-	          _react2.default.createElement(
-	            'section',
-	            { className: 'zone' },
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'zone__name' },
-	              this.state.zone.country
-	            ),
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'zone__name' },
-	              this.state.zone.city
-	            ),
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'zone__time' },
-	              this.state.time
-	            ),
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'zone__date' },
-	              this.state.date
-	            )
-	          )
+	          { className: 'zones' },
+	          this.renderZones()
 	        )
 	      );
 	    }
@@ -19872,11 +19846,6 @@
 
 	  return Zoned;
 	}(_react2.default.Component);
-	//
-	// Zoned.defaultProps = {
-	//   zones: filterZones(),
-	// }
-
 
 	exports.default = Zoned;
 
@@ -19886,12 +19855,938 @@
 /* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var moment = module.exports = __webpack_require__(162);
-	moment.tz.load(__webpack_require__(266));
+	/**
+	 * @license
+	 * Fuse - Lightweight fuzzy-search
+	 *
+	 * Copyright (c) 2012-2016 Kirollos Risk <kirollos@gmail.com>.
+	 * All Rights Reserved. Apache Software License 2.0
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License")
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 * http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	;(function (global) {
+	  'use strict'
+
+	  function log () {
+	    console.log.apply(console, arguments)
+	  }
+
+	  var MULTI_CHAR_REGEX = / +/g
+
+	  var defaultOptions = {
+	    // The name of the identifier property. If specified, the returned result will be a list
+	    // of the items' dentifiers, otherwise it will be a list of the items.
+	    id: null,
+
+	    // Indicates whether comparisons should be case sensitive.
+
+	    caseSensitive: false,
+
+	    // An array of values that should be included from the searcher's output. When this array
+	    // contains elements, each result in the list will be of the form `{ item: ..., include1: ..., include2: ... }`.
+	    // Values you can include are `score`, `matchedLocations`
+	    include: [],
+
+	    // Whether to sort the result list, by score
+	    shouldSort: true,
+
+	    // The search function to use
+	    // Note that the default search function ([[Function]]) must conform to the following API:
+	    //
+	    //  @param pattern The pattern string to search
+	    //  @param options The search option
+	    //  [[Function]].constructor = function(pattern, options)
+	    //
+	    //  @param text: the string to search in for the pattern
+	    //  @return Object in the form of:
+	    //    - isMatch: boolean
+	    //    - score: Int
+	    //  [[Function]].prototype.search = function(text)
+	    searchFn: BitapSearcher,
+
+	    // Default sort function
+	    sortFn: function (a, b) {
+	      return a.score - b.score
+	    },
+
+	    // The get function to use when fetching an object's properties.
+	    // The default will search nested paths *ie foo.bar.baz*
+	    getFn: deepValue,
+
+	    // List of properties that will be searched. This also supports nested properties.
+	    keys: [],
+
+	    // Will print to the console. Useful for debugging.
+	    verbose: false,
+
+	    // When true, the search algorithm will search individual words **and** the full string,
+	    // computing the final score as a function of both. Note that when `tokenize` is `true`,
+	    // the `threshold`, `distance`, and `location` are inconsequential for individual tokens.
+	    tokenize: false
+	  }
+
+	  function Fuse (list, options) {
+	    var i
+	    var len
+	    var key
+	    var keys
+
+	    this.list = list
+	    this.options = options = options || {}
+
+	    // Add boolean type options
+	    for (i = 0, keys = ['sort', 'shouldSort', 'verbose', 'tokenize'], len = keys.length; i < len; i++) {
+	      key = keys[i]
+	      this.options[key] = key in options ? options[key] : defaultOptions[key]
+	    }
+	    // Add all other options
+	    for (i = 0, keys = ['searchFn', 'sortFn', 'keys', 'getFn', 'include'], len = keys.length; i < len; i++) {
+	      key = keys[i]
+	      this.options[key] = options[key] || defaultOptions[key]
+	    }
+	  }
+
+	  Fuse.VERSION = '2.2.0'
+
+	  /**
+	   * Sets a new list for Fuse to match against.
+	   * @param {Array} list
+	   * @return {Array} The newly set list
+	   * @public
+	   */
+	  Fuse.prototype.set = function (list) {
+	    this.list = list
+	    return list
+	  }
+
+	  Fuse.prototype.search = function (pattern) {
+	    if (this.options.verbose) log('\nSearch term:', pattern, '\n')
+
+	    this.pattern = pattern
+	    this.results = []
+	    this.resultMap = {}
+	    this._keyMap = null
+
+	    this._prepareSearchers()
+	    this._startSearch()
+	    this._computeScore()
+	    this._sort()
+
+	    var output = this._format()
+	    return output
+	  }
+
+	  Fuse.prototype._prepareSearchers = function () {
+	    var options = this.options
+	    var pattern = this.pattern
+	    var searchFn = options.searchFn
+	    var tokens = pattern.split(MULTI_CHAR_REGEX)
+	    var i = 0
+	    var len = tokens.length
+
+	    if (this.options.tokenize) {
+	      this.tokenSearchers = []
+	      for (; i < len; i++) {
+	        this.tokenSearchers.push(new searchFn(tokens[i], options))
+	      }
+	    }
+	    this.fullSeacher = new searchFn(pattern, options)
+	  }
+
+	  Fuse.prototype._startSearch = function () {
+	    var options = this.options
+	    var getFn = options.getFn
+	    var list = this.list
+	    var listLen = list.length
+	    var keys = this.options.keys
+	    var keysLen = keys.length
+	    var key
+	    var weight
+	    var item = null
+	    var i
+	    var j
+
+	    // Check the first item in the list, if it's a string, then we assume
+	    // that every item in the list is also a string, and thus it's a flattened array.
+	    if (typeof list[0] === 'string') {
+	      // Iterate over every item
+	      for (i = 0; i < listLen; i++) {
+	        this._analyze('', list[i], i, i)
+	      }
+	    } else {
+	      this._keyMap = {}
+	      // Otherwise, the first item is an Object (hopefully), and thus the searching
+	      // is done on the values of the keys of each item.
+	      // Iterate over every item
+	      for (i = 0; i < listLen; i++) {
+	        item = list[i]
+	        // Iterate over every key
+	        for (j = 0; j < keysLen; j++) {
+	          key = keys[j]
+	          if (typeof key !== 'string') {
+	            weight = (1 - key.weight) || 1
+	            this._keyMap[key.name] = {
+	              weight: weight
+	            }
+	            if (key.weight <= 0 || key.weight > 1) {
+	              throw new Error('Key weight has to be > 0 and <= 1')
+	            }
+	            key = key.name
+	          } else {
+	            this._keyMap[key] = {
+	              weight: 1
+	            }
+	          }
+	          this._analyze(key, getFn(item, key, []), item, i)
+	        }
+	      }
+	    }
+	  }
+
+	  Fuse.prototype._analyze = function (key, text, entity, index) {
+	    var options = this.options
+	    var words
+	    var scores
+	    var exists = false
+	    var tokenSearchers
+	    var tokenSearchersLen
+	    var existingResult
+	    var averageScore
+	    var finalScore
+	    var scoresLen
+	    var mainSearchResult
+	    var tokenSearcher
+	    var termScores
+	    var word
+	    var tokenSearchResult
+	    var i
+	    var j
+
+	    // Check if the text can be searched
+	    if (text === undefined || text === null) {
+	      return
+	    }
+
+	    scores = []
+
+	    if (typeof text === 'string') {
+	      words = text.split(MULTI_CHAR_REGEX)
+
+	      if (options.verbose) log('---------\nKey:', key)
+	      if (options.verbose) log('Record:', words)
+
+	      if (this.options.tokenize) {
+	        tokenSearchers = this.tokenSearchers
+	        tokenSearchersLen = tokenSearchers.length
+
+	        for (i = 0; i < this.tokenSearchers.length; i++) {
+	          tokenSearcher = this.tokenSearchers[i]
+	          termScores = []
+	          for (j = 0; j < words.length; j++) {
+	            word = words[j]
+	            tokenSearchResult = tokenSearcher.search(word)
+	            if (tokenSearchResult.isMatch) {
+	              exists = true
+	              termScores.push(tokenSearchResult.score)
+	              scores.push(tokenSearchResult.score)
+	            } else {
+	              termScores.push(1)
+	              scores.push(1)
+	            }
+	          }
+	          if (options.verbose) log('Token scores:', termScores)
+	        }
+
+	        averageScore = scores[0]
+	        scoresLen = scores.length
+	        for (i = 1; i < scoresLen; i++) {
+	          averageScore += scores[i]
+	        }
+	        averageScore = averageScore / scoresLen
+
+	        if (options.verbose) log('Token score average:', averageScore)
+	      }
+
+	      // Get the result
+	      mainSearchResult = this.fullSeacher.search(text)
+	      if (options.verbose) log('Full text score:', mainSearchResult.score)
+
+	      finalScore = mainSearchResult.score
+	      if (averageScore !== undefined) {
+	        finalScore = (finalScore + averageScore) / 2
+	      }
+
+	      if (options.verbose) log('Score average:', finalScore)
+
+	      // If a match is found, add the item to <rawResults>, including its score
+	      if (exists || mainSearchResult.isMatch) {
+	        // Check if the item already exists in our results
+	        existingResult = this.resultMap[index]
+
+	        if (existingResult) {
+	          // Use the lowest score
+	          // existingResult.score, bitapResult.score
+	          existingResult.output.push({
+	            key: key,
+	            score: finalScore,
+	            matchedIndices: mainSearchResult.matchedIndices
+	          })
+	        } else {
+	          // Add it to the raw result list
+	          this.resultMap[index] = {
+	            item: entity,
+	            output: [{
+	              key: key,
+	              score: finalScore,
+	              matchedIndices: mainSearchResult.matchedIndices
+	            }]
+	          }
+
+	          this.results.push(this.resultMap[index])
+	        }
+	      }
+	    } else if (isArray(text)) {
+	      for (i = 0; i < text.length; i++) {
+	        this._analyze(key, text[i], entity, index)
+	      }
+	    }
+	  }
+
+	  Fuse.prototype._computeScore = function () {
+	    var i
+	    var j
+	    var keyMap = this._keyMap
+	    var totalScore
+	    var output
+	    var scoreLen
+	    var score
+	    var weight
+	    var results = this.results
+	    var bestScore
+	    var nScore
+
+	    if (this.options.verbose) log('\n\nComputing score:\n')
+
+	    for (i = 0; i < results.length; i++) {
+	      totalScore = 0
+	      output = results[i].output
+	      scoreLen = output.length
+
+	      bestScore = 1
+
+	      for (j = 0; j < scoreLen; j++) {
+	        score = output[j].score
+	        weight = keyMap ? keyMap[output[j].key].weight : 1
+
+	        nScore = score * weight
+
+	        if (weight !== 1) {
+	          bestScore = Math.min(bestScore, nScore)
+	        } else {
+	          totalScore += nScore
+	          output[j].nScore = nScore
+	        }
+	      }
+
+	      if (bestScore === 1) {
+	        results[i].score = totalScore / scoreLen
+	      } else {
+	        results[i].score = bestScore
+	      }
+
+	      if (this.options.verbose) log(results[i])
+	    }
+	  }
+
+	  Fuse.prototype._sort = function () {
+	    var options = this.options
+	    if (options.shouldSort) {
+	      if (options.verbose) log('\n\nSorting....')
+	      this.results.sort(options.sortFn)
+	    }
+	  }
+
+	  Fuse.prototype._format = function () {
+	    var options = this.options
+	    var getFn = options.getFn
+	    var finalOutput = []
+	    var item
+	    var i
+	    var len
+	    var results = this.results
+	    var replaceValue
+	    var getItemAtIndex
+	    var include = options.include
+
+	    if (options.verbose) log('\n\nOutput:\n\n', results)
+
+	    // Helper function, here for speed-up, which replaces the item with its value,
+	    // if the options specifies it,
+	    replaceValue = options.id ? function (index) {
+	      results[index].item = getFn(results[index].item, options.id, [])[0]
+	    } : function () {}
+
+	    getItemAtIndex = function (index) {
+	      var record = results[index]
+	      var data
+	      var includeVal
+	      var j
+	      var output
+	      var _item
+	      var _result
+
+	      // If `include` has values, put the item in the result
+	      if (include.length > 0) {
+	        data = {
+	          item: record.item
+	        }
+	        if (include.indexOf('matches') !== -1) {
+	          output = record.output
+	          data.matches = []
+	          for (j = 0; j < output.length; j++) {
+	            _item = output[j]
+	            _result = {
+	              indices: _item.matchedIndices
+	            }
+	            if (_item.key) {
+	              _result.key = _item.key
+	            }
+	            data.matches.push(_result)
+	          }
+	        }
+
+	        if (include.indexOf('score') !== -1) {
+	          data.score = results[index].score
+	        }
+
+	      } else {
+	        data = record.item
+	      }
+
+	      return data
+	    }
+
+	    // From the results, push into a new array only the item identifier (if specified)
+	    // of the entire item.  This is because we don't want to return the <results>,
+	    // since it contains other metadata
+	    for (i = 0, len = results.length; i < len; i++) {
+	      replaceValue(i)
+	      item = getItemAtIndex(i)
+	      finalOutput.push(item)
+	    }
+
+	    return finalOutput
+	  }
+
+	  // Helpers
+
+	  function deepValue (obj, path, list) {
+	    var firstSegment
+	    var remaining
+	    var dotIndex
+	    var value
+	    var i
+	    var len
+
+	    if (!path) {
+	      // If there's no path left, we've gotten to the object we care about.
+	      list.push(obj)
+	    } else {
+	      dotIndex = path.indexOf('.')
+
+	      if (dotIndex !== -1) {
+	        firstSegment = path.slice(0, dotIndex)
+	        remaining = path.slice(dotIndex + 1)
+	      } else {
+	        firstSegment = path
+	      }
+
+	      value = obj[firstSegment]
+	      if (value !== null && value !== undefined) {
+	        if (!remaining && (typeof value === 'string' || typeof value === 'number')) {
+	          list.push(value)
+	        } else if (isArray(value)) {
+	          // Search each item in the array.
+	          for (i = 0, len = value.length; i < len; i++) {
+	            deepValue(value[i], remaining, list)
+	          }
+	        } else if (remaining) {
+	          // An object. Recurse further.
+	          deepValue(value, remaining, list)
+	        }
+	      }
+	    }
+
+	    return list
+	  }
+
+	  function isArray (obj) {
+	    return Object.prototype.toString.call(obj) === '[object Array]'
+	  }
+
+	  /**
+	   * Adapted from "Diff, Match and Patch", by Google
+	   *
+	   *   http://code.google.com/p/google-diff-match-patch/
+	   *
+	   * Modified by: Kirollos Risk <kirollos@gmail.com>
+	   * -----------------------------------------------
+	   * Details: the algorithm and structure was modified to allow the creation of
+	   * <Searcher> instances with a <search> method which does the actual
+	   * bitap search. The <pattern> (the string that is searched for) is only defined
+	   * once per instance and thus it eliminates redundant re-creation when searching
+	   * over a list of strings.
+	   *
+	   * Licensed under the Apache License, Version 2.0 (the "License")
+	   * you may not use this file except in compliance with the License.
+	   */
+	  function BitapSearcher (pattern, options) {
+	    options = options || {}
+	    this.options = options
+	    this.options.location = options.location || BitapSearcher.defaultOptions.location
+	    this.options.distance = 'distance' in options ? options.distance : BitapSearcher.defaultOptions.distance
+	    this.options.threshold = 'threshold' in options ? options.threshold : BitapSearcher.defaultOptions.threshold
+	    this.options.maxPatternLength = options.maxPatternLength || BitapSearcher.defaultOptions.maxPatternLength
+
+	    this.pattern = options.caseSensitive ? pattern : pattern.toLowerCase()
+	    this.patternLen = pattern.length
+
+	    if (this.patternLen <= this.options.maxPatternLength) {
+	      this.matchmask = 1 << (this.patternLen - 1)
+	      this.patternAlphabet = this._calculatePatternAlphabet()
+	    }
+	  }
+
+	  BitapSearcher.defaultOptions = {
+	    // Approximately where in the text is the pattern expected to be found?
+	    location: 0,
+
+	    // Determines how close the match must be to the fuzzy location (specified above).
+	    // An exact letter match which is 'distance' characters away from the fuzzy location
+	    // would score as a complete mismatch. A distance of '0' requires the match be at
+	    // the exact location specified, a threshold of '1000' would require a perfect match
+	    // to be within 800 characters of the fuzzy location to be found using a 0.8 threshold.
+	    distance: 100,
+
+	    // At what point does the match algorithm give up. A threshold of '0.0' requires a perfect match
+	    // (of both letters and location), a threshold of '1.0' would match anything.
+	    threshold: 0.6,
+
+	    // Machine word size
+	    maxPatternLength: 32
+	  }
+
+	  /**
+	   * Initialize the alphabet for the Bitap algorithm.
+	   * @return {Object} Hash of character locations.
+	   * @private
+	   */
+	  BitapSearcher.prototype._calculatePatternAlphabet = function () {
+	    var mask = {},
+	      i = 0
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      mask[this.pattern.charAt(i)] = 0
+	    }
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      mask[this.pattern.charAt(i)] |= 1 << (this.pattern.length - i - 1)
+	    }
+
+	    return mask
+	  }
+
+	  /**
+	   * Compute and return the score for a match with `e` errors and `x` location.
+	   * @param {number} errors Number of errors in match.
+	   * @param {number} location Location of match.
+	   * @return {number} Overall score for match (0.0 = good, 1.0 = bad).
+	   * @private
+	   */
+	  BitapSearcher.prototype._bitapScore = function (errors, location) {
+	    var accuracy = errors / this.patternLen,
+	      proximity = Math.abs(this.options.location - location)
+
+	    if (!this.options.distance) {
+	      // Dodge divide by zero error.
+	      return proximity ? 1.0 : accuracy
+	    }
+	    return accuracy + (proximity / this.options.distance)
+	  }
+
+	  /**
+	   * Compute and return the result of the search
+	   * @param {String} text The text to search in
+	   * @return {Object} Literal containing:
+	   *                          {Boolean} isMatch Whether the text is a match or not
+	   *                          {Decimal} score Overall score for the match
+	   * @public
+	   */
+	  BitapSearcher.prototype.search = function (text) {
+	    var options = this.options
+	    var i
+	    var j
+	    var textLen
+	    var location
+	    var threshold
+	    var bestLoc
+	    var binMin
+	    var binMid
+	    var binMax
+	    var start, finish
+	    var bitArr
+	    var lastBitArr
+	    var charMatch
+	    var score
+	    var locations
+	    var matches
+	    var isMatched
+	    var matchMask
+	    var matchedIndices
+	    var matchesLen
+	    var match
+
+	    text = options.caseSensitive ? text : text.toLowerCase()
+
+	    if (this.pattern === text) {
+	      // Exact match
+	      return {
+	        isMatch: true,
+	        score: 0,
+	        matchedIndices: [[0, text.length - 1]]
+	      }
+	    }
+
+	    // When pattern length is greater than the machine word length, just do a a regex comparison
+	    if (this.patternLen > options.maxPatternLength) {
+	      matches = text.match(new RegExp(this.pattern.replace(MULTI_CHAR_REGEX, '|')))
+	      isMatched = !!matches
+
+	      if (isMatched) {
+	        matchedIndices = []
+	        for (i = 0, matchesLen = matches.length; i < matchesLen; i++) {
+	          match = matches[i]
+	          matchedIndices.push([text.indexOf(match), match.length - 1])
+	        }
+	      }
+
+	      return {
+	        isMatch: isMatched,
+	        // TODO: revisit this score
+	        score: isMatched ? 0.5 : 1,
+	        matchedIndices: matchedIndices
+	      }
+	    }
+
+	    location = options.location
+	    // Set starting location at beginning text and initialize the alphabet.
+	    textLen = text.length
+	    // Highest score beyond which we give up.
+	    threshold = options.threshold
+	    // Is there a nearby exact match? (speedup)
+	    bestLoc = text.indexOf(this.pattern, location)
+
+	    // a mask of the matches
+	    matchMask = []
+	    for (i = 0; i < textLen; i++) {
+	      matchMask[i] = 0
+	    }
+
+	    if (bestLoc != -1) {
+	      threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
+	      // What about in the other direction? (speed up)
+	      bestLoc = text.lastIndexOf(this.pattern, location + this.patternLen)
+
+	      if (bestLoc != -1) {
+	        threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
+	      }
+	    }
+
+	    bestLoc = -1
+	    score = 1
+	    locations = []
+	    binMax = this.patternLen + textLen
+
+	    for (i = 0; i < this.patternLen; i++) {
+	      // Scan for the best match; each iteration allows for one more error.
+	      // Run a binary search to determine how far from the match location we can stray
+	      // at this error level.
+	      binMin = 0
+	      binMid = binMax
+	      while (binMin < binMid) {
+	        if (this._bitapScore(i, location + binMid) <= threshold) {
+	          binMin = binMid
+	        } else {
+	          binMax = binMid
+	        }
+	        binMid = Math.floor((binMax - binMin) / 2 + binMin)
+	      }
+
+	      // Use the result from this iteration as the maximum for the next.
+	      binMax = binMid
+	      start = Math.max(1, location - binMid + 1)
+	      finish = Math.min(location + binMid, textLen) + this.patternLen
+
+	      // Initialize the bit array
+	      bitArr = Array(finish + 2)
+
+	      bitArr[finish + 1] = (1 << i) - 1
+
+	      for (j = finish; j >= start; j--) {
+	        charMatch = this.patternAlphabet[text.charAt(j - 1)]
+
+	        if (charMatch) {
+	          matchMask[j - 1] = 1
+	        }
+
+	        if (i === 0) {
+	          // First pass: exact match.
+	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch
+	        } else {
+	          // Subsequent passes: fuzzy match.
+	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch | (((lastBitArr[j + 1] | lastBitArr[j]) << 1) | 1) | lastBitArr[j + 1]
+	        }
+	        if (bitArr[j] & this.matchmask) {
+	          score = this._bitapScore(i, j - 1)
+
+	          // This match will almost certainly be better than any existing match.
+	          // But check anyway.
+	          if (score <= threshold) {
+	            // Indeed it is
+	            threshold = score
+	            bestLoc = j - 1
+	            locations.push(bestLoc)
+
+	            if (bestLoc > location) {
+	              // When passing loc, don't exceed our current distance from loc.
+	              start = Math.max(1, 2 * location - bestLoc)
+	            } else {
+	              // Already passed loc, downhill from here on in.
+	              break
+	            }
+	          }
+	        }
+	      }
+
+	      // No hope for a (better) match at greater error levels.
+	      if (this._bitapScore(i + 1, location) > threshold) {
+	        break
+	      }
+	      lastBitArr = bitArr
+	    }
+
+	    matchedIndices = this._getMatchedIndices(matchMask)
+
+	    // Count exact matches (those with a score of 0) to be "almost" exact
+	    return {
+	      isMatch: bestLoc >= 0,
+	      score: score === 0 ? 0.001 : score,
+	      matchedIndices: matchedIndices
+	    }
+	  }
+
+	  BitapSearcher.prototype._getMatchedIndices = function (matchMask) {
+	    var matchedIndices = []
+	    var start = -1
+	    var end = -1
+	    var i = 0
+	    var match
+	    var len = len = matchMask.length
+	    for (; i < len; i++) {
+	      match = matchMask[i]
+	      if (match && start === -1) {
+	        start = i
+	      } else if (!match && start !== -1) {
+	        end = i - 1
+	        matchedIndices.push([start, end])
+	        start = -1
+	      }
+	    }
+	    if (matchMask[i - 1]) {
+	      matchedIndices.push([start, i - 1])
+	    }
+	    return matchedIndices
+	  }
+
+	  // Export to Common JS Loader
+	  if (true) {
+	    // Node. Does not work with strict CommonJS, but
+	    // only CommonJS-like environments that support module.exports,
+	    // like Node.
+	    module.exports = Fuse
+	  } else if (typeof define === 'function' && define.amd) {
+	    // AMD. Register as an anonymous module.
+	    define(function () {
+	      return Fuse
+	    })
+	  } else {
+	    // Browser globals (root is window)
+	    global.Fuse = Fuse
+	  }
+
+	})(this)
 
 
 /***/ },
 /* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* REACT HOT LOADER */ if (false) { (function () { var ReactHotAPI = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/node_modules/react-hot-api/modules/index.js"), RootInstanceProvider = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/RootInstanceProvider.js"), ReactMount = require("react/lib/ReactMount"), React = require("react"); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Zone = undefined;
+
+	var _zone = __webpack_require__(163);
+
+	var _zone2 = _interopRequireDefault(_zone);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.Zone = _zone2.default;
+
+	/* REACT HOT LOADER */ }).call(this); } finally { if (false) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/makeExportsHot.js"); if (makeExportsHot(module, require("react"))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "index.js" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+
+/***/ },
+/* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* REACT HOT LOADER */ if (false) { (function () { var ReactHotAPI = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/node_modules/react-hot-api/modules/index.js"), RootInstanceProvider = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/RootInstanceProvider.js"), ReactMount = require("react/lib/ReactMount"), React = require("react"); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _momentTimezone = __webpack_require__(164);
+
+	var _momentTimezone2 = _interopRequireDefault(_momentTimezone);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Zone = function (_Component) {
+	  _inherits(Zone, _Component);
+
+	  function Zone(props) {
+	    _classCallCheck(this, Zone);
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Zone).call(this, props));
+
+	    _this.state = {
+	      time: null,
+	      date: null
+	    };
+	    return _this;
+	  }
+
+	  _createClass(Zone, [{
+	    key: 'getCurrentTime',
+	    value: function getCurrentTime() {
+	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss a');
+	    }
+	  }, {
+	    key: 'getCurrentDate',
+	    value: function getCurrentDate() {
+	      return (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('Z z');
+	    }
+	  }, {
+	    key: 'getClockStyle',
+	    value: function getClockStyle(type) {
+	      var time = (0, _momentTimezone2.default)(this.props.timestamp).tz(this.props.zone.tz).format('h:mm:ss').split(':');
+	      var deg = null;
+
+	      if (type === 's') deg = time[2] * 6;
+	      if (type === 'm') deg = time[1] * 6;
+	      if (type === 'h') deg = time[0] * 30;
+
+	      return {
+	        'transform': 'rotateZ(' + deg + 'deg)'
+	      };
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      return _react2.default.createElement(
+	        'div',
+	        { className: 'zoned', key: this.props.key },
+	        _react2.default.createElement(
+	          'div',
+	          { className: 'zoned__clock', dataTime: this.getCurrentTime() },
+	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--hour', style: this.getClockStyle('h') }),
+	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--minute', style: this.getClockStyle('m') }),
+	          _react2.default.createElement('div', { className: 'zoned__clock__hand zoned__clock__hand--second', style: this.getClockStyle('s') })
+	        ),
+	        _react2.default.createElement(
+	          'section',
+	          { className: 'zone' },
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'zone__name' },
+	            this.props.zone.country
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'zone__name' },
+	            this.props.zone.city
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'zone__time' },
+	            this.getCurrentTime()
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'zone__date' },
+	            this.getCurrentDate()
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return Zone;
+	}(_react.Component);
+
+	exports.default = Zone;
+
+	/* REACT HOT LOADER */ }).call(this); } finally { if (false) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = require("/Users/st/Documents/dev/zoneDev/node_modules/react-hot-loader/makeExportsHot.js"); if (makeExportsHot(module, require("react"))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "zone.js" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+
+/***/ },
+/* 164 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var moment = module.exports = __webpack_require__(165);
+	moment.tz.load(__webpack_require__(269));
+
+
+/***/ },
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//! moment-timezone.js
@@ -19905,7 +20800,7 @@
 
 		/*global define*/
 		if (true) {
-			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(163)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));                 // AMD
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(166)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));                 // AMD
 		} else if (typeof module === 'object' && module.exports) {
 			module.exports = factory(require('moment')); // Node
 		} else {
@@ -20496,7 +21391,7 @@
 
 
 /***/ },
-/* 163 */
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module) {//! moment.js
@@ -20897,7 +21792,7 @@
 	                module && module.exports) {
 	            try {
 	                oldLocale = globalLocale._abbr;
-	                __webpack_require__(165)("./" + name);
+	                __webpack_require__(168)("./" + name);
 	                // because defineLocale currently also sets the global locale, we
 	                // want to undo that for lazy loaded locales
 	                locale_locales__getSetGlobalLocale(oldLocale);
@@ -24539,10 +25434,10 @@
 	    return _moment;
 
 	}));
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(164)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(167)(module)))
 
 /***/ },
-/* 164 */
+/* 167 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -24558,210 +25453,210 @@
 
 
 /***/ },
-/* 165 */
+/* 168 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./af": 166,
-		"./af.js": 166,
-		"./ar": 167,
-		"./ar-ma": 168,
-		"./ar-ma.js": 168,
-		"./ar-sa": 169,
-		"./ar-sa.js": 169,
-		"./ar-tn": 170,
-		"./ar-tn.js": 170,
-		"./ar.js": 167,
-		"./az": 171,
-		"./az.js": 171,
-		"./be": 172,
-		"./be.js": 172,
-		"./bg": 173,
-		"./bg.js": 173,
-		"./bn": 174,
-		"./bn.js": 174,
-		"./bo": 175,
-		"./bo.js": 175,
-		"./br": 176,
-		"./br.js": 176,
-		"./bs": 177,
-		"./bs.js": 177,
-		"./ca": 178,
-		"./ca.js": 178,
-		"./cs": 179,
-		"./cs.js": 179,
-		"./cv": 180,
-		"./cv.js": 180,
-		"./cy": 181,
-		"./cy.js": 181,
-		"./da": 182,
-		"./da.js": 182,
-		"./de": 183,
-		"./de-at": 184,
-		"./de-at.js": 184,
-		"./de.js": 183,
-		"./dv": 185,
-		"./dv.js": 185,
-		"./el": 186,
-		"./el.js": 186,
-		"./en-au": 187,
-		"./en-au.js": 187,
-		"./en-ca": 188,
-		"./en-ca.js": 188,
-		"./en-gb": 189,
-		"./en-gb.js": 189,
-		"./en-ie": 190,
-		"./en-ie.js": 190,
-		"./en-nz": 191,
-		"./en-nz.js": 191,
-		"./eo": 192,
-		"./eo.js": 192,
-		"./es": 193,
-		"./es.js": 193,
-		"./et": 194,
-		"./et.js": 194,
-		"./eu": 195,
-		"./eu.js": 195,
-		"./fa": 196,
-		"./fa.js": 196,
-		"./fi": 197,
-		"./fi.js": 197,
-		"./fo": 198,
-		"./fo.js": 198,
-		"./fr": 199,
-		"./fr-ca": 200,
-		"./fr-ca.js": 200,
-		"./fr-ch": 201,
-		"./fr-ch.js": 201,
-		"./fr.js": 199,
-		"./fy": 202,
-		"./fy.js": 202,
-		"./gd": 203,
-		"./gd.js": 203,
-		"./gl": 204,
-		"./gl.js": 204,
-		"./he": 205,
-		"./he.js": 205,
-		"./hi": 206,
-		"./hi.js": 206,
-		"./hr": 207,
-		"./hr.js": 207,
-		"./hu": 208,
-		"./hu.js": 208,
-		"./hy-am": 209,
-		"./hy-am.js": 209,
-		"./id": 210,
-		"./id.js": 210,
-		"./is": 211,
-		"./is.js": 211,
-		"./it": 212,
-		"./it.js": 212,
-		"./ja": 213,
-		"./ja.js": 213,
-		"./jv": 214,
-		"./jv.js": 214,
-		"./ka": 215,
-		"./ka.js": 215,
-		"./kk": 216,
-		"./kk.js": 216,
-		"./km": 217,
-		"./km.js": 217,
-		"./ko": 218,
-		"./ko.js": 218,
-		"./ky": 219,
-		"./ky.js": 219,
-		"./lb": 220,
-		"./lb.js": 220,
-		"./lo": 221,
-		"./lo.js": 221,
-		"./lt": 222,
-		"./lt.js": 222,
-		"./lv": 223,
-		"./lv.js": 223,
-		"./me": 224,
-		"./me.js": 224,
-		"./mk": 225,
-		"./mk.js": 225,
-		"./ml": 226,
-		"./ml.js": 226,
-		"./mr": 227,
-		"./mr.js": 227,
-		"./ms": 228,
-		"./ms-my": 229,
-		"./ms-my.js": 229,
-		"./ms.js": 228,
-		"./my": 230,
-		"./my.js": 230,
-		"./nb": 231,
-		"./nb.js": 231,
-		"./ne": 232,
-		"./ne.js": 232,
-		"./nl": 233,
-		"./nl.js": 233,
-		"./nn": 234,
-		"./nn.js": 234,
-		"./pa-in": 235,
-		"./pa-in.js": 235,
-		"./pl": 236,
-		"./pl.js": 236,
-		"./pt": 237,
-		"./pt-br": 238,
-		"./pt-br.js": 238,
-		"./pt.js": 237,
-		"./ro": 239,
-		"./ro.js": 239,
-		"./ru": 240,
-		"./ru.js": 240,
-		"./se": 241,
-		"./se.js": 241,
-		"./si": 242,
-		"./si.js": 242,
-		"./sk": 243,
-		"./sk.js": 243,
-		"./sl": 244,
-		"./sl.js": 244,
-		"./sq": 245,
-		"./sq.js": 245,
-		"./sr": 246,
-		"./sr-cyrl": 247,
-		"./sr-cyrl.js": 247,
-		"./sr.js": 246,
-		"./ss": 248,
-		"./ss.js": 248,
-		"./sv": 249,
-		"./sv.js": 249,
-		"./sw": 250,
-		"./sw.js": 250,
-		"./ta": 251,
-		"./ta.js": 251,
-		"./te": 252,
-		"./te.js": 252,
-		"./th": 253,
-		"./th.js": 253,
-		"./tl-ph": 254,
-		"./tl-ph.js": 254,
-		"./tlh": 255,
-		"./tlh.js": 255,
-		"./tr": 256,
-		"./tr.js": 256,
-		"./tzl": 257,
-		"./tzl.js": 257,
-		"./tzm": 258,
-		"./tzm-latn": 259,
-		"./tzm-latn.js": 259,
-		"./tzm.js": 258,
-		"./uk": 260,
-		"./uk.js": 260,
-		"./uz": 261,
-		"./uz.js": 261,
-		"./vi": 262,
-		"./vi.js": 262,
-		"./x-pseudo": 263,
-		"./x-pseudo.js": 263,
-		"./zh-cn": 264,
-		"./zh-cn.js": 264,
-		"./zh-tw": 265,
-		"./zh-tw.js": 265
+		"./af": 169,
+		"./af.js": 169,
+		"./ar": 170,
+		"./ar-ma": 171,
+		"./ar-ma.js": 171,
+		"./ar-sa": 172,
+		"./ar-sa.js": 172,
+		"./ar-tn": 173,
+		"./ar-tn.js": 173,
+		"./ar.js": 170,
+		"./az": 174,
+		"./az.js": 174,
+		"./be": 175,
+		"./be.js": 175,
+		"./bg": 176,
+		"./bg.js": 176,
+		"./bn": 177,
+		"./bn.js": 177,
+		"./bo": 178,
+		"./bo.js": 178,
+		"./br": 179,
+		"./br.js": 179,
+		"./bs": 180,
+		"./bs.js": 180,
+		"./ca": 181,
+		"./ca.js": 181,
+		"./cs": 182,
+		"./cs.js": 182,
+		"./cv": 183,
+		"./cv.js": 183,
+		"./cy": 184,
+		"./cy.js": 184,
+		"./da": 185,
+		"./da.js": 185,
+		"./de": 186,
+		"./de-at": 187,
+		"./de-at.js": 187,
+		"./de.js": 186,
+		"./dv": 188,
+		"./dv.js": 188,
+		"./el": 189,
+		"./el.js": 189,
+		"./en-au": 190,
+		"./en-au.js": 190,
+		"./en-ca": 191,
+		"./en-ca.js": 191,
+		"./en-gb": 192,
+		"./en-gb.js": 192,
+		"./en-ie": 193,
+		"./en-ie.js": 193,
+		"./en-nz": 194,
+		"./en-nz.js": 194,
+		"./eo": 195,
+		"./eo.js": 195,
+		"./es": 196,
+		"./es.js": 196,
+		"./et": 197,
+		"./et.js": 197,
+		"./eu": 198,
+		"./eu.js": 198,
+		"./fa": 199,
+		"./fa.js": 199,
+		"./fi": 200,
+		"./fi.js": 200,
+		"./fo": 201,
+		"./fo.js": 201,
+		"./fr": 202,
+		"./fr-ca": 203,
+		"./fr-ca.js": 203,
+		"./fr-ch": 204,
+		"./fr-ch.js": 204,
+		"./fr.js": 202,
+		"./fy": 205,
+		"./fy.js": 205,
+		"./gd": 206,
+		"./gd.js": 206,
+		"./gl": 207,
+		"./gl.js": 207,
+		"./he": 208,
+		"./he.js": 208,
+		"./hi": 209,
+		"./hi.js": 209,
+		"./hr": 210,
+		"./hr.js": 210,
+		"./hu": 211,
+		"./hu.js": 211,
+		"./hy-am": 212,
+		"./hy-am.js": 212,
+		"./id": 213,
+		"./id.js": 213,
+		"./is": 214,
+		"./is.js": 214,
+		"./it": 215,
+		"./it.js": 215,
+		"./ja": 216,
+		"./ja.js": 216,
+		"./jv": 217,
+		"./jv.js": 217,
+		"./ka": 218,
+		"./ka.js": 218,
+		"./kk": 219,
+		"./kk.js": 219,
+		"./km": 220,
+		"./km.js": 220,
+		"./ko": 221,
+		"./ko.js": 221,
+		"./ky": 222,
+		"./ky.js": 222,
+		"./lb": 223,
+		"./lb.js": 223,
+		"./lo": 224,
+		"./lo.js": 224,
+		"./lt": 225,
+		"./lt.js": 225,
+		"./lv": 226,
+		"./lv.js": 226,
+		"./me": 227,
+		"./me.js": 227,
+		"./mk": 228,
+		"./mk.js": 228,
+		"./ml": 229,
+		"./ml.js": 229,
+		"./mr": 230,
+		"./mr.js": 230,
+		"./ms": 231,
+		"./ms-my": 232,
+		"./ms-my.js": 232,
+		"./ms.js": 231,
+		"./my": 233,
+		"./my.js": 233,
+		"./nb": 234,
+		"./nb.js": 234,
+		"./ne": 235,
+		"./ne.js": 235,
+		"./nl": 236,
+		"./nl.js": 236,
+		"./nn": 237,
+		"./nn.js": 237,
+		"./pa-in": 238,
+		"./pa-in.js": 238,
+		"./pl": 239,
+		"./pl.js": 239,
+		"./pt": 240,
+		"./pt-br": 241,
+		"./pt-br.js": 241,
+		"./pt.js": 240,
+		"./ro": 242,
+		"./ro.js": 242,
+		"./ru": 243,
+		"./ru.js": 243,
+		"./se": 244,
+		"./se.js": 244,
+		"./si": 245,
+		"./si.js": 245,
+		"./sk": 246,
+		"./sk.js": 246,
+		"./sl": 247,
+		"./sl.js": 247,
+		"./sq": 248,
+		"./sq.js": 248,
+		"./sr": 249,
+		"./sr-cyrl": 250,
+		"./sr-cyrl.js": 250,
+		"./sr.js": 249,
+		"./ss": 251,
+		"./ss.js": 251,
+		"./sv": 252,
+		"./sv.js": 252,
+		"./sw": 253,
+		"./sw.js": 253,
+		"./ta": 254,
+		"./ta.js": 254,
+		"./te": 255,
+		"./te.js": 255,
+		"./th": 256,
+		"./th.js": 256,
+		"./tl-ph": 257,
+		"./tl-ph.js": 257,
+		"./tlh": 258,
+		"./tlh.js": 258,
+		"./tr": 259,
+		"./tr.js": 259,
+		"./tzl": 260,
+		"./tzl.js": 260,
+		"./tzm": 261,
+		"./tzm-latn": 262,
+		"./tzm-latn.js": 262,
+		"./tzm.js": 261,
+		"./uk": 263,
+		"./uk.js": 263,
+		"./uz": 264,
+		"./uz.js": 264,
+		"./vi": 265,
+		"./vi.js": 265,
+		"./x-pseudo": 266,
+		"./x-pseudo.js": 266,
+		"./zh-cn": 267,
+		"./zh-cn.js": 267,
+		"./zh-tw": 268,
+		"./zh-tw.js": 268
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -24774,11 +25669,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 165;
+	webpackContext.id = 168;
 
 
 /***/ },
-/* 166 */
+/* 169 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -24786,7 +25681,7 @@
 	//! author : Werner Mollentze : https://github.com/wernerm
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -24855,7 +25750,7 @@
 	}));
 
 /***/ },
-/* 167 */
+/* 170 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -24865,7 +25760,7 @@
 	//! Native plural forms: forabi https://github.com/forabi
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -24996,7 +25891,7 @@
 	}));
 
 /***/ },
-/* 168 */
+/* 171 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25005,7 +25900,7 @@
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25060,7 +25955,7 @@
 	}));
 
 /***/ },
-/* 169 */
+/* 172 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25068,7 +25963,7 @@
 	//! author : Suhail Alkowaileet : https://github.com/xsoh
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25168,14 +26063,14 @@
 	}));
 
 /***/ },
-/* 170 */
+/* 173 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale  : Tunisian Arabic (ar-tn)
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25230,7 +26125,7 @@
 	}));
 
 /***/ },
-/* 171 */
+/* 174 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25238,7 +26133,7 @@
 	//! author : topchiyev : https://github.com/topchiyev
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25339,7 +26234,7 @@
 	}));
 
 /***/ },
-/* 172 */
+/* 175 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25349,7 +26244,7 @@
 	//! Author : Menelion Elensúle : https://github.com/Oire
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25477,7 +26372,7 @@
 	}));
 
 /***/ },
-/* 173 */
+/* 176 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25485,7 +26380,7 @@
 	//! author : Krasen Borisov : https://github.com/kraz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25571,7 +26466,7 @@
 	}));
 
 /***/ },
-/* 174 */
+/* 177 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25579,7 +26474,7 @@
 	//! author : Kaushik Gandhi : https://github.com/kaushikgandhi
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25694,7 +26589,7 @@
 	}));
 
 /***/ },
-/* 175 */
+/* 178 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25702,7 +26597,7 @@
 	//! author : Thupten N. Chakrishar : https://github.com/vajradog
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25817,7 +26712,7 @@
 	}));
 
 /***/ },
-/* 176 */
+/* 179 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25825,7 +26720,7 @@
 	//! author : Jean-Baptiste Le Duigou : https://github.com/jbleduigou
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -25929,7 +26824,7 @@
 	}));
 
 /***/ },
-/* 177 */
+/* 180 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -25938,7 +26833,7 @@
 	//! based on (hr) translation by Bojan Marković
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26076,7 +26971,7 @@
 	}));
 
 /***/ },
-/* 178 */
+/* 181 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26084,7 +26979,7 @@
 	//! author : Juan G. Hurtado : https://github.com/juanghurtado
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26161,7 +27056,7 @@
 	}));
 
 /***/ },
-/* 179 */
+/* 182 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26169,7 +27064,7 @@
 	//! author : petrbela : https://github.com/petrbela
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26336,7 +27231,7 @@
 	}));
 
 /***/ },
-/* 180 */
+/* 183 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26344,7 +27239,7 @@
 	//! author : Anatoly Mironov : https://github.com/mirontoli
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26403,7 +27298,7 @@
 	}));
 
 /***/ },
-/* 181 */
+/* 184 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26411,7 +27306,7 @@
 	//! author : Robert Allen
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26487,7 +27382,7 @@
 	}));
 
 /***/ },
-/* 182 */
+/* 185 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26495,7 +27390,7 @@
 	//! author : Ulrik Nielsen : https://github.com/mrbase
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26551,7 +27446,7 @@
 	}));
 
 /***/ },
-/* 183 */
+/* 186 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26561,7 +27456,7 @@
 	//! author : Mikolaj Dadela : https://github.com/mik01aj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26633,7 +27528,7 @@
 	}));
 
 /***/ },
-/* 184 */
+/* 187 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26644,7 +27539,7 @@
 	//! author : Mikolaj Dadela : https://github.com/mik01aj
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26716,7 +27611,7 @@
 	}));
 
 /***/ },
-/* 185 */
+/* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26724,7 +27619,7 @@
 	//! author : Jawish Hameed : https://github.com/jawish
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26819,7 +27714,7 @@
 	}));
 
 /***/ },
-/* 186 */
+/* 189 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26827,7 +27722,7 @@
 	//! author : Aggelos Karalias : https://github.com/mehiel
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26921,14 +27816,14 @@
 	}));
 
 /***/ },
-/* 187 */
+/* 190 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : australian english (en-au)
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -26991,7 +27886,7 @@
 	}));
 
 /***/ },
-/* 188 */
+/* 191 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -26999,7 +27894,7 @@
 	//! author : Jonathan Abourbih : https://github.com/jonbca
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27058,7 +27953,7 @@
 	}));
 
 /***/ },
-/* 189 */
+/* 192 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27066,7 +27961,7 @@
 	//! author : Chris Gedrim : https://github.com/chrisgedrim
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27129,7 +28024,7 @@
 	}));
 
 /***/ },
-/* 190 */
+/* 193 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27137,7 +28032,7 @@
 	//! author : Chris Cartlidge : https://github.com/chriscartlidge
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27200,14 +28095,14 @@
 	}));
 
 /***/ },
-/* 191 */
+/* 194 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : New Zealand english (en-nz)
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27270,7 +28165,7 @@
 	}));
 
 /***/ },
-/* 192 */
+/* 195 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27280,7 +28175,7 @@
 	//!          Se ne, bonvolu korekti kaj avizi min por ke mi povas lerni!
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27347,7 +28242,7 @@
 	}));
 
 /***/ },
-/* 193 */
+/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27355,7 +28250,7 @@
 	//! author : Julio Napurí : https://github.com/julionc
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27432,7 +28327,7 @@
 	}));
 
 /***/ },
-/* 194 */
+/* 197 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27441,7 +28336,7 @@
 	//! improvements : Illimar Tambek : https://github.com/ragulka
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27516,7 +28411,7 @@
 	}));
 
 /***/ },
-/* 195 */
+/* 198 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27524,7 +28419,7 @@
 	//! author : Eneko Illarramendi : https://github.com/eillarra
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27586,7 +28481,7 @@
 	}));
 
 /***/ },
-/* 196 */
+/* 199 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27594,7 +28489,7 @@
 	//! author : Ebrahim Byagowi : https://github.com/ebraminio
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27696,7 +28591,7 @@
 	}));
 
 /***/ },
-/* 197 */
+/* 200 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27704,7 +28599,7 @@
 	//! author : Tarmo Aidantausta : https://github.com/bleadof
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27807,7 +28702,7 @@
 	}));
 
 /***/ },
-/* 198 */
+/* 201 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27815,7 +28710,7 @@
 	//! author : Ragnar Johannesen : https://github.com/ragnar123
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27871,7 +28766,7 @@
 	}));
 
 /***/ },
-/* 199 */
+/* 202 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27879,7 +28774,7 @@
 	//! author : John Fischer : https://github.com/jfroffice
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -27939,7 +28834,7 @@
 	}));
 
 /***/ },
-/* 200 */
+/* 203 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -27947,7 +28842,7 @@
 	//! author : Jonathan Abourbih : https://github.com/jonbca
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28003,7 +28898,7 @@
 	}));
 
 /***/ },
-/* 201 */
+/* 204 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28011,7 +28906,7 @@
 	//! author : Gaspard Bucher : https://github.com/gaspard
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28071,7 +28966,7 @@
 	}));
 
 /***/ },
-/* 202 */
+/* 205 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28079,7 +28974,7 @@
 	//! author : Robin van der Vliet : https://github.com/robin0van0der0v
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28148,7 +29043,7 @@
 	}));
 
 /***/ },
-/* 203 */
+/* 206 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28156,7 +29051,7 @@
 	//! author : Jon Ashdown : https://github.com/jonashdown
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28228,7 +29123,7 @@
 	}));
 
 /***/ },
-/* 204 */
+/* 207 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28236,7 +29131,7 @@
 	//! author : Juan G. Hurtado : https://github.com/juanghurtado
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28309,7 +29204,7 @@
 	}));
 
 /***/ },
-/* 205 */
+/* 208 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28319,7 +29214,7 @@
 	//! author : Tal Ater : https://github.com/TalAter
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28412,7 +29307,7 @@
 	}));
 
 /***/ },
-/* 206 */
+/* 209 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28420,7 +29315,7 @@
 	//! author : Mayank Singhal : https://github.com/mayanksinghal
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28540,7 +29435,7 @@
 	}));
 
 /***/ },
-/* 207 */
+/* 210 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28548,7 +29443,7 @@
 	//! author : Bojan Marković : https://github.com/bmarkovic
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28689,7 +29584,7 @@
 	}));
 
 /***/ },
-/* 208 */
+/* 211 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28697,7 +29592,7 @@
 	//! author : Adam Brunner : https://github.com/adambrunner
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28802,7 +29697,7 @@
 	}));
 
 /***/ },
-/* 209 */
+/* 212 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28810,7 +29705,7 @@
 	//! author : Armendarabyan : https://github.com/armendarabyan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28901,7 +29796,7 @@
 	}));
 
 /***/ },
-/* 210 */
+/* 213 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28910,7 +29805,7 @@
 	//! reference: http://id.wikisource.org/wiki/Pedoman_Umum_Ejaan_Bahasa_Indonesia_yang_Disempurnakan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -28988,7 +29883,7 @@
 	}));
 
 /***/ },
-/* 211 */
+/* 214 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -28996,7 +29891,7 @@
 	//! author : Hinrik Örn Sigurðsson : https://github.com/hinrik
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29119,7 +30014,7 @@
 	}));
 
 /***/ },
-/* 212 */
+/* 215 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29128,7 +30023,7 @@
 	//! author: Mattia Larentis: https://github.com/nostalgiaz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29193,7 +30088,7 @@
 	}));
 
 /***/ },
-/* 213 */
+/* 216 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29201,7 +30096,7 @@
 	//! author : LI Long : https://github.com/baryon
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29273,7 +30168,7 @@
 	}));
 
 /***/ },
-/* 214 */
+/* 217 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29282,7 +30177,7 @@
 	//! reference: http://jv.wikipedia.org/wiki/Basa_Jawa
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29360,7 +30255,7 @@
 	}));
 
 /***/ },
-/* 215 */
+/* 218 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29368,7 +30263,7 @@
 	//! author : Irakli Janiashvili : https://github.com/irakli-janiashvili
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29453,7 +30348,7 @@
 	}));
 
 /***/ },
-/* 216 */
+/* 219 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29461,7 +30356,7 @@
 	//! authors : Nurlan Rakhimzhanov : https://github.com/nurlan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29544,7 +30439,7 @@
 	}));
 
 /***/ },
-/* 217 */
+/* 220 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29552,7 +30447,7 @@
 	//! author : Kruy Vanna : https://github.com/kruyvanna
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29606,7 +30501,7 @@
 	}));
 
 /***/ },
-/* 218 */
+/* 221 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29618,7 +30513,7 @@
 	//! - Jeeeyul Lee <jeeeyul@gmail.com>
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29678,7 +30573,7 @@
 	}));
 
 /***/ },
-/* 219 */
+/* 222 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29686,7 +30581,7 @@
 	//! author : Chyngyz Arystan uulu : https://github.com/chyngyz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29770,7 +30665,7 @@
 	}));
 
 /***/ },
-/* 220 */
+/* 223 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29778,7 +30673,7 @@
 	//! author : mweimerskirch : https://github.com/mweimerskirch, David Raison : https://github.com/kwisatz
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29910,7 +30805,7 @@
 	}));
 
 /***/ },
-/* 221 */
+/* 224 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29918,7 +30813,7 @@
 	//! author : Ryan Hart : https://github.com/ryanhart2
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -29984,7 +30879,7 @@
 	}));
 
 /***/ },
-/* 222 */
+/* 225 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -29992,7 +30887,7 @@
 	//! author : Mindaugas Mozūras : https://github.com/mmozuras
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30104,7 +30999,7 @@
 	}));
 
 /***/ },
-/* 223 */
+/* 226 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30113,7 +31008,7 @@
 	//! author : Jānis Elmeris : https://github.com/JanisE
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30205,7 +31100,7 @@
 	}));
 
 /***/ },
-/* 224 */
+/* 227 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30213,7 +31108,7 @@
 	//! author : Miodrag Nikač <miodrag@restartit.me> : https://github.com/miodragnikac
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30320,7 +31215,7 @@
 	}));
 
 /***/ },
-/* 225 */
+/* 228 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30328,7 +31223,7 @@
 	//! author : Borislav Mickov : https://github.com/B0k0
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30414,7 +31309,7 @@
 	}));
 
 /***/ },
-/* 226 */
+/* 229 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30422,7 +31317,7 @@
 	//! author : Floyd Pink : https://github.com/floydpink
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30499,7 +31394,7 @@
 	}));
 
 /***/ },
-/* 227 */
+/* 230 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30508,7 +31403,7 @@
 	//! author : Vivek Athalye : https://github.com/vnathalye
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30662,7 +31557,7 @@
 	}));
 
 /***/ },
-/* 228 */
+/* 231 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30670,7 +31565,7 @@
 	//! author : Weldan Jamili : https://github.com/weldan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30748,7 +31643,7 @@
 	}));
 
 /***/ },
-/* 229 */
+/* 232 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30756,7 +31651,7 @@
 	//! author : Weldan Jamili : https://github.com/weldan
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30834,7 +31729,7 @@
 	}));
 
 /***/ },
-/* 230 */
+/* 233 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30842,7 +31737,7 @@
 	//! author : Squar team, mysquar.com
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30931,7 +31826,7 @@
 	}));
 
 /***/ },
-/* 231 */
+/* 234 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -30940,7 +31835,7 @@
 	//!           Sigurd Gartmann : https://github.com/sigurdga
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -30998,7 +31893,7 @@
 	}));
 
 /***/ },
-/* 232 */
+/* 235 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31006,7 +31901,7 @@
 	//! author : suvash : https://github.com/suvash
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31125,7 +32020,7 @@
 	}));
 
 /***/ },
-/* 233 */
+/* 236 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31133,7 +32028,7 @@
 	//! author : Joris Röling : https://github.com/jjupiter
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31202,7 +32097,7 @@
 	}));
 
 /***/ },
-/* 234 */
+/* 237 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31210,7 +32105,7 @@
 	//! author : https://github.com/mechuwind
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31266,7 +32161,7 @@
 	}));
 
 /***/ },
-/* 235 */
+/* 238 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31274,7 +32169,7 @@
 	//! author : Harpreet Singh : https://github.com/harpreetkhalsagtbit
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31394,7 +32289,7 @@
 	}));
 
 /***/ },
-/* 236 */
+/* 239 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31402,7 +32297,7 @@
 	//! author : Rafal Hirsz : https://github.com/evoL
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31503,7 +32398,7 @@
 	}));
 
 /***/ },
-/* 237 */
+/* 240 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31511,7 +32406,7 @@
 	//! author : Jefferson : https://github.com/jalex79
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31572,7 +32467,7 @@
 	}));
 
 /***/ },
-/* 238 */
+/* 241 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31580,7 +32475,7 @@
 	//! author : Caio Ribeiro Pereira : https://github.com/caio-ribeiro-pereira
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31637,7 +32532,7 @@
 	}));
 
 /***/ },
-/* 239 */
+/* 242 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31646,7 +32541,7 @@
 	//! author : Valentin Agachi : https://github.com/avaly
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31716,7 +32611,7 @@
 	}));
 
 /***/ },
-/* 240 */
+/* 243 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31726,7 +32621,7 @@
 	//! author : Коренберг Марк : https://github.com/socketpair
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31895,7 +32790,7 @@
 	}));
 
 /***/ },
-/* 241 */
+/* 244 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31903,7 +32798,7 @@
 	//! authors : Bård Rolstad Henriksen : https://github.com/karamell
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -31960,7 +32855,7 @@
 	}));
 
 /***/ },
-/* 242 */
+/* 245 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -31968,7 +32863,7 @@
 	//! author : Sampath Sitinamaluwa : https://github.com/sampathsris
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32035,7 +32930,7 @@
 	}));
 
 /***/ },
-/* 243 */
+/* 246 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32044,7 +32939,7 @@
 	//! based on work of petrbela : https://github.com/petrbela
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32189,7 +33084,7 @@
 	}));
 
 /***/ },
-/* 244 */
+/* 247 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32197,7 +33092,7 @@
 	//! author : Robert Sedovšek : https://github.com/sedovsek
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32355,7 +33250,7 @@
 	}));
 
 /***/ },
-/* 245 */
+/* 248 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32365,7 +33260,7 @@
 	//! author : Oerd Cukalla : https://github.com/oerd (fixes)
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32429,7 +33324,7 @@
 	}));
 
 /***/ },
-/* 246 */
+/* 249 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32437,7 +33332,7 @@
 	//! author : Milan Janačković<milanjanackovic@gmail.com> : https://github.com/milan-j
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32543,7 +33438,7 @@
 	}));
 
 /***/ },
-/* 247 */
+/* 250 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32551,7 +33446,7 @@
 	//! author : Milan Janačković<milanjanackovic@gmail.com> : https://github.com/milan-j
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32657,7 +33552,7 @@
 	}));
 
 /***/ },
-/* 248 */
+/* 251 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32665,7 +33560,7 @@
 	//! author : Nicolai Davies<mail@nicolai.io> : https://github.com/nicolaidavies
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32750,7 +33645,7 @@
 	}));
 
 /***/ },
-/* 249 */
+/* 252 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32758,7 +33653,7 @@
 	//! author : Jens Alm : https://github.com/ulmus
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32823,7 +33718,7 @@
 	}));
 
 /***/ },
-/* 250 */
+/* 253 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32831,7 +33726,7 @@
 	//! author : Fahad Kassim : https://github.com/fadsel
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -32886,7 +33781,7 @@
 	}));
 
 /***/ },
-/* 251 */
+/* 254 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -32894,7 +33789,7 @@
 	//! author : Arjunkumar Krishnamoorthy : https://github.com/tk120404
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33019,7 +33914,7 @@
 	}));
 
 /***/ },
-/* 252 */
+/* 255 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33027,7 +33922,7 @@
 	//! author : Krishna Chaitanya Thota : https://github.com/kcthota
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33112,7 +34007,7 @@
 	}));
 
 /***/ },
-/* 253 */
+/* 256 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33120,7 +34015,7 @@
 	//! author : Kridsada Thanabulpong : https://github.com/sirn
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33183,7 +34078,7 @@
 	}));
 
 /***/ },
-/* 254 */
+/* 257 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33191,7 +34086,7 @@
 	//! author : Dan Hagman
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33249,7 +34144,7 @@
 	}));
 
 /***/ },
-/* 255 */
+/* 258 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33257,7 +34152,7 @@
 	//! author : Dominika Kruk : https://github.com/amaranthrose
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33373,7 +34268,7 @@
 	}));
 
 /***/ },
-/* 256 */
+/* 259 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33382,7 +34277,7 @@
 	//!           Burak Yiğit Kaya: https://github.com/BYK
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33467,7 +34362,7 @@
 	}));
 
 /***/ },
-/* 257 */
+/* 260 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33475,7 +34370,7 @@
 	//! author : Robin van der Vliet : https://github.com/robin0van0der0v with the help of Iustì Canun
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33562,7 +34457,7 @@
 	}));
 
 /***/ },
-/* 258 */
+/* 261 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33570,7 +34465,7 @@
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33624,7 +34519,7 @@
 	}));
 
 /***/ },
-/* 259 */
+/* 262 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33632,7 +34527,7 @@
 	//! author : Abdel Said : https://github.com/abdelsaid
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33686,7 +34581,7 @@
 	}));
 
 /***/ },
-/* 260 */
+/* 263 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33695,7 +34590,7 @@
 	//! Author : Menelion Elensúle : https://github.com/Oire
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33836,7 +34731,7 @@
 	}));
 
 /***/ },
-/* 261 */
+/* 264 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33844,7 +34739,7 @@
 	//! author : Sardor Muminov : https://github.com/muminoff
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33898,7 +34793,7 @@
 	}));
 
 /***/ },
-/* 262 */
+/* 265 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33906,7 +34801,7 @@
 	//! author : Bang Nguyen : https://github.com/bangnk
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -33981,7 +34876,7 @@
 	}));
 
 /***/ },
-/* 263 */
+/* 266 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -33989,7 +34884,7 @@
 	//! author : Andrew Hood : https://github.com/andrewhood125
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -34053,7 +34948,7 @@
 	}));
 
 /***/ },
-/* 264 */
+/* 267 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -34062,7 +34957,7 @@
 	//! author : Zeno Zeng : https://github.com/zenozeng
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -34184,7 +35079,7 @@
 	}));
 
 /***/ },
-/* 265 */
+/* 268 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
@@ -34192,7 +35087,7 @@
 	//! author : Ben : https://github.com/ben-lin
 
 	;(function (global, factory) {
-	    true ? factory(__webpack_require__(163)) :
+	    true ? factory(__webpack_require__(166)) :
 	   typeof define === 'function' && define.amd ? define(['moment'], factory) :
 	   factory(global.moment)
 	}(this, function (moment) { 'use strict';
@@ -34289,7 +35184,7 @@
 	}));
 
 /***/ },
-/* 266 */
+/* 269 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -34887,793 +35782,7 @@
 	};
 
 /***/ },
-/* 267 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * @license
-	 * Fuse - Lightweight fuzzy-search
-	 *
-	 * Copyright (c) 2012-2016 Kirollos Risk <kirollos@gmail.com>.
-	 * All Rights Reserved. Apache Software License 2.0
-	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License")
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 * http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
-	 */
-	;(function (global) {
-	  'use strict'
-
-	  function log () {
-	    console.log.apply(console, arguments)
-	  }
-
-	  var MULTI_CHAR_REGEX = / +/g
-
-	  var defaultOptions = {
-	    // The name of the identifier property. If specified, the returned result will be a list
-	    // of the items' dentifiers, otherwise it will be a list of the items.
-	    id: null,
-
-	    // Indicates whether comparisons should be case sensitive.
-
-	    caseSensitive: false,
-
-	    // An array of values that should be included from the searcher's output. When this array
-	    // contains elements, each result in the list will be of the form `{ item: ..., include1: ..., include2: ... }`.
-	    // Values you can include are `score`, `matchedLocations`
-	    include: [],
-
-	    // Whether to sort the result list, by score
-	    shouldSort: true,
-
-	    // The search function to use
-	    // Note that the default search function ([[Function]]) must conform to the following API:
-	    //
-	    //  @param pattern The pattern string to search
-	    //  @param options The search option
-	    //  [[Function]].constructor = function(pattern, options)
-	    //
-	    //  @param text: the string to search in for the pattern
-	    //  @return Object in the form of:
-	    //    - isMatch: boolean
-	    //    - score: Int
-	    //  [[Function]].prototype.search = function(text)
-	    searchFn: BitapSearcher,
-
-	    // Default sort function
-	    sortFn: function (a, b) {
-	      return a.score - b.score
-	    },
-
-	    // The get function to use when fetching an object's properties.
-	    // The default will search nested paths *ie foo.bar.baz*
-	    getFn: deepValue,
-
-	    // List of properties that will be searched. This also supports nested properties.
-	    keys: [],
-
-	    // Will print to the console. Useful for debugging.
-	    verbose: false,
-
-	    // When true, the search algorithm will search individual words **and** the full string,
-	    // computing the final score as a function of both. Note that when `tokenize` is `true`,
-	    // the `threshold`, `distance`, and `location` are inconsequential for individual tokens.
-	    tokenize: false
-	  }
-
-	  function Fuse (list, options) {
-	    var i
-	    var len
-	    var key
-	    var keys
-
-	    this.list = list
-	    this.options = options = options || {}
-
-	    // Add boolean type options
-	    for (i = 0, keys = ['sort', 'shouldSort', 'verbose', 'tokenize'], len = keys.length; i < len; i++) {
-	      key = keys[i]
-	      this.options[key] = key in options ? options[key] : defaultOptions[key]
-	    }
-	    // Add all other options
-	    for (i = 0, keys = ['searchFn', 'sortFn', 'keys', 'getFn', 'include'], len = keys.length; i < len; i++) {
-	      key = keys[i]
-	      this.options[key] = options[key] || defaultOptions[key]
-	    }
-	  }
-
-	  Fuse.VERSION = '2.2.0'
-
-	  /**
-	   * Sets a new list for Fuse to match against.
-	   * @param {Array} list
-	   * @return {Array} The newly set list
-	   * @public
-	   */
-	  Fuse.prototype.set = function (list) {
-	    this.list = list
-	    return list
-	  }
-
-	  Fuse.prototype.search = function (pattern) {
-	    if (this.options.verbose) log('\nSearch term:', pattern, '\n')
-
-	    this.pattern = pattern
-	    this.results = []
-	    this.resultMap = {}
-	    this._keyMap = null
-
-	    this._prepareSearchers()
-	    this._startSearch()
-	    this._computeScore()
-	    this._sort()
-
-	    var output = this._format()
-	    return output
-	  }
-
-	  Fuse.prototype._prepareSearchers = function () {
-	    var options = this.options
-	    var pattern = this.pattern
-	    var searchFn = options.searchFn
-	    var tokens = pattern.split(MULTI_CHAR_REGEX)
-	    var i = 0
-	    var len = tokens.length
-
-	    if (this.options.tokenize) {
-	      this.tokenSearchers = []
-	      for (; i < len; i++) {
-	        this.tokenSearchers.push(new searchFn(tokens[i], options))
-	      }
-	    }
-	    this.fullSeacher = new searchFn(pattern, options)
-	  }
-
-	  Fuse.prototype._startSearch = function () {
-	    var options = this.options
-	    var getFn = options.getFn
-	    var list = this.list
-	    var listLen = list.length
-	    var keys = this.options.keys
-	    var keysLen = keys.length
-	    var key
-	    var weight
-	    var item = null
-	    var i
-	    var j
-
-	    // Check the first item in the list, if it's a string, then we assume
-	    // that every item in the list is also a string, and thus it's a flattened array.
-	    if (typeof list[0] === 'string') {
-	      // Iterate over every item
-	      for (i = 0; i < listLen; i++) {
-	        this._analyze('', list[i], i, i)
-	      }
-	    } else {
-	      this._keyMap = {}
-	      // Otherwise, the first item is an Object (hopefully), and thus the searching
-	      // is done on the values of the keys of each item.
-	      // Iterate over every item
-	      for (i = 0; i < listLen; i++) {
-	        item = list[i]
-	        // Iterate over every key
-	        for (j = 0; j < keysLen; j++) {
-	          key = keys[j]
-	          if (typeof key !== 'string') {
-	            weight = (1 - key.weight) || 1
-	            this._keyMap[key.name] = {
-	              weight: weight
-	            }
-	            if (key.weight <= 0 || key.weight > 1) {
-	              throw new Error('Key weight has to be > 0 and <= 1')
-	            }
-	            key = key.name
-	          } else {
-	            this._keyMap[key] = {
-	              weight: 1
-	            }
-	          }
-	          this._analyze(key, getFn(item, key, []), item, i)
-	        }
-	      }
-	    }
-	  }
-
-	  Fuse.prototype._analyze = function (key, text, entity, index) {
-	    var options = this.options
-	    var words
-	    var scores
-	    var exists = false
-	    var tokenSearchers
-	    var tokenSearchersLen
-	    var existingResult
-	    var averageScore
-	    var finalScore
-	    var scoresLen
-	    var mainSearchResult
-	    var tokenSearcher
-	    var termScores
-	    var word
-	    var tokenSearchResult
-	    var i
-	    var j
-
-	    // Check if the text can be searched
-	    if (text === undefined || text === null) {
-	      return
-	    }
-
-	    scores = []
-
-	    if (typeof text === 'string') {
-	      words = text.split(MULTI_CHAR_REGEX)
-
-	      if (options.verbose) log('---------\nKey:', key)
-	      if (options.verbose) log('Record:', words)
-
-	      if (this.options.tokenize) {
-	        tokenSearchers = this.tokenSearchers
-	        tokenSearchersLen = tokenSearchers.length
-
-	        for (i = 0; i < this.tokenSearchers.length; i++) {
-	          tokenSearcher = this.tokenSearchers[i]
-	          termScores = []
-	          for (j = 0; j < words.length; j++) {
-	            word = words[j]
-	            tokenSearchResult = tokenSearcher.search(word)
-	            if (tokenSearchResult.isMatch) {
-	              exists = true
-	              termScores.push(tokenSearchResult.score)
-	              scores.push(tokenSearchResult.score)
-	            } else {
-	              termScores.push(1)
-	              scores.push(1)
-	            }
-	          }
-	          if (options.verbose) log('Token scores:', termScores)
-	        }
-
-	        averageScore = scores[0]
-	        scoresLen = scores.length
-	        for (i = 1; i < scoresLen; i++) {
-	          averageScore += scores[i]
-	        }
-	        averageScore = averageScore / scoresLen
-
-	        if (options.verbose) log('Token score average:', averageScore)
-	      }
-
-	      // Get the result
-	      mainSearchResult = this.fullSeacher.search(text)
-	      if (options.verbose) log('Full text score:', mainSearchResult.score)
-
-	      finalScore = mainSearchResult.score
-	      if (averageScore !== undefined) {
-	        finalScore = (finalScore + averageScore) / 2
-	      }
-
-	      if (options.verbose) log('Score average:', finalScore)
-
-	      // If a match is found, add the item to <rawResults>, including its score
-	      if (exists || mainSearchResult.isMatch) {
-	        // Check if the item already exists in our results
-	        existingResult = this.resultMap[index]
-
-	        if (existingResult) {
-	          // Use the lowest score
-	          // existingResult.score, bitapResult.score
-	          existingResult.output.push({
-	            key: key,
-	            score: finalScore,
-	            matchedIndices: mainSearchResult.matchedIndices
-	          })
-	        } else {
-	          // Add it to the raw result list
-	          this.resultMap[index] = {
-	            item: entity,
-	            output: [{
-	              key: key,
-	              score: finalScore,
-	              matchedIndices: mainSearchResult.matchedIndices
-	            }]
-	          }
-
-	          this.results.push(this.resultMap[index])
-	        }
-	      }
-	    } else if (isArray(text)) {
-	      for (i = 0; i < text.length; i++) {
-	        this._analyze(key, text[i], entity, index)
-	      }
-	    }
-	  }
-
-	  Fuse.prototype._computeScore = function () {
-	    var i
-	    var j
-	    var keyMap = this._keyMap
-	    var totalScore
-	    var output
-	    var scoreLen
-	    var score
-	    var weight
-	    var results = this.results
-	    var bestScore
-	    var nScore
-
-	    if (this.options.verbose) log('\n\nComputing score:\n')
-
-	    for (i = 0; i < results.length; i++) {
-	      totalScore = 0
-	      output = results[i].output
-	      scoreLen = output.length
-
-	      bestScore = 1
-
-	      for (j = 0; j < scoreLen; j++) {
-	        score = output[j].score
-	        weight = keyMap ? keyMap[output[j].key].weight : 1
-
-	        nScore = score * weight
-
-	        if (weight !== 1) {
-	          bestScore = Math.min(bestScore, nScore)
-	        } else {
-	          totalScore += nScore
-	          output[j].nScore = nScore
-	        }
-	      }
-
-	      if (bestScore === 1) {
-	        results[i].score = totalScore / scoreLen
-	      } else {
-	        results[i].score = bestScore
-	      }
-
-	      if (this.options.verbose) log(results[i])
-	    }
-	  }
-
-	  Fuse.prototype._sort = function () {
-	    var options = this.options
-	    if (options.shouldSort) {
-	      if (options.verbose) log('\n\nSorting....')
-	      this.results.sort(options.sortFn)
-	    }
-	  }
-
-	  Fuse.prototype._format = function () {
-	    var options = this.options
-	    var getFn = options.getFn
-	    var finalOutput = []
-	    var item
-	    var i
-	    var len
-	    var results = this.results
-	    var replaceValue
-	    var getItemAtIndex
-	    var include = options.include
-
-	    if (options.verbose) log('\n\nOutput:\n\n', results)
-
-	    // Helper function, here for speed-up, which replaces the item with its value,
-	    // if the options specifies it,
-	    replaceValue = options.id ? function (index) {
-	      results[index].item = getFn(results[index].item, options.id, [])[0]
-	    } : function () {}
-
-	    getItemAtIndex = function (index) {
-	      var record = results[index]
-	      var data
-	      var includeVal
-	      var j
-	      var output
-	      var _item
-	      var _result
-
-	      // If `include` has values, put the item in the result
-	      if (include.length > 0) {
-	        data = {
-	          item: record.item
-	        }
-	        if (include.indexOf('matches') !== -1) {
-	          output = record.output
-	          data.matches = []
-	          for (j = 0; j < output.length; j++) {
-	            _item = output[j]
-	            _result = {
-	              indices: _item.matchedIndices
-	            }
-	            if (_item.key) {
-	              _result.key = _item.key
-	            }
-	            data.matches.push(_result)
-	          }
-	        }
-
-	        if (include.indexOf('score') !== -1) {
-	          data.score = results[index].score
-	        }
-
-	      } else {
-	        data = record.item
-	      }
-
-	      return data
-	    }
-
-	    // From the results, push into a new array only the item identifier (if specified)
-	    // of the entire item.  This is because we don't want to return the <results>,
-	    // since it contains other metadata
-	    for (i = 0, len = results.length; i < len; i++) {
-	      replaceValue(i)
-	      item = getItemAtIndex(i)
-	      finalOutput.push(item)
-	    }
-
-	    return finalOutput
-	  }
-
-	  // Helpers
-
-	  function deepValue (obj, path, list) {
-	    var firstSegment
-	    var remaining
-	    var dotIndex
-	    var value
-	    var i
-	    var len
-
-	    if (!path) {
-	      // If there's no path left, we've gotten to the object we care about.
-	      list.push(obj)
-	    } else {
-	      dotIndex = path.indexOf('.')
-
-	      if (dotIndex !== -1) {
-	        firstSegment = path.slice(0, dotIndex)
-	        remaining = path.slice(dotIndex + 1)
-	      } else {
-	        firstSegment = path
-	      }
-
-	      value = obj[firstSegment]
-	      if (value !== null && value !== undefined) {
-	        if (!remaining && (typeof value === 'string' || typeof value === 'number')) {
-	          list.push(value)
-	        } else if (isArray(value)) {
-	          // Search each item in the array.
-	          for (i = 0, len = value.length; i < len; i++) {
-	            deepValue(value[i], remaining, list)
-	          }
-	        } else if (remaining) {
-	          // An object. Recurse further.
-	          deepValue(value, remaining, list)
-	        }
-	      }
-	    }
-
-	    return list
-	  }
-
-	  function isArray (obj) {
-	    return Object.prototype.toString.call(obj) === '[object Array]'
-	  }
-
-	  /**
-	   * Adapted from "Diff, Match and Patch", by Google
-	   *
-	   *   http://code.google.com/p/google-diff-match-patch/
-	   *
-	   * Modified by: Kirollos Risk <kirollos@gmail.com>
-	   * -----------------------------------------------
-	   * Details: the algorithm and structure was modified to allow the creation of
-	   * <Searcher> instances with a <search> method which does the actual
-	   * bitap search. The <pattern> (the string that is searched for) is only defined
-	   * once per instance and thus it eliminates redundant re-creation when searching
-	   * over a list of strings.
-	   *
-	   * Licensed under the Apache License, Version 2.0 (the "License")
-	   * you may not use this file except in compliance with the License.
-	   */
-	  function BitapSearcher (pattern, options) {
-	    options = options || {}
-	    this.options = options
-	    this.options.location = options.location || BitapSearcher.defaultOptions.location
-	    this.options.distance = 'distance' in options ? options.distance : BitapSearcher.defaultOptions.distance
-	    this.options.threshold = 'threshold' in options ? options.threshold : BitapSearcher.defaultOptions.threshold
-	    this.options.maxPatternLength = options.maxPatternLength || BitapSearcher.defaultOptions.maxPatternLength
-
-	    this.pattern = options.caseSensitive ? pattern : pattern.toLowerCase()
-	    this.patternLen = pattern.length
-
-	    if (this.patternLen <= this.options.maxPatternLength) {
-	      this.matchmask = 1 << (this.patternLen - 1)
-	      this.patternAlphabet = this._calculatePatternAlphabet()
-	    }
-	  }
-
-	  BitapSearcher.defaultOptions = {
-	    // Approximately where in the text is the pattern expected to be found?
-	    location: 0,
-
-	    // Determines how close the match must be to the fuzzy location (specified above).
-	    // An exact letter match which is 'distance' characters away from the fuzzy location
-	    // would score as a complete mismatch. A distance of '0' requires the match be at
-	    // the exact location specified, a threshold of '1000' would require a perfect match
-	    // to be within 800 characters of the fuzzy location to be found using a 0.8 threshold.
-	    distance: 100,
-
-	    // At what point does the match algorithm give up. A threshold of '0.0' requires a perfect match
-	    // (of both letters and location), a threshold of '1.0' would match anything.
-	    threshold: 0.6,
-
-	    // Machine word size
-	    maxPatternLength: 32
-	  }
-
-	  /**
-	   * Initialize the alphabet for the Bitap algorithm.
-	   * @return {Object} Hash of character locations.
-	   * @private
-	   */
-	  BitapSearcher.prototype._calculatePatternAlphabet = function () {
-	    var mask = {},
-	      i = 0
-
-	    for (i = 0; i < this.patternLen; i++) {
-	      mask[this.pattern.charAt(i)] = 0
-	    }
-
-	    for (i = 0; i < this.patternLen; i++) {
-	      mask[this.pattern.charAt(i)] |= 1 << (this.pattern.length - i - 1)
-	    }
-
-	    return mask
-	  }
-
-	  /**
-	   * Compute and return the score for a match with `e` errors and `x` location.
-	   * @param {number} errors Number of errors in match.
-	   * @param {number} location Location of match.
-	   * @return {number} Overall score for match (0.0 = good, 1.0 = bad).
-	   * @private
-	   */
-	  BitapSearcher.prototype._bitapScore = function (errors, location) {
-	    var accuracy = errors / this.patternLen,
-	      proximity = Math.abs(this.options.location - location)
-
-	    if (!this.options.distance) {
-	      // Dodge divide by zero error.
-	      return proximity ? 1.0 : accuracy
-	    }
-	    return accuracy + (proximity / this.options.distance)
-	  }
-
-	  /**
-	   * Compute and return the result of the search
-	   * @param {String} text The text to search in
-	   * @return {Object} Literal containing:
-	   *                          {Boolean} isMatch Whether the text is a match or not
-	   *                          {Decimal} score Overall score for the match
-	   * @public
-	   */
-	  BitapSearcher.prototype.search = function (text) {
-	    var options = this.options
-	    var i
-	    var j
-	    var textLen
-	    var location
-	    var threshold
-	    var bestLoc
-	    var binMin
-	    var binMid
-	    var binMax
-	    var start, finish
-	    var bitArr
-	    var lastBitArr
-	    var charMatch
-	    var score
-	    var locations
-	    var matches
-	    var isMatched
-	    var matchMask
-	    var matchedIndices
-	    var matchesLen
-	    var match
-
-	    text = options.caseSensitive ? text : text.toLowerCase()
-
-	    if (this.pattern === text) {
-	      // Exact match
-	      return {
-	        isMatch: true,
-	        score: 0,
-	        matchedIndices: [[0, text.length - 1]]
-	      }
-	    }
-
-	    // When pattern length is greater than the machine word length, just do a a regex comparison
-	    if (this.patternLen > options.maxPatternLength) {
-	      matches = text.match(new RegExp(this.pattern.replace(MULTI_CHAR_REGEX, '|')))
-	      isMatched = !!matches
-
-	      if (isMatched) {
-	        matchedIndices = []
-	        for (i = 0, matchesLen = matches.length; i < matchesLen; i++) {
-	          match = matches[i]
-	          matchedIndices.push([text.indexOf(match), match.length - 1])
-	        }
-	      }
-
-	      return {
-	        isMatch: isMatched,
-	        // TODO: revisit this score
-	        score: isMatched ? 0.5 : 1,
-	        matchedIndices: matchedIndices
-	      }
-	    }
-
-	    location = options.location
-	    // Set starting location at beginning text and initialize the alphabet.
-	    textLen = text.length
-	    // Highest score beyond which we give up.
-	    threshold = options.threshold
-	    // Is there a nearby exact match? (speedup)
-	    bestLoc = text.indexOf(this.pattern, location)
-
-	    // a mask of the matches
-	    matchMask = []
-	    for (i = 0; i < textLen; i++) {
-	      matchMask[i] = 0
-	    }
-
-	    if (bestLoc != -1) {
-	      threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
-	      // What about in the other direction? (speed up)
-	      bestLoc = text.lastIndexOf(this.pattern, location + this.patternLen)
-
-	      if (bestLoc != -1) {
-	        threshold = Math.min(this._bitapScore(0, bestLoc), threshold)
-	      }
-	    }
-
-	    bestLoc = -1
-	    score = 1
-	    locations = []
-	    binMax = this.patternLen + textLen
-
-	    for (i = 0; i < this.patternLen; i++) {
-	      // Scan for the best match; each iteration allows for one more error.
-	      // Run a binary search to determine how far from the match location we can stray
-	      // at this error level.
-	      binMin = 0
-	      binMid = binMax
-	      while (binMin < binMid) {
-	        if (this._bitapScore(i, location + binMid) <= threshold) {
-	          binMin = binMid
-	        } else {
-	          binMax = binMid
-	        }
-	        binMid = Math.floor((binMax - binMin) / 2 + binMin)
-	      }
-
-	      // Use the result from this iteration as the maximum for the next.
-	      binMax = binMid
-	      start = Math.max(1, location - binMid + 1)
-	      finish = Math.min(location + binMid, textLen) + this.patternLen
-
-	      // Initialize the bit array
-	      bitArr = Array(finish + 2)
-
-	      bitArr[finish + 1] = (1 << i) - 1
-
-	      for (j = finish; j >= start; j--) {
-	        charMatch = this.patternAlphabet[text.charAt(j - 1)]
-
-	        if (charMatch) {
-	          matchMask[j - 1] = 1
-	        }
-
-	        if (i === 0) {
-	          // First pass: exact match.
-	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch
-	        } else {
-	          // Subsequent passes: fuzzy match.
-	          bitArr[j] = ((bitArr[j + 1] << 1) | 1) & charMatch | (((lastBitArr[j + 1] | lastBitArr[j]) << 1) | 1) | lastBitArr[j + 1]
-	        }
-	        if (bitArr[j] & this.matchmask) {
-	          score = this._bitapScore(i, j - 1)
-
-	          // This match will almost certainly be better than any existing match.
-	          // But check anyway.
-	          if (score <= threshold) {
-	            // Indeed it is
-	            threshold = score
-	            bestLoc = j - 1
-	            locations.push(bestLoc)
-
-	            if (bestLoc > location) {
-	              // When passing loc, don't exceed our current distance from loc.
-	              start = Math.max(1, 2 * location - bestLoc)
-	            } else {
-	              // Already passed loc, downhill from here on in.
-	              break
-	            }
-	          }
-	        }
-	      }
-
-	      // No hope for a (better) match at greater error levels.
-	      if (this._bitapScore(i + 1, location) > threshold) {
-	        break
-	      }
-	      lastBitArr = bitArr
-	    }
-
-	    matchedIndices = this._getMatchedIndices(matchMask)
-
-	    // Count exact matches (those with a score of 0) to be "almost" exact
-	    return {
-	      isMatch: bestLoc >= 0,
-	      score: score === 0 ? 0.001 : score,
-	      matchedIndices: matchedIndices
-	    }
-	  }
-
-	  BitapSearcher.prototype._getMatchedIndices = function (matchMask) {
-	    var matchedIndices = []
-	    var start = -1
-	    var end = -1
-	    var i = 0
-	    var match
-	    var len = len = matchMask.length
-	    for (; i < len; i++) {
-	      match = matchMask[i]
-	      if (match && start === -1) {
-	        start = i
-	      } else if (!match && start !== -1) {
-	        end = i - 1
-	        matchedIndices.push([start, end])
-	        start = -1
-	      }
-	    }
-	    if (matchMask[i - 1]) {
-	      matchedIndices.push([start, i - 1])
-	    }
-	    return matchedIndices
-	  }
-
-	  // Export to Common JS Loader
-	  if (true) {
-	    // Node. Does not work with strict CommonJS, but
-	    // only CommonJS-like environments that support module.exports,
-	    // like Node.
-	    module.exports = Fuse
-	  } else if (typeof define === 'function' && define.amd) {
-	    // AMD. Register as an anonymous module.
-	    define(function () {
-	      return Fuse
-	    })
-	  } else {
-	    // Browser globals (root is window)
-	    global.Fuse = Fuse
-	  }
-
-	})(this)
-
-
-/***/ },
-/* 268 */
+/* 270 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -44999,16 +45108,16 @@
 	];
 
 /***/ },
-/* 269 */
+/* 271 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(270);
+	var content = __webpack_require__(272);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(272)(content, {});
+	var update = __webpack_require__(274)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -45025,21 +45134,21 @@
 	}
 
 /***/ },
-/* 270 */
+/* 272 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(271)();
+	exports = module.exports = __webpack_require__(273)();
 	// imports
 
 
 	// module
-	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  border: 1px solid #c3c3c3;\n  margin: 0 auto;\n  width: 350px;\n  height: 450px;\n  position: relative;\n  overflow: hidden; }\n\n.header {\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\n.header__icon {\n  float: left;\n  display: inline-block;\n  font-size: 2em;\n  color: #6c6c6c; }\n\n.logo {\n  display: block;\n  margin: 0 auto; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  font-size: 3em;\n  font-weight: 100;\n  text-align: center;\n  background-color: rgba(255, 255, 255, 0.8);\n  padding: 20px;\n  width: 100%;\n  position: absolute;\n  bottom: calc(1.5em);\n  left: 0;\n  right: 0; }\n\n.zone__date {\n  padding: 10px;\n  background-color: rgba(255, 255, 255, 0.8);\n  font-size: 2em;\n  font-weight: 100;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0; }\n\n.zoned__clock {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  right: 0;\n  background-color: #fff;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -150%;\n  height: 200%;\n  transform-origin: bottom center;\n  transition: 200ms transform;\n  border: 1px solid #ccc; }\n  .zoned__clock__hand:after {\n    content: '';\n    display: block;\n    width: 50px;\n    height: 50px;\n    position: absolute;\n    bottom: -25px;\n    z-index: -1;\n    background-color: white;\n    border: 1px solid #ccc; }\n\n.zoned__clock__hand--minute {\n  width: 10px;\n  left: calc(50% - 5px);\n  background-color: rgba(165, 199, 223, 0.1); }\n  .zoned__clock__hand--minute:after {\n    left: -20px; }\n\n.zoned__clock__hand--hour {\n  width: 20px;\n  left: calc(50% - 10px);\n  background-color: rgba(212, 40, 33, 0.1); }\n  .zoned__clock__hand--hour:after {\n    left: -15px; }\n\n.zoned__clock__hand--second {\n  width: 5px;\n  left: calc(50% - 2.5px);\n  background-color: rgba(77, 77, 77, 0.2); }\n  .zoned__clock__hand--second:after {\n    left: -22.5px; }\n", ""]);
+	exports.push([module.id, "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box; }\n\nbody, html {\n  overflow-x: hidden;\n  overflow-y: auto; }\n\nbody {\n  font-family: 'Raleway', sans-serif;\n  font-size: 16px;\n  background-color: #fff; }\n\nh1, h2, h3, h4, h5 {\n  font-family: 'Montserrat', sans-serif;\n  font-weight: 100; }\n\n.zoned {\n  border: 1px solid #c3c3c3;\n  margin: 0 auto;\n  width: 300px;\n  height: 300px;\n  position: relative;\n  overflow: hidden;\n  font-size: 12px; }\n\n.header {\n  text-align: center;\n  color: #fff;\n  font-size: 2em; }\n\nbutton,\ninput {\n  font-family: 'Raleway', sans-serif;\n  background-color: #fff;\n  color: #3d3d3d;\n  display: block;\n  padding: 0.5em;\n  font-size: 1em;\n  width: 100%;\n  font-weight: 800;\n  text-transform: uppercase;\n  text-align: center;\n  border: 1px solid #efefef; }\n\nbutton:focus,\ninput:focus {\n  outline-width: 0; }\n\n.search {\n  padding: 5px;\n  position: relative; }\n\n.search__input {\n  margin: 0;\n  width: 100%; }\n\nul {\n  list-style-type: none; }\n\n.zone__name {\n  font-weight: 100;\n  text-align: center;\n  color: white;\n  padding-top: 5px; }\n  .zone__name:nth-of-type(1) {\n    font-size: 1.5em; }\n  .zone__name:nth-of-type(2) {\n    font-size: 2.5em; }\n  .zone__name:nth-of-type(3) {\n    font-size: 1.25em; }\n\n.zone__time {\n  font-size: 3em;\n  font-weight: 100;\n  text-align: center;\n  padding: 15px;\n  font-weight: bold;\n  text-transform: uppercase;\n  position: absolute;\n  bottom: 1.5em;\n  color: #cfcfcf;\n  left: 0;\n  right: 0; }\n\n.zone__date {\n  padding: 5px;\n  background-color: white;\n  font-size: 2em;\n  font-weight: 100;\n  text-transform: uppercase;\n  text-align: center;\n  width: 100%;\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  right: 0; }\n\n.other-zone {\n  margin: 0 auto;\n  padding: 10px;\n  text-align: center;\n  cursor: pointer;\n  font-size: 1.5em;\n  color: #ccc; }\n\n.zoned__clock {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  right: 0;\n  background-color: #b0b0f0;\n  background-color: #2a2a33;\n  z-index: -1; }\n\n.zoned__clock__hand {\n  position: absolute;\n  top: -55%;\n  height: 100%;\n  transform-origin: bottom center;\n  transition: 200ms transform;\n  border-right: 1px solid #666;\n  border-left: 1px solid #666;\n  width: 3px;\n  left: 50%; }\n", ""]);
 
 	// exports
 
 
 /***/ },
-/* 271 */
+/* 273 */
 /***/ function(module, exports) {
 
 	/*
@@ -45095,7 +45204,7 @@
 
 
 /***/ },
-/* 272 */
+/* 274 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
