@@ -19848,7 +19848,6 @@
 	              type: 'text',
 	              className: 'search__input',
 	              placeholder: 'Search',
-	              defaultValue: 'Birmingham',
 	              onFocus: this.clearInput.bind(this),
 	              onChange: this.onInputChange
 	            })
