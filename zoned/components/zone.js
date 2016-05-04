@@ -26,6 +26,14 @@ export default class Zone extends Component {
     const time = moment(this.props.timestamp).tz(this.props.zone.tz).format('HH:mm:ss').split(':');
     let deg = null;
 
+    if (type === 'bg') {
+      if (time[0] >= 7 && time[0] <= 21) {
+        return 'day';
+      } else {
+        return 'night'
+      }
+    }
+
     if (type === 's') deg = time[2] * 6;
     if (type === 'm') deg = time[1] * 6;
     if (type === 'h') deg = time[0] * 30;
@@ -38,7 +46,7 @@ export default class Zone extends Component {
 
   render() {
     return (
-      <div className='zoned' key={ this.props.key }>
+      <div className={`zoned ${this.getClockStyle('bg')}`} key={ this.props.key }>
         <div className='zoned__clock' dataTime={ this.getCurrentTime() }>
           <div className='zoned__clock__hand zoned__clock__hand--hour' style={ this.getClockStyle('h') }/>
           <div className='zoned__clock__hand zoned__clock__hand--minute' style={ this.getClockStyle('m') }/>

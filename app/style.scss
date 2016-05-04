@@ -151,18 +151,50 @@ ul {
 .zoned__clock {
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background-color: #b0b0f0; // day
-  background-color: #2a2a33; // night
   z-index: -1;
+  transition: 1s background-color;
 }
+
 .zoned__clock__hand {
   position: absolute;
   top: -55%;
   height: 100%;
   transform-origin: bottom center;
   transition: 200ms transform;
-  border-right: 1px solid #666;
-  border-left: 1px solid #666;
   width: 3px;
   left: 50%;
+}
+
+
+
+.zoned.day {
+  .zoned__clock {
+    background-color: #7BB4E9; // day
+  }
+  .zone__name {
+    color: #3d3d3d;
+    font-weight: bold;
+  }
+  .zoned__clock__hand {
+    border-right: 1px solid #fff;
+    border-left: 1px solid #fff;
+  }
+  .zone__time {
+    color: #3d3d3d;
+  }
+  .zone__offset {
+    color: #3d3d3d;
+  }
+}
+
+
+
+.night {
+  .zoned__clock {
+    background-color: #2a2a33; // night
+  }
+    .zoned__clock__hand {
+      border-right: 1px solid #666;
+      border-left: 1px solid #666;
+    }
 }
