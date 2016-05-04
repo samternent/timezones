@@ -32,8 +32,16 @@ h1, h2, h3, h4, h5 {
   text-align: center;
   color: #fff;
   font-size: 2em;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
+.search__icon {
+  color: #e3e3e3;
+  position: absolute;
+  left: 0;
+  padding: 0.5em;
+}
 
 button,
 input {
@@ -47,7 +55,8 @@ input {
   font-weight:800;
   text-transform: uppercase;;
   text-align: center;
-  border: 1px solid #efefef;
+  border: 2px solid #e3e3e3;
+  // background-color: #e3e3e3;
 }
 
 button:focus,
@@ -59,6 +68,7 @@ input:focus {
 .search {
   padding: 5px;
   position: relative;
+  margin-top: 1em;
 }
 
 .search__input {
@@ -138,10 +148,12 @@ ul {
 .other-zone {
   margin: 0 auto;
   padding: 10px;
+  max-width: 600px;
+  border-radius: 15px;
   text-align: center;
   cursor: pointer;
   font-size: 1.5em;
-  color: #ccc;
+  color: #c3c3c3;
   transition: 0.1s color;
   &:hover {
     color: #333;
@@ -173,7 +185,7 @@ ul {
   }
   .zone__name {
     color: #3d3d3d;
-    font-weight: bold;
+    font-weight: 300;
   }
   .zoned__clock__hand {
     border-right: 1px solid #fff;

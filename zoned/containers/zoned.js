@@ -102,6 +102,7 @@ export default class Zoned extends React.Component {
       <div>
         <header className='header'>
           <div className='search'>
+            <i className="fa fa-search search__icon" />
             <input
               ref='search'
               type='text'
