@@ -1,4 +1,4 @@
-Simple dev environment for creating standalone react components
+Timezone search POC - teamzone.herokuapp.com
 
 `$ npm start`
 
